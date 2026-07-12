@@ -1,0 +1,235 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;family=Montserrat:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "outline": "#916f6e",
+                    "surface-tint": "#bf0030",
+                    "on-primary-fixed": "#40000a",
+                    "secondary-fixed-dim": "#a1d494",
+                    "on-secondary-fixed": "#002201",
+                    "secondary-fixed": "#bcf0ae",
+                    "background": "#f6f9ff",
+                    "surface-container-highest": "#dee3ea",
+                    "surface": "#f6f9ff",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "on-primary-fixed-variant": "#920022",
+                    "surface-dim": "#d5dae1",
+                    "on-tertiary-container": "#f4f2ff",
+                    "primary-fixed": "#ffdad9",
+                    "surface-container": "#e9eef5",
+                    "on-primary-container": "#fff1f0",
+                    "on-surface": "#171c21",
+                    "on-background": "#171c21",
+                    "inverse-on-surface": "#ecf1f8",
+                    "tertiary-fixed": "#e2e1f1",
+                    "surface-variant": "#dee3ea",
+                    "tertiary": "#555663",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#b9eeab",
+                    "primary": "#b1002c",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#6e6e7c",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#eff4fb",
+                    "inverse-surface": "#2b3136",
+                    "secondary": "#3b6934",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#e6bdbc",
+                    "on-secondary-container": "#3f6d38",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e4e9f0",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "surface-bright": "#f6f9ff",
+                    "inverse-primary": "#ffb3b3",
+                    "primary-container": "#dc143c",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#5c3f3f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "lg": "24px",
+                    "xl": "48px",
+                    "gutter": "16px",
+                    "sm": "8px",
+                    "margin-mobile": "20px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Montserrat"],
+                    "headline-lg-mobile": ["Montserrat"],
+                    "display-calligraphy": ["Montserrat"],
+                    "body-md": ["Inter"],
+                    "label-mono": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f6f9ff;
+            font-family: 'Inter', sans-serif;
+        }
+        .neumorphic-extruded {
+            background: #f6f9ff;
+            box-shadow: -5px -5px 10px rgba(255, 255, 255, 1), 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+        .neumorphic-sunken {
+            background: #f6f9ff;
+            box-shadow: inset -5px -5px 10px rgba(255, 255, 255, 1), inset 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+        .neumorphic-button:active {
+            box-shadow: inset -2px -2px 5px rgba(255, 255, 255, 1), inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+            transform: scale(0.98);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .zen-liquid {
+            background: linear-gradient(90deg, #3b6934, #a1d494);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center bg-background p-margin-mobile">
+<!-- Top AppBar (Simplified for Onboarding Flow) -->
+
+<main class="w-full max-w-md flex flex-col gap-lg"><div class="flex justify-between items-center w-full mb-md pt-md">
+  <button class="w-10 h-10 neumorphic-extruded rounded-full flex items-center justify-center neumorphic-button">
+    <span class="material-symbols-outlined text-primary">arrow_back</span>
+  </button>
+  <h1 class="font-display-calligraphy text-headline-lg-mobile text-primary">BenGo</h1>
+  <div class="w-10"></div>
+</div>
+<!-- Progress Indicator -->
+<header class="w-full max-w-md mx-auto mb-lg">
+<div class="flex justify-between items-center mb-sm"><span class="font-label-mono text-label-mono text-outline font-headline-lg-mobile">Identity</span>
+<span class="font-headline-lg-mobile text-label-mono text-primary uppercase">STAGE 4 OF 5</span></div>
+<div class="h-4 w-full bg-surface-container-low rounded-full progress-well overflow-hidden">
+<div class="h-full transition-all duration-700 ease-out relative bg-primary" id="progress-bar" style="width: 80%;">
+<div class="absolute inset-0 bg-white/20 blur-sm"></div>
+</div>
+</div>
+</header>
+<!-- Main Content Card -->
+<div class="neumorphic-extruded rounded-xl p-lg flex flex-col gap-lg">
+<div class="flex flex-col gap-xs">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Claim your identity</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Choose a unique username that others will use to find you on the BenGo leaderboard.</p>
+</div>
+<!-- Username Input Group -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-mono text-label-mono text-outline ml-1" for="username">USERNAME</label>
+<div class="relative flex items-center">
+<span class="absolute left-4 font-label-mono text-on-surface-variant text-lg">@</span>
+<input class="w-full neumorphic-sunken border-none rounded-xl py-4 pl-10 pr-12 focus:ring-2 focus:ring-primary/20 bg-transparent font-label-mono text-lg text-on-surface placeholder:text-surface-dim transition-all" id="username" oninput="checkUsername(this.value)" placeholder="yourname" type="text">
+<!-- Status Indicator -->
+<div class="absolute right-4 flex items-center justify-center opacity-0 transition-opacity duration-300" id="status-icon">
+<span class="material-symbols-outlined text-secondary" id="check-icon">check_circle</span>
+<span class="material-symbols-outlined text-error hidden" id="error-icon">cancel</span>
+</div>
+</div>
+<!-- Feedback Text -->
+<div class="h-6 ml-1 flex items-center gap-2 opacity-0 transition-opacity duration-300" id="status-message">
+<span class="font-label-mono text-label-mono" id="status-text">Checking...</span>
+</div>
+</div>
+<!-- Avatar Preview / Visual Element -->
+<div class="flex items-center gap-md p-md neumorphic-sunken rounded-xl">
+<div class="w-12 h-12 rounded-full neumorphic-extruded flex items-center justify-center overflow-hidden bg-primary/5">
+<img class="w-10 h-10 object-cover" data-alt="A clean, minimalist 3D avatar icon of a friendly Shiba Inu character wearing student glasses, set against a soft pastel blue studio background. The lighting is diffused and professional, matching a high-end educational app aesthetic with soft shadows and tactile textures." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD67H3TtG-Vbj_ULfdvSuNdcwszrYb7ckPrMOMBmneJK3g3Ee0eta2GeBz5DoWwcWTh-AuH7VQkCV58mgtkt-LsQk_v3DOzgMVADNRnGBDis4V-qxK-YglBmLOHCDOztysnR_y6M9KDjm7_5VjwG0PW-CgntfS8szpYw5bZTjTlnc_0377CfAVSqNPTXV5t1VQOmuFnbqbbfE3l_pJhV0TEvGnDpzHrFN7ac9bHuikEBXuaXXkmgQlPKf6Rer2b-CqWdusHrRqd7A">
+</div>
+<div>
+<div class="font-label-mono text-label-mono text-outline">PREVIEW</div>
+<div class="font-body-md text-body-md font-bold text-on-surface" id="preview-text">@username</div>
+</div>
+</div>
+<!-- Finish Button -->
+<button class="w-full py-4 px-lg neumorphic-extruded neumorphic-button rounded-xl transition-all group bg-primary">
+<div class="flex items-center justify-center gap-md">
+<span class="font-headline-lg-mobile text-[18px] text-on-primary">Finish Setup</span>
+<span class="material-symbols-outlined text-on-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</button>
+</div>
+<!-- Illustration / Background Detail -->
+<div class="mt-lg opacity-40 flex justify-center">
+<div class="w-32 h-32 neumorphic-sunken rounded-full flex items-center justify-center rotate-12">
+<span class="material-symbols-outlined text-outline text-5xl" style="font-variation-settings: &quot;wght&quot; 200;">draw</span>
+</div>
+</div>
+</main>
+<script>
+        const takenUsernames = ['bengo', 'admin', 'ninja', 'sensei', 'study', 'focus'];
+        const statusIcon = document.getElementById('status-icon');
+        const checkIcon = document.getElementById('check-icon');
+        const errorIcon = document.getElementById('error-icon');
+        const statusMessage = document.getElementById('status-message');
+        const statusText = document.getElementById('status-text');
+        const previewText = document.getElementById('preview-text');
+
+        function checkUsername(val) {
+            const cleanVal = val.trim().toLowerCase();
+            previewText.textContent = cleanVal ? '@' + cleanVal : '@username';
+
+            if (cleanVal.length < 3) {
+                statusIcon.style.opacity = '0';
+                statusMessage.style.opacity = '0';
+                return;
+            }
+
+            statusIcon.style.opacity = '1';
+            statusMessage.style.opacity = '1';
+            statusText.textContent = 'Checking...';
+            statusText.className = 'font-label-mono text-label-mono text-outline';
+            checkIcon.classList.add('hidden');
+            errorIcon.classList.add('hidden');
+
+            // Simulate Network Delay
+            setTimeout(() => {
+                if (takenUsernames.includes(cleanVal)) {
+                    statusText.textContent = 'Username Taken';
+                    statusText.className = 'font-label-mono text-label-mono text-error';
+                    errorIcon.classList.remove('hidden');
+                    checkIcon.classList.add('hidden');
+                } else {
+                    statusText.textContent = 'Available';
+                    statusText.className = 'font-label-mono text-label-mono text-secondary';
+                    checkIcon.classList.remove('hidden');
+                    errorIcon.classList.add('hidden');
+                }
+            }, 600);
+        }
+    </script>
+
+
+</body></html>

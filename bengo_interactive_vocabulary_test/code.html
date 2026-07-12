@@ -1,0 +1,330 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BenGo - Take Test</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container-high": "#e4e9f0",
+                "on-secondary": "#ffffff",
+                "on-secondary-container": "#3f6d38",
+                "surface-container": "#e9eef5",
+                "inverse-on-surface": "#ecf1f8",
+                "on-primary": "#ffffff",
+                "secondary-fixed": "#bcf0ae",
+                "surface-tint": "#bf0030",
+                "secondary-fixed-dim": "#a1d494",
+                "on-tertiary": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "surface-bright": "#f6f9ff",
+                "primary-container": "#dc143c",
+                "on-surface": "#171c21",
+                "on-primary-fixed-variant": "#920022",
+                "surface-dim": "#d5dae1",
+                "inverse-primary": "#ffb3b3",
+                "surface": "#f6f9ff",
+                "on-tertiary-fixed-variant": "#454652",
+                "tertiary-fixed-dim": "#c6c5d4",
+                "secondary-container": "#b9eeab",
+                "outline": "#916f6e",
+                "on-tertiary-fixed": "#1a1b26",
+                "on-tertiary-container": "#f4f2ff",
+                "surface-container-highest": "#dee3ea",
+                "tertiary-fixed": "#e2e1f1",
+                "on-surface-variant": "#5c3f3f",
+                "background": "#f6f9ff",
+                "outline-variant": "#e6bdbc",
+                "primary-fixed-dim": "#ffb3b3",
+                "tertiary-container": "#6e6e7c",
+                "primary": "#b1002c",
+                "on-secondary-fixed-variant": "#23501e",
+                "error-container": "#ffdad6",
+                "surface-variant": "#dee3ea",
+                "tertiary": "#555663",
+                "surface-container-low": "#eff4fb",
+                "on-primary-fixed": "#40000a",
+                "on-background": "#171c21",
+                "inverse-surface": "#2b3136",
+                "error": "#ba1a1a",
+                "on-error-container": "#93000a",
+                "on-secondary-fixed": "#002201",
+                "on-error": "#ffffff",
+                "on-primary-container": "#fff1f0",
+                "secondary": "#3b6934",
+                "primary-fixed": "#ffdad9"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "sm": "8px",
+                "margin-mobile": "20px",
+                "unit": "4px",
+                "lg": "24px",
+                "xs": "4px",
+                "gutter": "16px",
+                "md": "16px",
+                "xl": "48px"
+            },
+            "fontFamily": {
+                "headline-lg-mobile": ["Montserrat"],
+                "display-calligraphy": ["Montserrat"],
+                "body-md": ["Inter"],
+                "label-mono": ["JetBrains Mono"],
+                "headline-lg": ["Montserrat"]
+            },
+            "fontSize": {
+                "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .neumorphic-extrusion {
+            box-shadow: -5px -5px 10px #FFFFFF, 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+
+        .neumorphic-well {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+        }
+
+        .key-shadow {
+            box-shadow: -3px -3px 6px #FFFFFF, 3px 3px 6px rgba(23, 28, 33, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .key-shadow:active, .key-pressed {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+            transform: scale(0.98);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(59, 105, 52, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 105, 52, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 105, 52, 0); }
+        }
+
+        .shake { animation: shake 0.4s ease-in-out; }
+        .pulse-success { animation: pulse-green 0.6s infinite; }
+
+        .slide-out {
+            transform: translateX(-150%);
+            opacity: 0;
+            transition: transform 0.5s ease-in, opacity 0.5s ease-in;
+        }
+
+        .slide-in {
+            transform: translateX(150%);
+            opacity: 0;
+        }
+
+        .slide-active {
+            transform: translateX(0);
+            opacity: 1;
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        }
+
+        .progress-liquid {
+            background: linear-gradient(90deg, #3b6934, #a1d494);
+            box-shadow: inset 0 0 8px rgba(255,255,255,0.4);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen font-body-md overflow-x-hidden">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]"><div class="flex items-center gap-3 flex-1">
+  <div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden neumorphic-extrusion">
+    <img class="w-full h-full object-cover" alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-GzW4Rk1ldxdT5RGc_Jo-efWkWy0a6a2ze0MpZhDecie6ZhGhqnI8qiuFWDWNq_TfPVtFf4fOqxAFzTMgILaScYjyyRVrzBjuTJ0i4uxCweurXJRAuVjJf6E7nuTG-56oAbS_tCsT5Xp928W3qOWHehsO6VdGCWsD3UVX-mW6dPvelOoYbw_K5qNAWUU38lRbBCZpeSVWSwPhdc97fmZQECq76zkBJD-o1oEmP4CGOCrJ4WBrVNhjuPGPMnZ4g0BoLLVAe8fSpg">
+  </div>
+  <div class="flex flex-col">
+    <span class="font-label-mono text-[10px] text-primary leading-none">12 DAYS</span>
+    <span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest leading-none">2,450 XP</span>
+  </div>
+</div>
+<h1 class="font-display-calligraphy text-headline-lg-mobile text-primary dark:text-inverse-primary absolute left-1/2 -translate-x-1/2">BenGo</h1>
+<div class="flex items-center gap-sm flex-1 justify-end">
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extrusion hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">leaderboard</span>
+  </button>
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extrusion hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">notifications</span>
+  </button>
+</div></header>
+<!-- Main Content Container -->
+<main class="pt-24 pb-32 px-margin-mobile flex flex-col items-center justify-center min-h-screen gap-lg overflow-hidden">
+<!-- Progress Bar (Zen Well) -->
+<div class="w-full max-w-md h-4 neumorphic-well rounded-full overflow-hidden mb-4">
+<div class="h-full progress-liquid rounded-full transition-all duration-500 ease-out" id="progress-bar" style="width: 40%;"></div>
+</div>
+<div class="w-full max-w-md flex flex-col items-center gap-xl" id="quiz-container">
+<!-- Quiz Word Card -->
+<div class="w-full aspect-[4/3] bg-surface neumorphic-extrusion rounded-3xl flex flex-col items-center justify-center p-xl slide-active" id="word-card">
+<h2 class="font-display-calligraphy text-display-calligraphy text-primary mb-2" id="current-word">こんにちは</h2>
+<p class="font-label-mono text-label-mono text-outline-variant uppercase tracking-widest">VOCABULARY TEST</p>
+<!-- Engraving Effect Subtext -->
+
+</div>
+<!-- Answer Buttons Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md w-full" id="answers-grid">
+<button class="answer-btn p-md rounded-xl bg-surface key-shadow text-on-surface font-body-md border border-white/50 text-left hover:scale-[1.02]" onclick="window.location.href='{{DATA:SCREEN:SCREEN_34}}'">
+<span class="font-label-mono mr-2 text-outline">A</span> Good morning
+                </button>
+<button class="answer-btn p-md rounded-xl bg-surface key-shadow text-on-surface font-body-md border border-white/50 text-left hover:scale-[1.02]" onclick="window.location.href='{{DATA:SCREEN:SCREEN_34}}'">
+<span class="font-label-mono mr-2 text-outline">B</span> Hello
+                </button>
+<button class="answer-btn p-md rounded-xl bg-surface key-shadow text-on-surface font-body-md border border-white/50 text-left hover:scale-[1.02]" onclick="window.location.href='{{DATA:SCREEN:SCREEN_34}}'">
+<span class="font-label-mono mr-2 text-outline">C</span> Goodbye
+                </button>
+<button class="answer-btn p-md rounded-xl bg-surface key-shadow text-on-surface font-body-md border border-white/50 text-left hover:scale-[1.02]" onclick="window.location.href='{{DATA:SCREEN:SCREEN_34}}'">
+<span class="font-label-mono mr-2 text-outline">D</span> Thank you
+                </button>
+</div>
+</div>
+</main>
+<!-- Bottom Actions Shell -->
+<div class="fixed bottom-0 left-0 w-full z-40 p-margin-mobile flex justify-center items-center">
+<button class="w-full max-w-md bg-surface neumorphic-extrusion rounded-xl py-4 flex items-center justify-center gap-sm font-label-mono text-primary uppercase tracking-widest hover:scale-95 transition-transform" onclick="window.location.href='{{DATA:SCREEN:SCREEN_70}}'">
+<span class="material-symbols-outlined">exit_to_app</span>
+            Exit Quiz
+        </button>
+</div>
+<!-- Background Decorative Elements -->
+<div class="fixed inset-0 -z-10 pointer-events-none opacity-40">
+
+</div>
+<script>
+        // State Management
+        let currentQuestion = 4;
+        const totalQuestions = 10;
+        let timeLeft = 299; // 4:59
+        let isProcessing = false;
+
+        const words = [
+            { jp: "さようなら", en: "Goodbye", options: ["Hello", "Goodbye", "Please", "Excuse me"], correct: 1 },
+            { jp: "ありがとう", en: "Thank you", options: ["Yes", "No", "Thank you", "Sorry"], correct: 2 },
+            { jp: "おやすみ", en: "Good night", options: ["Good morning", "Good night", "Good evening", "Hi"], correct: 1 },
+            { jp: "すみません", en: "Excuse me", options: ["Excuse me", "Wait", "Hurry", "Slowly"], correct: 0 }
+        ];
+
+        // Timer Logic
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            if (timeLeft > 0) timeLeft--;
+        }
+        setInterval(updateTimer, 1000);
+
+        // Selection Logic
+        function checkAnswer(btn, isCorrect) {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const allBtns = document.querySelectorAll('.answer-btn');
+            
+            if (isCorrect) {
+                btn.classList.add('bg-secondary-container', 'text-on-secondary-container', 'pulse-success', 'key-pressed');
+                btn.innerHTML = `<span class="material-symbols-outlined align-middle mr-2">check_circle</span> Correct!`;
+            } else {
+                btn.classList.add('bg-error-container', 'text-on-error-container', 'shake', 'key-pressed');
+                btn.innerHTML = `<span class="material-symbols-outlined align-middle mr-2">cancel</span> Wrong`;
+                
+                // Show the correct one
+                allBtns.forEach(b => {
+                    if (b.innerText.includes('Hello') || b.innerText.includes('Goodbye')) { // Mock logic for visual demo
+                         // Could highlight correct here
+                    }
+                });
+            }
+
+            // Progression Delay
+            setTimeout(() => {
+                transitionNextQuestion();
+            }, 2000);
+        }
+
+        function transitionNextQuestion() {
+            const card = document.getElementById('word-card');
+            const grid = document.getElementById('answers-grid');
+            
+            // Slide current out
+            card.classList.remove('slide-active');
+            card.classList.add('slide-out');
+            grid.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+
+            setTimeout(() => {
+                // Update State
+                currentQuestion++;
+                if (currentQuestion > totalQuestions) currentQuestion = 1; // Loop for demo
+                
+                const nextWordData = words[Math.floor(Math.random() * words.length)];
+                
+                // Update UI content
+                document.getElementById('current-word').textContent = nextWordData.jp;
+                document.getElementById('progress-text').textContent = `COMPLETED: ${currentQuestion}/${totalQuestions}`;
+                document.getElementById('progress-bar').style.width = `${(currentQuestion/totalQuestions) * 100}%`;
+
+                // Reset Buttons
+                grid.innerHTML = nextWordData.options.map((opt, idx) => `
+                    <button onclick="checkAnswer(this, ${idx === nextWordData.correct})" class="answer-btn p-md rounded-xl bg-surface key-shadow text-on-surface font-body-md border border-white/50 text-left hover:scale-[1.02]">
+                        <span class="font-label-mono mr-2 text-outline">${String.fromCharCode(65 + idx)}</span> ${opt}
+                    </button>
+                `).join('');
+
+                // Prepare for slide in
+                card.classList.remove('slide-out');
+                card.classList.add('slide-in');
+                
+                // Force Reflow
+                void card.offsetWidth;
+
+                // Slide in
+                card.classList.remove('slide-in');
+                card.classList.add('slide-active');
+                grid.classList.remove('opacity-0');
+                
+                isProcessing = false;
+            }, 600);
+        }
+    </script>
+
+
+
+
+
+
+
+
+</body></html>

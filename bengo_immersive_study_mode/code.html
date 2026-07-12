@@ -1,0 +1,471 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>BenGo | Immersive Study Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=JetBrains+Mono:wght@500&amp;family=Inter:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "inverse-surface": "#2b3136",
+                    "on-background": "#171c21",
+                    "outline-variant": "#e6bdbc",
+                    "on-tertiary-container": "#f4f2ff",
+                    "surface-container-highest": "#dee3ea",
+                    "secondary-container": "#b9eeab",
+                    "on-surface-variant": "#5c3f3f",
+                    "secondary": "#3b6934",
+                    "surface-bright": "#f6f9ff",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#ffdad9",
+                    "inverse-primary": "#ffb3b3",
+                    "surface-container-high": "#e4e9f0",
+                    "inverse-on-surface": "#ecf1f8",
+                    "error": "#ba1a1a",
+                    "tertiary": "#555663",
+                    "surface-container-low": "#eff4fb",
+                    "surface": "#f6f9ff",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#a1d494",
+                    "on-primary-container": "#fff1f0",
+                    "tertiary-container": "#6e6e7c",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "on-primary-fixed-variant": "#920022",
+                    "on-primary-fixed": "#40000a",
+                    "on-secondary-fixed": "#002201",
+                    "on-surface": "#171c21",
+                    "secondary-fixed": "#bcf0ae",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "surface-dim": "#d5dae1",
+                    "surface-tint": "#bf0030",
+                    "surface-variant": "#dee3ea",
+                    "on-secondary-container": "#3f6d38",
+                    "primary": "#b1002c",
+                    "tertiary-fixed": "#e2e1f1",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-container": "#dc143c",
+                    "outline": "#916f6e",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "surface-container": "#e9eef5",
+                    "background": "#f6f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "margin-mobile": "20px",
+                    "gutter": "16px",
+                    "unit": "4px",
+                    "xl": "48px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Montserrat"],
+                    "label-mono": ["JetBrains Mono"],
+                    "display-calligraphy": ["Montserrat"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Montserrat"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Neumorphic Shadow Helpers */
+        .skeuo-extrusion {
+            background: #f6f9ff;
+            box-shadow: -10px -10px 20px #FFFFFF, 10px 10px 20px rgba(23, 28, 33, 0.15);
+        }
+        
+        .skeuo-well {
+            background: #f6f9ff;
+            box-shadow: inset -5px -5px 10px #FFFFFF, inset 5px 5px 10px rgba(23, 28, 33, 0.1);
+        }
+
+        /* Glossy 3D Button */
+        .study-button-gloss {
+            background: linear-gradient(145deg, #ffffff, #e6eef9);
+            box-shadow: -15px -15px 30px #ffffff, 15px 15px 30px rgba(23, 28, 33, 0.2), 
+                        inset 0 4px 12px rgba(255,255,255,1), inset 0 -4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .study-button-gloss:active {
+            box-shadow: inset -8px -8px 16px #ffffff, inset 8px 8px 16px rgba(23, 28, 33, 0.15);
+            transform: scale(0.96);
+        }
+
+        /* Floating Badge Animations */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-float-delayed { animation: float 5s ease-in-out infinite 1s; }
+
+        /* Japanese Character Pulse Glow */
+        @keyframes kanji-pulse {
+            0%, 100% { filter: drop-shadow(0 0 0px rgba(177, 0, 44, 0)); }
+            50% { filter: drop-shadow(0 0 30px rgba(177, 0, 44, 0.4)); }
+        }
+        .kanji-glow { animation: kanji-pulse 3s ease-in-out infinite; }
+
+        /* Liquid Progress Shimmer */
+        @keyframes liquid-flow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .liquid-shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: liquid-flow 2s infinite;
+        }
+
+        /* Particle Spark Ring (Doctor Strange Influence) */
+        .spark-particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #ffdad9;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 8px #bf0030, 0 0 12px #ffb3b3;
+        }
+
+        @keyframes spark-orbit {
+            from { transform: rotate(0deg) translateX(120px) rotate(0deg); opacity: 1; }
+            to { transform: rotate(360deg) translateX(140px) rotate(-360deg); opacity: 0; }
+        }
+
+        .portal-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            z-index: 10;
+        }
+
+        /* Custom Safe Area Padding */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-hidden font-body-md h-screen w-screen flex flex-col">
+<!-- Immersive Portal Background -->
+<div class="fixed inset-0 z-0">
+<!-- STITCH_SHADER_START:ANIMATION_24 class="absolute inset-0 w-full h-full opacity-60" -->
+<div class="absolute inset-0 w-full h-full opacity-60" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_24" style="display:block;width:100%;height:100%" width="391" height="884"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_24');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+varying vec2 v_texCoord;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+
+// Helper for noise/glow
+float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+}
+
+void main() {
+    vec2 uv = v_texCoord;
+    vec2 center = uv - 0.5;
+    center.x *= u_resolution.x / u_resolution.y;
+    
+    // Base gradient - Tactile Zen blue/white palette
+    vec3 color1 = vec3(0.96, 0.98, 1.0); // Surface bright
+    vec3 color2 = vec3(0.84, 0.86, 0.88); // Surface dim
+    vec3 baseColor = mix(color1, color2, uv.y + 0.2 * sin(u_time * 0.5));
+    
+    // Light rays (Cyber Sprint influence)
+    float angle = atan(center.y, center.x);
+    float dist = length(center);
+    float rays = sin(angle * 8.0 + u_time * 1.2) * 0.5 + 0.5;
+    rays *= pow(1.0 - dist, 2.0);
+    vec3 rayColor = vec3(0.86, 0.08, 0.24) * rays * 0.15; // Primary red accent
+    
+    // Floating "Knowledge Particles"
+    float particles = 0.0;
+    for(float i = 0.0; i < 15.0; i++) {
+        vec2 pPos = vec2(hash(vec2(i, 1.0)), hash(vec2(i, 2.0)));
+        pPos.y = fract(pPos.y + u_time * 0.05);
+        pPos.x += 0.05 * sin(u_time * 0.2 + i);
+        float pSize = 0.002 + 0.003 * hash(vec2(i, 3.0));
+        float pDist = length(uv - pPos);
+        particles += smoothstep(pSize, 0.0, pDist);
+    }
+    
+    // Mouse interaction glow
+    vec2 mouseUV = u_mouse / u_resolution;
+    float mouseGlow = smoothstep(0.4, 0.0, length(uv - mouseUV));
+    vec3 interaction = vec3(1.0, 0.9, 0.7) * mouseGlow * 0.3;
+    
+    vec3 finalColor = baseColor + rayColor + vec3(1.0) * particles + interaction;
+    
+    // Vignette for depth
+    finalColor *= 1.0 - 0.3 * dist;
+    
+    gl_FragColor = vec4(finalColor, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_24 -->
+<div class="absolute inset-0 bg-gradient-to-b from-surface via-transparent to-surface opacity-80"></div>
+</div>
+<!-- Top Navigation Anchor (As per Shared Components) -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface dark:bg-surface-container shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]"><!-- Left: User Stats -->
+<div class="flex items-center gap-sm">
+  <div class="w-10 h-10 rounded-full skeuo-extrusion p-xs overflow-hidden flex items-center justify-center">
+    <img class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA35iamytxkPDjtvM-VnTx2AsEUGe8NLozz8ULtJApyhpQOxROLGwxyygNKeVHJiaEEK5GJHl5WFrwtdJFxQHsIhqowVY2UXPtiiwSI84FUOKL2tjkhpAqtCCLglWLsc2ibLhil-EDiJpY-5GEhdZSuPxTjLk3lrossH0PVAlXI0wLhoAyHHNwRYSTWQAdJjFqYOOpnsQYkiORicAHCH0-nqHHTaQNe4YlmnELOgpNCi98Vt5J5WUMIKT3l9V4IBTzRYD_h2IPD4A">
+  </div>
+  <div class="flex flex-col">
+    <div class="flex items-center gap-xs">
+      <span class="material-symbols-outlined text-primary text-[14px]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+      <span class="font-label-mono text-[10px] font-bold">12 DAYS</span>
+    </div>
+    <div class="flex items-center gap-xs">
+      <span class="material-symbols-outlined text-secondary text-[14px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+      <span class="font-label-mono text-[10px] font-bold">2,450 XP</span>
+    </div>
+  </div>
+</div>
+
+<!-- Center: Logo -->
+<div class="absolute left-1/2 -translate-x-1/2">
+  <span class="font-display-calligraphy text-headline-lg-mobile text-primary">BenGo</span>
+</div>
+
+<!-- Right: Actions -->
+<div class="flex items-center gap-sm">
+  <button class="w-10 h-10 rounded-xl skeuo-extrusion flex items-center justify-center text-primary hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">leaderboard</span>
+  </button>
+  <button class="w-10 h-10 rounded-xl skeuo-extrusion flex items-center justify-center text-primary hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">notifications</span>
+  </button>
+</div></header>
+<!-- Main Content Area -->
+<main class="relative z-10 flex-1 flex flex-col items-center justify-center px-margin-mobile pt-24 pb-32">
+<!-- Floating Badges -->
+<div class="absolute top-[15%] left-[10%] animate-float">
+<div class="skeuo-extrusion px-lg py-sm rounded-xl border border-white/50 flex flex-col items-center gap-xs">
+<span class="font-label-mono text-label-mono text-outline uppercase tracking-widest">Mastery</span>
+<span class="font-headline-lg text-primary">LV. 42</span>
+</div>
+</div>
+<div class="absolute top-[20%] right-[8%] animate-float-delayed">
+<div class="skeuo-extrusion px-lg py-sm rounded-xl border border-white/50 flex flex-col items-center gap-xs">
+<span class="font-label-mono text-label-mono text-outline uppercase tracking-widest">Total XP</span>
+<span class="font-headline-lg text-secondary">12,450</span>
+</div>
+</div>
+<!-- Central Kanji Display -->
+<div class="mb-12 relative group cursor-pointer">
+<div class="absolute -inset-12 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="relative z-20 text-[120px] md:text-[180px] font-bold text-on-surface select-none kanji-glow">
+                勉
+            </div>
+<div class="text-center -mt-4">
+<span class="font-label-mono text-label-mono text-primary-container bg-primary-fixed px-sm py-xs rounded-lg uppercase tracking-tighter shadow-sm">
+                    Study / Diligence
+                </span>
+</div>
+</div>
+<!-- Massive Portal Study Button -->
+<div class="relative group">
+<!-- Spark Portal (Doctor Strange) Elements -->
+<div class="portal-ring" id="portalContainer"><div class="spark-particle" style="width: 1.78983px; height: 1.78983px; animation: 1.5456s linear 0.502457s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.50608px; height: 3.50608px; animation: 2.45969s linear 1.32784s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.10635px; height: 1.10635px; animation: 1.50308s linear 0.235428s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.0597px; height: 3.0597px; animation: 2.01638s linear 1.77425s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.80973px; height: 1.80973px; animation: 2.6073s linear 0.459273s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.41406px; height: 1.41406px; animation: 2.97462s linear 1.53382s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.23301px; height: 1.23301px; animation: 1.9275s linear 1.64246s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.39341px; height: 3.39341px; animation: 2.60175s linear 1.59342s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.56663px; height: 1.56663px; animation: 2.82335s linear 1.25899s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.8716px; height: 3.8716px; animation: 2.2198s linear 0.788232s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.22769px; height: 3.22769px; animation: 2.50795s linear 0.18843s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.79954px; height: 3.79954px; animation: 2.62827s linear 1.62426s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.47487px; height: 1.47487px; animation: 2.51945s linear 1.87976s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.18824px; height: 3.18824px; animation: 1.80369s linear 1.44091s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.74911px; height: 2.74911px; animation: 2.09401s linear 1.81846s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.42871px; height: 1.42871px; animation: 2.23657s linear 1.07991s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.97426px; height: 1.97426px; animation: 2.16812s linear 1.10306s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.0977px; height: 1.0977px; animation: 2.44321s linear 0.238689s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.20308px; height: 1.20308px; animation: 2.95452s linear 1.18957s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.77993px; height: 2.77993px; animation: 2.35079s linear 1.4156s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.9853px; height: 2.9853px; animation: 1.99473s linear 0.527147s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.59924px; height: 1.59924px; animation: 2.00067s linear 0.12225s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.28252px; height: 1.28252px; animation: 2.95719s linear 0.734047s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.58235px; height: 3.58235px; animation: 1.5555s linear 1.01347s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.21138px; height: 2.21138px; animation: 2.44744s linear 1.84762s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.78708px; height: 3.78708px; animation: 2.76138s linear 0.62357s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.68102px; height: 2.68102px; animation: 2.38102s linear 0.790258s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.87905px; height: 1.87905px; animation: 2.2356s linear 1.22902s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.87106px; height: 1.87106px; animation: 2.32724s linear 0.658324s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.7827px; height: 2.7827px; animation: 2.03337s linear 1.96908s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.75752px; height: 2.75752px; animation: 1.50844s linear 0.576037s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.47969px; height: 2.47969px; animation: 1.5681s linear 1.05761s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.06707px; height: 3.06707px; animation: 1.66817s linear 0.322167s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.70195px; height: 1.70195px; animation: 2.62327s linear 1.1332s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 3.49377px; height: 3.49377px; animation: 2.14347s linear 1.39673s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.33846px; height: 2.33846px; animation: 1.90988s linear 1.20476s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.40828px; height: 1.40828px; animation: 1.60467s linear 0.303487s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 1.6437px; height: 1.6437px; animation: 2.9031s linear 1.75507s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.5947px; height: 2.5947px; animation: 2.92838s linear 1.27289s infinite normal none running spark-orbit;"></div><div class="spark-particle" style="width: 2.64551px; height: 2.64551px; animation: 2.05299s linear 0.833507s infinite normal none running spark-orbit;"></div></div>
+<button class="relative z-20 w-48 h-48 md:w-56 md:h-56 rounded-full study-button-gloss flex items-center justify-center flex-col gap-xs overflow-hidden border-4 border-white/30">
+<span class="material-symbols-outlined text-primary text-5xl md:text-6xl mb-1" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-display-calligraphy text-headline-lg text-primary tracking-tight">STUDY</span>
+<!-- Inner gloss overlay -->
+<div class="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
+</button>
+<!-- Shadow Casting for Depth -->
+<div class="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-6 bg-black/10 blur-xl rounded-[100%]"></div>
+</div>
+<!-- Motivation Label -->
+<p class="mt-lg font-body-md text-on-surface-variant text-center max-w-xs px-md">
+            Ready to break your daily record? <br>
+<span class="font-bold text-primary italic">"Persistence is the key to mastery."</span>
+</p>
+</main>
+<!-- Bottom Interface (Liquid Progress & Nav) -->
+<footer class="fixed bottom-0 left-0 w-full z-50">
+<!-- Liquid Progress Bar -->
+<div class="px-margin-mobile mb-4">
+<div class="skeuo-well h-6 rounded-full relative overflow-hidden p-1">
+<div class="h-full bg-primary rounded-full relative overflow-hidden liquid-shimmer" style="width: 72%;">
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.3),transparent)]"></div>
+</div>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-label-mono text-[10px] text-primary-container mix-blend-difference">DAILY TARGET: 72%</span>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation (As per Shared Components) -->
+<nav class="bg-surface dark:bg-surface-container-high pb-safe flex justify-around items-center px-2 py-2 rounded-t-xl shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]">
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-xl px-4 py-2 shadow-[inset_-2px_-2px_5px_#FFFFFF,inset_2px_2px_5px_rgba(23,28,33,0.15)] transition-all scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-mono text-label-mono mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-mono text-label-mono mt-1">Courses</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-mono text-label-mono mt-1">Teams</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-mono text-label-mono mt-1">Profile</span>
+</a>
+</nav>
+</footer>
+<!-- Script for Particle Ring Creation -->
+<script>
+        const container = document.getElementById('portalContainer');
+        const particleCount = 40;
+
+        function createSpark() {
+            const spark = document.createElement('div');
+            spark.className = 'spark-particle';
+            
+            // Randomize starting delay and duration
+            const delay = Math.random() * 2;
+            const duration = 1.5 + Math.random() * 1.5;
+            
+            // Randomize offset within the ring
+            const size = 1 + Math.random() * 3;
+            spark.style.width = `${size}px`;
+            spark.style.height = `${size}px`;
+            
+            spark.style.animation = `spark-orbit ${duration}s linear ${delay}s infinite`;
+            
+            container.appendChild(spark);
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            createSpark();
+        }
+
+        // Micromovement on mouse move for parallax feel
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth / 2 - e.pageX) / 50;
+            const y = (window.innerHeight / 2 - e.pageY) / 50;
+            const badges = document.querySelectorAll('.animate-float, .animate-float-delayed');
+            
+            badges.forEach(badge => {
+                badge.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>BenGo - N5 Vocabulary Path</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=JetBrains+Mono:wght@500&amp;family=Inter:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#ffb3b3",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#40000a",
+                    "on-secondary-fixed": "#002201",
+                    "secondary-container": "#b9eeab",
+                    "secondary-fixed-dim": "#a1d494",
+                    "on-tertiary-container": "#f4f2ff",
+                    "surface-container-low": "#eff4fb",
+                    "surface-container": "#e9eef5",
+                    "inverse-on-surface": "#ecf1f8",
+                    "surface-bright": "#f6f9ff",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "tertiary-fixed": "#e2e1f1",
+                    "on-surface-variant": "#5c3f3f",
+                    "outline": "#916f6e",
+                    "on-surface": "#171c21",
+                    "surface-variant": "#dee3ea",
+                    "secondary": "#3b6934",
+                    "primary-fixed": "#ffdad9",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "secondary-fixed": "#bcf0ae",
+                    "primary": "#b1002c",
+                    "on-primary-fixed-variant": "#920022",
+                    "on-primary-container": "#fff1f0",
+                    "on-background": "#171c21",
+                    "on-secondary-container": "#3f6d38",
+                    "error-container": "#ffdad6",
+                    "surface-dim": "#d5dae1",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#dee3ea",
+                    "surface": "#f6f9ff",
+                    "surface-container-high": "#e4e9f0",
+                    "on-primary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "tertiary": "#555663",
+                    "error": "#ba1a1a",
+                    "primary-container": "#dc143c",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#e6bdbc",
+                    "inverse-surface": "#2b3136",
+                    "tertiary-container": "#6e6e7c",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "surface-tint": "#bf0030",
+                    "background": "#f6f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "margin-mobile": "20px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "xl": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Montserrat"],
+                    "headline-lg": ["Montserrat"],
+                    "display-calligraphy": ["Montserrat"],
+                    "label-mono": ["JetBrains Mono"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #f6f9ff;
+            color: #171c21;
+            overflow-x: hidden;
+        }
+
+        /* Neumorphic Extrusion */
+        .neumorphic-out {
+            box-shadow: -5px -5px 10px #FFFFFF, 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+
+        /* Neumorphic Sunken */
+        .neumorphic-in {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+        }
+
+        /* Pebble Node Styling */
+        .pebble-node {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+        }
+        .pebble-node:active {
+            transform: scale(0.92);
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+        }
+
+        /* Path Animation */
+        .path-line {
+            stroke-dasharray: 8;
+            animation: dash 20s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -100; }
+        }
+
+        /* Zen Background Texture */
+        .zen-texture {
+            background-image: radial-gradient(circle at 2px 2px, rgba(145, 111, 110, 0.05) 1px, transparent 0);
+            background-size: 32px 32px;
+        }
+
+        /* Popup Animation */
+        .lesson-popup {
+            display: none;
+            animation: springUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes springUp {
+            from { transform: translateY(20px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        /* Material Icon Sizing Override */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md zen-texture min-h-[100dvh]">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface dark:bg-surface-container shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]"><div class="flex items-center gap-3 flex-1">
+  <a href="{{DATA:SCREEN:SCREEN_87}}" class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden neumorphic-out block"><img class="w-full h-full object-cover" alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLesKF4t7QozBhZyxG0Btyi7E42REOPp5Z7RmYSVA8N2nGA5iPuPwXhiww-4oB-IAB0x41hbkLgHIcIWR4Uz0FJ2zoBsvob9rn5F8m_eZMWi9lhbMa8wc6FF8Vz4brRgJ6q9IQELQCXqTXTth1VkutTG7Q34waB4lpI4w3Kz-q293BuCNKsrZqLaTV9iRXEnMJv5R7Y3WCoiwaso2CQoNeslIv1lwnLty1BLMMmjS8MSPm4ICPaI_q2q6Xadt_d49-DWtC1KWx7Q"></a>
+  <div class="flex flex-col" onclick="window.location.href='{{DATA:SCREEN:SCREEN_70}}'">
+    <span class="font-label-mono text-[10px] text-primary leading-none">12 DAYS</span>
+    <span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest leading-none">2,450 XP</span>
+  </div>
+</div>
+<h1 class="font-display-calligraphy text-headline-lg-mobile text-primary dark:text-inverse-primary absolute left-1/2 -translate-x-1/2">BenGo</h1>
+<div class="flex items-center gap-sm flex-1 justify-end">
+  <a href="{{DATA:SCREEN:SCREEN_37}}" class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-out hover:opacity-80 transition-opacity"><span class="material-symbols-outlined text-primary">leaderboard</span></a>
+  <a href="#" class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-out hover:opacity-80 transition-opacity"><span class="material-symbols-outlined text-primary">notifications</span></a>
+</div></header>
+<!-- Category Header -->
+<div class="pt-24 px-margin-mobile text-center">
+<div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-primary-container text-on-primary-container font-label-mono text-[10px] uppercase tracking-widest shadow-sm">
+<span class="material-symbols-outlined !text-sm">menu_book</span>
+        Current Track
+    </div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-2">N5 Vocabulary Path</h2>
+<div class="flex justify-center gap-4 mt-4">
+<div class="flex flex-col items-center">
+<span class="font-label-mono text-xs text-outline">PROGRESS</span>
+<span class="font-headline-lg-mobile text-primary">1 / 10</span>
+</div>
+<div class="w-[1px] h-10 bg-outline-variant"></div>
+<div class="flex flex-col items-center">
+<span class="font-label-mono text-xs text-outline">MASTERY</span>
+<span class="font-headline-lg-mobile text-secondary">10%</span>
+</div>
+</div>
+</div>
+<!-- Main Learning Path Canvas -->
+<main class="relative pt-8 pb-40 px-margin-mobile flex flex-col items-center overflow-visible">
+<!-- SVG Path Layer (Dynamic behind nodes) -->
+<svg class="absolute top-0 left-0 w-full h-[1200px] pointer-events-none opacity-20" preserveAspectRatio="none">
+<path class="path-line" d="M 195.5 60 L 263.66933416147367 188 L 164.52356896936033 316 L 141.40648587108092 444 L 251.05675046944071 572 L 224.34829396692297 700 L 126.83446389534559 828 L 197.85361330547957 956 L 263.09604435844943 1084 L 162.43046095210735 1212" fill="none" id="learningPath" stroke="#916f6e" stroke-linecap="round" stroke-width="4"></path>
+</svg>
+<!-- Lessons Container -->
+<div class="relative z-10 w-full max-w-md flex flex-col items-center gap-xl" id="pathContainer"><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(0px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-primary">filter_1</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">1. Essential</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(68.1693px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">2. Social</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(-30.9764px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">3. Objects</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(-54.0935px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">4. Time</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(55.5568px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">5. People</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(28.8483px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">6. Dining</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(-68.6655px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">7. Town</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(2.35361px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">8. Describing</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(67.596px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">9. Actions</span>
+                </div>
+            </div><div class="pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 opacity-50 grayscale" onclick="window.location.href='{{DATA:SCREEN:SCREEN_20}}'" style="transform: translateX(-33.0695px);">
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl text-outline-variant">lock</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">10. Mastery</span>
+                </div>
+            </div></div>
+</main>
+<!-- Lesson Selection Modal -->
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-surface/40 backdrop-blur-sm" id="lessonModal" onclick="closeModal()">
+<div class="lesson-popup w-full max-w-xs bg-surface-container rounded-3xl p-lg neumorphic-out border border-white/50" onclick="event.stopPropagation()" style="display: block;">
+<div class="text-center mb-md">
+<div class="w-16 h-16 mx-auto mb-sm rounded-2xl neumorphic-in flex items-center justify-center text-primary" id="modalIcon">
+<span class="material-symbols-outlined !text-4xl" id="nodeSymbol">filter_1</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface" id="modalTitle">Numbers 1-10</h3>
+<p class="font-label-mono text-label-mono text-outline mt-xs uppercase" id="modalDescription">VOCABULARY • LESSON 1</p>
+</div>
+<div class="space-y-md">
+<button class="w-full py-md rounded-2xl bg-surface-bright neumorphic-out flex items-center justify-center gap-sm text-primary font-bold hover:scale-[1.02] transition-transform">
+<span class="material-symbols-outlined">menu_book</span>
+                STUDY
+            </button>
+<button class="w-full py-md rounded-2xl bg-primary text-on-primary shadow-lg flex items-center justify-center gap-sm font-bold hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">quiz</span>
+                TAKE TEST
+            </button>
+</div>
+<button class="mt-lg w-full text-center font-label-mono text-label-mono text-outline-variant hover:text-outline transition-colors" onclick="closeModal()">
+            BACK TO PATH
+        </button>
+</div>
+</div>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface dark:bg-surface-container-high rounded-t-xl shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_70}}">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-mono text-label-mono">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-xl px-4 py-2 shadow-[inset_-2px_-2px_5px_#FFFFFF,inset_2px_2px_5px_rgba(23,28,33,0.15)] hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_82}}">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-mono text-label-mono">Vocab</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_39}}">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-mono text-label-mono">Teams</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_87}}">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-mono text-label-mono">Profile</span>
+</a>
+</nav>
+<script>
+    const vocabularyLessons = [
+        { id: 1, title: "Numbers 1-10", icon: "filter_1", type: "Essential", color: "text-primary" },
+        { id: 2, title: "Daily Greeting", icon: "handshake", type: "Social", color: "text-primary" },
+        { id: 3, title: "Common Nouns", icon: "category", type: "Objects", color: "text-primary" },
+        { id: 4, title: "Time & Dates", icon: "schedule", type: "Time", color: "text-primary" },
+        { id: 5, title: "Family Terms", icon: "family_restroom", type: "People", color: "text-primary" },
+        { id: 6, title: "Food & Drinks", icon: "restaurant", type: "Dining", color: "text-primary" },
+        { id: 7, title: "Places", icon: "location_on", type: "Town", color: "text-primary" },
+        { id: 8, title: "Adjectives", icon: "label_important", type: "Describing", color: "text-primary" },
+        { id: 9, title: "Verbs List", icon: "auto_fix_normal", type: "Actions", color: "text-primary" },
+        { id: 10, title: "Vocab Review", icon: "verified", type: "Mastery", color: "text-secondary" }
+    ];
+
+    const container = document.getElementById('pathContainer');
+    const pathLine = document.getElementById('learningPath');
+
+    function generatePath() {
+        let pathD = "";
+        container.innerHTML = "";
+        
+        vocabularyLessons.forEach((lesson, index) => {
+            const node = document.createElement('div');
+            const xOffset = Math.sin(index * 1.8) * 70; // Adjusted wiggle for visibility
+            const isLocked = index > 0; // Only Lesson 1 is unlocked for this demo
+
+            node.className = `pebble-node relative w-20 h-20 rounded-full flex items-center justify-center neumorphic-out bg-surface-bright z-20 ${isLocked ? 'opacity-50 grayscale' : ''}`;
+            node.style.transform = `translateX(${xOffset}px)`;
+            
+            node.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <span class="material-symbols-outlined !text-3xl ${isLocked ? 'text-outline-variant' : lesson.color}">${isLocked ? 'lock' : lesson.icon}</span>
+                    <span class="absolute -bottom-6 font-label-mono text-[10px] text-outline whitespace-nowrap uppercase tracking-tighter">${lesson.id}. ${lesson.type}</span>
+                </div>
+            `;
+
+            if (!isLocked) {
+                node.onclick = () => openLesson(lesson);
+            }
+            
+            container.appendChild(node);
+
+            // Calculate SVG path points relative to the main container
+            // This is a simplified calculation for the static layout
+            const rectY = index * 128 + 20; // vertical spacing
+            const rectX = (window.innerWidth / 2) + xOffset;
+            
+            if (index === 0) {
+                pathD += `M ${rectX} ${rectY + 40}`;
+            } else {
+                pathD += ` L ${rectX} ${rectY + 40}`;
+            }
+        });
+
+        pathLine.setAttribute('d', pathD);
+    }
+
+    function openLesson(lesson) {
+        document.getElementById('modalTitle').innerText = lesson.title;
+        document.getElementById('modalDescription').innerText = "VOCABULARY • LESSON " + lesson.id;
+        document.getElementById('nodeSymbol').innerText = lesson.icon;
+        
+        const modal = document.getElementById('lessonModal');
+        modal.classList.remove('hidden');
+        const content = modal.querySelector('.lesson-popup');
+        content.style.display = 'block';
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('lessonModal');
+        const content = modal.querySelector('.lesson-popup');
+        modal.classList.add('hidden');
+        content.style.display = 'none';
+    }
+
+    // Initialize
+    window.addEventListener('load', generatePath);
+    window.addEventListener('resize', generatePath);
+</script>
+
+
+
+
+
+
+
+
+</body></html>

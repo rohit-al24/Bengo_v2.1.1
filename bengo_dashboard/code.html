@@ -1,0 +1,327 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>BenGo Dashboard - Zen Learning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=JetBrains+Mono:wght@500&amp;family=Inter:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#ffb3b3",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#40000a",
+                    "on-secondary-fixed": "#002201",
+                    "secondary-container": "#b9eeab",
+                    "secondary-fixed-dim": "#a1d494",
+                    "on-tertiary-container": "#f4f2ff",
+                    "surface-container-low": "#eff4fb",
+                    "surface-container": "#e9eef5",
+                    "inverse-on-surface": "#ecf1f8",
+                    "surface-bright": "#f6f9ff",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "tertiary-fixed": "#e2e1f1",
+                    "on-surface-variant": "#5c3f3f",
+                    "outline": "#916f6e",
+                    "on-surface": "#171c21",
+                    "surface-variant": "#dee3ea",
+                    "secondary": "#3b6934",
+                    "primary-fixed": "#ffdad9",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "secondary-fixed": "#bcf0ae",
+                    "primary": "#b1002c",
+                    "on-primary-fixed-variant": "#920022",
+                    "on-primary-container": "#fff1f0",
+                    "on-background": "#171c21",
+                    "on-secondary-container": "#3f6d38",
+                    "error-container": "#ffdad6",
+                    "surface-dim": "#d5dae1",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#dee3ea",
+                    "surface": "#f6f9ff",
+                    "surface-container-high": "#e4e9f0",
+                    "on-primary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "tertiary": "#555663",
+                    "error": "#ba1a1a",
+                    "primary-container": "#dc143c",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#e6bdbc",
+                    "inverse-surface": "#2b3136",
+                    "tertiary-container": "#6e6e7c",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "surface-tint": "#bf0030",
+                    "background": "#f6f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "margin-mobile": "20px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "xl": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Montserrat"],
+                    "headline-lg": ["Montserrat"],
+                    "display-calligraphy": ["Montserrat"],
+                    "label-mono": ["JetBrains Mono"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f6f9ff;
+            color: #171c21;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .neumorphic-extruded {
+            background: #f6f9ff;
+            box-shadow: -5px -5px 10px #FFFFFF, 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+
+        .neumorphic-sunken {
+            background: #f6f9ff;
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+        }
+
+        .tactile-button {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tactile-button:active {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+            transform: scale(0.98);
+        }
+
+        .progress-dial {
+            transform: rotate(-90deg);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface dark:bg-surface-container shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]"><div class="flex items-center gap-3 flex-1">
+  <a href="{{DATA:SCREEN:SCREEN_87}}" class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden neumorphic-extruded block">
+    <img class="w-full h-full object-cover" alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLesKF4t7QozBhZyxG0Btyi7E42REOPp5Z7RmYSVA8N2nGA5iPuPwXhiww-4oB-IAB0x41hbkLgHIcIWR4Uz0FJ2zoBsvob9rn5F8m_eZMWi9lhbMa8wc6FF8Vz4brRgJ6q9IQELQCXqTXTth1VkutTG7Q34waB4lpI4w3Kz-q293BuCNKsrZqLaTV9iRXEnMJv5R7Y3WCoiwaso2CQoNeslIv1lwnLty1BLMMmjS8MSPm4ICPaI_q2q6Xadt_d49-DWtC1KWx7Q">
+  </a>
+  <div class="flex flex-col">
+    <span class="font-label-mono text-[10px] text-primary leading-none">12 DAYS</span>
+    <span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest leading-none">2,450 XP</span>
+  </div>
+</div>
+<h1 class="font-display-calligraphy text-headline-lg-mobile text-primary dark:text-inverse-primary absolute left-1/2 -translate-x-1/2">BenGo</h1>
+<div class="flex items-center gap-sm flex-1 justify-end">
+  <a href="{{DATA:SCREEN:SCREEN_37}}" class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">leaderboard</span>
+  </a>
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">notifications</span>
+  </button>
+</div></header>
+<main class="mt-24 px-margin-mobile space-y-lg">
+<!-- Daily Revision Section (Neumorphic) -->
+<section class="space-y-md">
+<div class="p-lg rounded-xl neumorphic-extruded border border-white/50">
+<div class="flex justify-between items-start mb-md">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Daily Revision</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">Recall 15 vocab items from Lesson 4</p>
+</div>
+<span class="material-symbols-outlined text-primary text-3xl fill-icon" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div class="flex items-center gap-md mb-lg">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed border-2 border-surface"></div>
+<div class="w-8 h-8 rounded-full bg-primary-fixed border-2 border-surface"></div>
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed border-2 border-surface"></div>
+</div>
+<span class="font-label-mono text-label-mono text-outline">8k students studying now</span>
+</div>
+<a href="{{DATA:SCREEN:SCREEN_91}}" class="w-full py-md rounded-xl neumorphic-extruded tactile-button bg-surface font-headline-lg-mobile text-primary border-t border-white flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined">quiz</span>
+                    TAKE QUIZ
+                </a>
+</div>
+</section>
+<!-- Progress Overview (Skeuomorphic Dial) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="p-lg rounded-xl neumorphic-extruded flex items-center gap-lg">
+<div class="relative w-24 h-24 flex items-center justify-center">
+<!-- Gauge SVG -->
+<svg class="progress-dial w-full h-full" viewBox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="40" stroke="#e9eef5" stroke-linecap="round" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="none" r="40" stroke="#b1002c" stroke-dasharray="188.5" stroke-dashoffset="65" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary leading-none">65</span>
+<span class="font-label-mono text-[10px] text-on-surface-variant leading-none">%</span>
+</div>
+</div>
+<div class="flex-1">
+<h3 class="font-headline-lg-mobile text-[18px] text-on-surface leading-tight">Daily Goal</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant mb-sm">45/60 min completed</p>
+<div class="w-full h-2 rounded-full neumorphic-sunken overflow-hidden">
+<div class="h-full bg-secondary w-2/3 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]"></div>
+</div>
+</div>
+</div>
+<!-- Stats Mini Card -->
+<div class="grid grid-cols-2 gap-md">
+<div class="p-md rounded-xl neumorphic-sunken flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-secondary mb-xs">bolt</span>
+<span class="font-headline-lg-mobile text-[20px]">420</span>
+<span class="font-label-mono text-[10px] text-outline">CALORIES? NO, XP</span>
+</div>
+<div class="p-md rounded-xl neumorphic-sunken flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-primary mb-xs">history_edu</span>
+<span class="font-headline-lg-mobile text-[20px]">12</span>
+<span class="font-label-mono text-[10px] text-outline">KANJI TODAY</span>
+</div>
+</div>
+</section>
+<!-- Next Lesson (Large Tactile Card) -->
+<section class="space-y-md">
+<h2 class="font-label-mono text-label-mono text-outline uppercase tracking-[0.2em] px-xs">Current Path</h2>
+<div class="relative overflow-hidden rounded-xl neumorphic-extruded group">
+<div class="h-48 w-full relative">
+<img class="w-full h-full object-cover" data-alt="A serene cinematic shot of a modern Japanese study room at sunset. Golden light hits a wooden desk featuring a high-end mechanical keyboard, a stack of minimalist stationery, and a single branch of cherry blossom in a vase. The aesthetic is clean, Zen-like, and physically tactile, emphasizing soft shadows and physical depth in a light-themed environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtGvL3Qf2CZ4kmaDh9FaNvDCT7MdedR9SrcjPtV816CXPKdkY019LNpUaqbgzccYfv5_dO7FRlGV_yLc6HZ0Yqy9JthG7EFcvHQGznxYLm1909K0nglaXGcatZU9X_Ms5iiflZQbnlNb4LNZzLJC3e6DwyxHe6fPHb9u0ucj2tdzZI9LHHX_XzMB0wtQ0FPRkMxebJCOSrN9v2yUcfD9rqZaFmwXYNDxXJwsu4KcAwPI9P7QmxyJE3hNyKIOdDvt7g9cM0JY-CfQ">
+<div class="absolute inset-0 bg-gradient-to-t from-surface to-transparent"></div>
+<div class="absolute top-4 left-4 bg-primary px-3 py-1 rounded-full shadow-lg">
+<span class="font-label-mono text-[10px] text-white">JLPT N5</span>
+</div>
+</div>
+<div class="p-lg -mt-8 relative z-10 bg-surface/90 backdrop-blur-sm rounded-t-3xl">
+<div class="flex justify-between items-end mb-md">
+<div>
+<p class="font-label-mono text-label-mono text-primary mb-xs">CHAPTER 5</p>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Going to the Market</h3>
+</div>
+<div class="text-right">
+<span class="font-label-mono text-label-mono text-on-surface-variant">4 / 12 Lessons</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg">Learn common particles and shopping vocabulary used in daily Tokyo life.</p>
+<div class="flex gap-md">
+<a href="{{DATA:SCREEN:SCREEN_19}}" class="flex-1 py-md rounded-xl neumorphic-extruded tactile-button bg-primary text-white font-headline-lg-mobile border-t border-white/20 flex items-center justify-center">
+                            RESUME
+                        </a>
+<button class="w-14 h-14 rounded-xl neumorphic-extruded tactile-button flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface">bookmark</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Small Quick Action Row -->
+<section class="flex gap-gutter overflow-x-auto no-scrollbar pb-sm -mx-margin-mobile px-margin-mobile">
+<div class="flex-shrink-0 w-32 p-md rounded-xl neumorphic-extruded flex flex-col items-center">
+<div class="w-12 h-12 rounded-full neumorphic-sunken flex items-center justify-center mb-sm">
+<span class="material-symbols-outlined text-primary">translate</span>
+</div>
+<span class="font-label-mono text-[10px]">DICTIONARY</span>
+</div>
+<a href="{{DATA:SCREEN:SCREEN_39}}" class="flex-shrink-0 w-32 p-md rounded-xl neumorphic-extruded flex flex-col items-center">
+<div class="w-12 h-12 rounded-full neumorphic-sunken flex items-center justify-center mb-sm">
+<span class="material-symbols-outlined text-secondary">groups</span>
+</div>
+<span class="font-label-mono text-[10px]">TEAM CHAT</span>
+</a>
+<a href="{{DATA:SCREEN:SCREEN_37}}" class="flex-shrink-0 w-32 p-md rounded-xl neumorphic-extruded flex flex-col items-center">
+<div class="w-12 h-12 rounded-full neumorphic-sunken flex items-center justify-center mb-sm">
+<span class="material-symbols-outlined text-tertiary">leaderboard</span>
+</div>
+<span class="font-label-mono text-[10px]">RANKINGS</span>
+</a>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface dark:bg-surface-container-high rounded-t-xl shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]">
+<!-- Dashboard - ACTIVE -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-xl px-4 py-2 shadow-[inset_-2px_-2px_5px_#FFFFFF,inset_2px_2px_5px_rgba(23,28,33,0.15)] scale-95 transition-all" href="{{DATA:SCREEN:SCREEN_70}}">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-mono text-label-mono">Dashboard</span>
+</a>
+<!-- Courses -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_82}}">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-mono text-label-mono">Courses</span>
+</a>
+<!-- Teams -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_39}}">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-mono text-label-mono">Teams</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_87}}">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-mono text-label-mono">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for buttons
+        document.querySelectorAll('.tactile-button').forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.classList.remove('neumorphic-extruded');
+                this.classList.add('neumorphic-sunken');
+            });
+            button.addEventListener('touchend', function() {
+                this.classList.remove('neumorphic-sunken');
+                this.classList.add('neumorphic-extruded');
+            });
+        });
+
+        // Simple parallax for the background image on scroll
+        window.addEventListener('scroll', () => {
+            const scroll = window.pageYOffset;
+            const img = document.querySelector('.group img');
+            if (img) {
+                img.style.transform = `translateY(${scroll * 0.1}px)`;
+            }
+        });
+    </script>
+
+
+
+
+</body></html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>BenGo Leaderboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#dc143c",
+                    "background": "#f6f9ff",
+                    "secondary-fixed": "#bcf0ae",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "on-error": "#ffffff",
+                    "on-surface-variant": "#5c3f3f",
+                    "on-primary-fixed": "#40000a",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#eff4fb",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "surface-dim": "#d5dae1",
+                    "on-secondary": "#ffffff",
+                    "surface": "#f6f9ff",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#a1d494",
+                    "on-primary-fixed-variant": "#920022",
+                    "surface-container-highest": "#dee3ea",
+                    "surface-bright": "#f6f9ff",
+                    "on-primary-container": "#fff1f0",
+                    "inverse-on-surface": "#ecf1f8",
+                    "tertiary": "#555663",
+                    "primary": "#b1002c",
+                    "surface-variant": "#dee3ea",
+                    "surface-container-high": "#e4e9f0",
+                    "on-secondary-container": "#3f6d38",
+                    "secondary": "#3b6934",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "tertiary-fixed": "#e2e1f1",
+                    "surface-tint": "#bf0030",
+                    "on-tertiary-container": "#f4f2ff",
+                    "on-surface": "#171c21",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "on-tertiary": "#ffffff",
+                    "inverse-surface": "#2b3136",
+                    "surface-container": "#e9eef5",
+                    "outline-variant": "#e6bdbc",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "primary-fixed": "#ffdad9",
+                    "on-background": "#171c21",
+                    "on-secondary-fixed": "#002201",
+                    "outline": "#916f6e",
+                    "tertiary-container": "#6e6e7c",
+                    "secondary-container": "#b9eeab",
+                    "inverse-primary": "#ffb3b3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "48px",
+                    "margin-mobile": "20px",
+                    "md": "16px",
+                    "unit": "4px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "label-mono": ["JetBrains Mono"],
+                    "body-md": ["Inter"],
+                    "headline-lg-mobile": ["Montserrat"],
+                    "headline-lg": ["Montserrat"],
+                    "display-calligraphy": ["Montserrat"]
+            },
+            "fontSize": {
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f6f9ff;
+            color: #171c21;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .neumorphic-flat {
+            background: #f6f9ff;
+            box-shadow: -5px -5px 10px #FFFFFF, 5px 5px 10px rgba(23, 28, 33, 0.1);
+        }
+
+        .neumorphic-extruded {
+            background: #f6f9ff;
+            box-shadow: -6px -6px 12px #FFFFFF, 6px 6px 12px rgba(23, 28, 33, 0.12);
+        }
+
+        .neumorphic-sunken {
+            background: #f6f9ff;
+            box-shadow: inset -4px -4px 8px #FFFFFF, inset 4px 4px 8px rgba(23, 28, 33, 0.1);
+        }
+
+        .neumorphic-key-active {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+        }
+
+        .gold-glow { box-shadow: 0 0 25px rgba(255, 215, 0, 0.5), -4px -4px 8px #FFFFFF, 4px 4px 8px rgba(23, 28, 33, 0.1); }
+        .silver-glow { box-shadow: 0 0 25px rgba(192, 192, 192, 0.5), -4px -4px 8px #FFFFFF, 4px 4px 8px rgba(23, 28, 33, 0.1); }
+        .bronze-glow { box-shadow: 0 0 25px rgba(205, 127, 50, 0.5), -4px -4px 8px #FFFFFF, 4px 4px 8px rgba(23, 28, 33, 0.1); }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #dee3ea;
+            border-radius: 10px;
+        }
+
+        .tab-indicator {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Portal Styling */
+        .portal-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 125%;
+            height: 125%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .portal-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            mask-image: radial-gradient(transparent 60%, black 61%);
+            -webkit-mask-image: radial-gradient(transparent 60%, black 61%);
+        }
+
+        .portal-ring-1 { animation: portal-spin 2s linear infinite; border-style: dashed; border-width: 4px; }
+        .portal-ring-2 { animation: portal-spin-reverse 3s linear infinite; border-style: dotted; border-width: 2px; opacity: 0.7; }
+        .portal-ring-3 { animation: portal-spin 5s linear infinite; border-style: double; border-width: 6px; opacity: 0.5; }
+
+        @keyframes portal-spin {
+            from { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.05); }
+            to { transform: rotate(360deg) scale(1); }
+        }
+
+        @keyframes portal-spin-reverse {
+            from { transform: rotate(360deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            to { transform: rotate(0deg) scale(1.1); }
+        }
+
+        .gold-portal .portal-ring { border-color: #FFD700; filter: drop-shadow(0 0 8px #FFD700); }
+        .silver-portal .portal-ring { border-color: #C0C0C0; filter: drop-shadow(0 0 8px #C0C0C0); }
+        .bronze-portal .portal-ring { border-color: #CD7F32; filter: drop-shadow(0 0 8px #CD7F32); }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 6;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]"><div class="flex items-center gap-3 flex-1">
+  <div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden neumorphic-extruded">
+    <img class="w-full h-full object-cover" alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgmZD9c7pXwm5f_k4X-NZITPWNcVbqXHI70pil9Ub1uWHfCbLMGE9fsIuAC2rinAc9CcMRPqtXHCu5fRWbDxJky4pMNtHcV9gm3sWJU4eLBHm1R_lwIfrLuwDdgXjIY3N-t9l__viv-WcaJocvNmwBt27mUNUDvcr2nlMZadiZAXDwayGFoOC78mjbf0DUn2lcMETLryJyWvPhpAK4XMGj8diYLkU2MtVVT17wjnqQRAtWc9eZV0RWfxoiAxKAAvU_EB90uDZXkw">
+  </div>
+  <div class="flex flex-col">
+    <span class="font-label-mono text-[10px] text-primary leading-none">12 DAYS</span>
+    <span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest leading-none">2,450 XP</span>
+  </div>
+</div>
+<h1 class="font-display-calligraphy text-headline-lg-mobile text-primary dark:text-inverse-primary absolute left-1/2 -translate-x-1/2">BenGo</h1>
+<div class="flex items-center gap-sm flex-1 justify-end">
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">leaderboard</span>
+  </button>
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">notifications</span>
+  </button>
+</div></header>
+<main class="pt-24 pb-32 px-margin-mobile">
+<!-- Section Header -->
+<div class="mb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Leaderboard</h1>
+<p class="font-body-md text-on-surface-variant">Climb the ranks and master Japanese.</p>
+</div>
+<!-- Segmented Control (Tabs) -->
+<div class="neumorphic-sunken p-1 rounded-xl flex mb-lg relative">
+<a href="{{DATA:SCREEN:SCREEN_83}}" class="relative z-10 flex-1 py-3 font-label-mono text-label-mono text-primary transition-colors duration-300 text-center" id="btn-friends">FRIENDS</a>
+<button class="relative z-10 flex-1 py-3 font-label-mono text-label-mono text-on-surface-variant transition-colors duration-300" id="btn-institution" onclick="switchTab('institution')">
+                INSTITUTION
+            </button>
+<div class="absolute top-1 left-1 w-[calc(50%-4px)] h-[calc(100%-8px)] neumorphic-extruded bg-surface rounded-lg tab-indicator" id="tab-indicator"></div>
+</div>
+<!-- Podium Section (Top 3) -->
+<div class="flex items-end justify-center gap-4 mb-xl mt-8">
+<!-- Rank 2 -->
+<div class="flex flex-col items-center">
+<div class="w-16 h-16 rounded-full silver-glow p-1 mb-2 relative">
+<div class="portal-container silver-portal" id="container-silver">
+<div class="portal-ring portal-ring-1"></div>
+<div class="portal-ring portal-ring-2"></div>
+<div class="portal-ring portal-ring-3"></div>
+<div class="particle" style="width: 4.98259px; height: 4.98259px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 85.4517%; top: 22.284%; opacity: 1;"></div><div class="particle" style="width: 3.77478px; height: 3.77478px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 56.5449%; top: 94.5215%; opacity: 1;"></div><div class="particle" style="width: 4.18487px; height: 4.18487px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 94.8995%; top: 53.0058%; opacity: 1;"></div><div class="particle" style="width: 3.40731px; height: 3.40731px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 70.7027%; top: 89.9549%; opacity: 1;"></div><div class="particle" style="width: 5.75101px; height: 5.75101px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 54.5239%; top: 94.772%; opacity: 1;"></div><div class="particle" style="width: 5.97661px; height: 5.97661px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 93.2615%; top: 37.613%; opacity: 1;"></div><div class="particle" style="width: 4.80193px; height: 4.80193px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 33.1456%; top: 8.27557%; opacity: 1;"></div><div class="particle" style="width: 3.56706px; height: 3.56706px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 17.2561%; top: 19.132%; opacity: 1;"></div><div class="particle" style="width: 2.20619px; height: 2.20619px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 94.8436%; top: 46.2513%; opacity: 1;"></div><div class="particle" style="width: 4.65522px; height: 4.65522px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 93.7955%; top: 60.3419%; opacity: 1;"></div><div class="particle" style="width: 5.32541px; height: 5.32541px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 60.8709%; top: 6.33281%; opacity: 1;"></div><div class="particle" style="width: 4.16066px; height: 4.16066px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 93.9301%; top: 59.7542%; opacity: 1;"></div><div class="particle" style="width: 4.76244px; height: 4.76244px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 94.5472%; top: 43.6321%; opacity: 1;"></div><div class="particle" style="width: 2.89034px; height: 2.89034px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 17.0005%; top: 80.5947%; opacity: 1;"></div><div class="particle" style="width: 4.96981px; height: 4.96981px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 73.3299%; top: 11.5199%; opacity: 1;"></div><div class="particle" style="width: 4.82207px; height: 4.82207px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 72.5582%; top: 88.9375%; opacity: 1;"></div><div class="particle" style="width: 5.6481px; height: 5.6481px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 5.00238%; top: 49.5376%; opacity: 1;"></div><div class="particle" style="width: 5.83913px; height: 5.83913px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 81.917%; top: 81.7223%; opacity: 1;"></div><div class="particle" style="width: 3.00933px; height: 3.00933px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 26.7524%; top: 88.5299%; opacity: 1;"></div><div class="particle" style="width: 2.87618px; height: 2.87618px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 5.4006%; top: 44.0089%; opacity: 1;"></div><div class="particle" style="width: 5.39299px; height: 5.39299px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 72.1089%; top: 89.1943%; opacity: 1;"></div><div class="particle" style="width: 5.50783px; height: 5.50783px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 16.2632%; top: 20.2203%; opacity: 1;"></div><div class="particle" style="width: 2.16806px; height: 2.16806px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 94.9558%; top: 48.0058%; opacity: 1;"></div><div class="particle" style="width: 5.2441px; height: 5.2441px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 66.3936%; top: 8.09235%; opacity: 1;"></div><div class="particle" style="width: 4.08993px; height: 4.08993px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 53.6042%; top: 5.14457%; opacity: 1;"></div><div class="particle" style="width: 2.11798px; height: 2.11798px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 5.10185%; top: 46.9742%; opacity: 1;"></div><div class="particle" style="width: 3.73044px; height: 3.73044px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 5.64156%; top: 57.5716%; opacity: 1;"></div><div class="particle" style="width: 3.01257px; height: 3.01257px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 15.642%; top: 79.0608%; opacity: 1;"></div><div class="particle" style="width: 2.50693px; height: 2.50693px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 94.947%; top: 52.1832%; opacity: 1;"></div><div class="particle" style="width: 3.1786px; height: 3.1786px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 37.0028%; top: 6.91785%; opacity: 1;"></div><div class="particle" style="width: 5.47219px; height: 5.47219px; background-color: rgb(192, 192, 192); box-shadow: rgb(192, 192, 192) 0px 0px 8px; left: 6.72583%; top: 62.3429%; opacity: 1;"></div></div>
+<img class="w-full h-full object-cover rounded-full relative z-10" data-alt="A portrait of a cheerful student avatar for a leaderboards screen. The style is clean, 3D clay-like, and tactile, evoking a sense of modern Japanese stationery aesthetics. Soft studio lighting highlights the matte texture of the skin and hair, using a neutral color scheme with silver metallic accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjINBnt_vkmuQseml2d2oo25qB54FAJ6LUR_ZaFwkNRl2Tu0be9dxaDRRB97nDAkZYriPd4VGVGx3G04d2X_zBOtsR7W-JtouWXQ9V-bdnJu8p8WwlQnO-gyAibmsA9qz2VFXhGf7GthGWSj6mH_Hq8X6_-j4npZs6Vskd8nFpY8_ha39z1linWpVAFv2pCU-vJaKeyTivdurqN262xBNiWmDKnB_UD7xf3NgHVaMTKaifBq-VwOqIBNxgJylDGNUr5w2xbJcyiA">
+<div class="absolute -bottom-1 -right-1 w-6 h-6 bg-surface-dim rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm z-20">2</div>
+</div>
+<div class="neumorphic-extruded px-3 py-4 rounded-t-xl w-24 h-24 flex flex-col items-center justify-end text-center">
+<span class="font-label-mono text-[10px] block truncate w-full">Yuki S.</span>
+<span class="font-label-mono text-primary text-[12px] font-bold">14.2k</span>
+</div>
+</div>
+<!-- Rank 1 -->
+<div class="flex flex-col items-center -mt-8">
+<div class="w-20 h-20 rounded-full gold-glow p-1 mb-2 relative">
+<div class="portal-container gold-portal" id="container-gold">
+<div class="portal-ring portal-ring-1"></div>
+<div class="portal-ring portal-ring-2"></div>
+<div class="portal-ring portal-ring-3"></div>
+<div class="particle" style="width: 3.10034px; height: 3.10034px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 12.8456%; top: 24.6121%; opacity: 1;"></div><div class="particle" style="width: 5.12945px; height: 5.12945px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 35.3392%; top: 7.45519%; opacity: 1;"></div><div class="particle" style="width: 5.93563px; height: 5.93563px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 8.88004%; top: 68.2797%; opacity: 1;"></div><div class="particle" style="width: 5.11477px; height: 5.11477px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 90.4031%; top: 30.1861%; opacity: 1;"></div><div class="particle" style="width: 3.4206px; height: 3.4206px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 59.1646%; top: 5.9431%; opacity: 1;"></div><div class="particle" style="width: 4.04918px; height: 4.04918px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 80.9413%; top: 82.6747%; opacity: 1;"></div><div class="particle" style="width: 2.82317px; height: 2.82317px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 31.2369%; top: 90.9017%; opacity: 1;"></div><div class="particle" style="width: 5.49406px; height: 5.49406px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 10.6137%; top: 28.235%; opacity: 1;"></div><div class="particle" style="width: 5.71546px; height: 5.71546px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 5.74243%; top: 41.8595%; opacity: 1;"></div><div class="particle" style="width: 5.09409px; height: 5.09409px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 36.8895%; top: 93.0478%; opacity: 1;"></div><div class="particle" style="width: 3.45456px; height: 3.45456px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 5.1252%; top: 46.6456%; opacity: 1;"></div><div class="particle" style="width: 4.9989px; height: 4.9989px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 65.6025%; top: 7.79146%; opacity: 1;"></div><div class="particle" style="width: 5.0094px; height: 5.0094px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 19.0355%; top: 17.3473%; opacity: 1;"></div><div class="particle" style="width: 4.40928px; height: 4.40928px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 7.75151%; top: 65.494%; opacity: 1;"></div><div class="particle" style="width: 4.44747px; height: 4.44747px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 5.21572%; top: 54.4009%; opacity: 1;"></div><div class="particle" style="width: 4.69156px; height: 4.69156px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 91.6597%; top: 32.9862%; opacity: 1;"></div><div class="particle" style="width: 2.99274px; height: 2.99274px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 88.6725%; top: 26.9904%; opacity: 1;"></div><div class="particle" style="width: 2.82897px; height: 2.82897px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 11.1356%; top: 27.316%; opacity: 1;"></div><div class="particle" style="width: 4.5881px; height: 4.5881px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 91.7079%; top: 33.1046%; opacity: 1;"></div><div class="particle" style="width: 5.32818px; height: 5.32818px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 52.0423%; top: 94.9536%; opacity: 1;"></div><div class="particle" style="width: 5.93734px; height: 5.93734px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 79.9057%; top: 16.3748%; opacity: 1;"></div><div class="particle" style="width: 3.30974px; height: 3.30974px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 76.8859%; top: 86.0853%; opacity: 1;"></div><div class="particle" style="width: 3.49813px; height: 3.49813px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 94.8482%; top: 46.3068%; opacity: 1;"></div><div class="particle" style="width: 3.99821px; height: 3.99821px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 33.6473%; top: 91.9236%; opacity: 1;"></div><div class="particle" style="width: 4.34384px; height: 4.34384px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 7.7116%; top: 34.6152%; opacity: 1;"></div><div class="particle" style="width: 4.50853px; height: 4.50853px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 94.9985%; top: 49.6383%; opacity: 1;"></div><div class="particle" style="width: 5.9968px; height: 5.9968px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 22.471%; top: 14.4029%; opacity: 1;"></div><div class="particle" style="width: 5.11608px; height: 5.11608px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 5.05486%; top: 47.7786%; opacity: 1;"></div><div class="particle" style="width: 2.42847px; height: 2.42847px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 88.6236%; top: 26.9084%; opacity: 1;"></div><div class="particle" style="width: 2.6491px; height: 2.6491px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 47.4263%; top: 5.07366%; opacity: 1;"></div><div class="particle" style="width: 2.64561px; height: 2.64561px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 16.3588%; top: 79.8876%; opacity: 1;"></div><div class="particle" style="width: 4.64421px; height: 4.64421px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 61.7137%; top: 93.4487%; opacity: 1;"></div><div class="particle" style="width: 3.68626px; height: 3.68626px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 47.1568%; top: 94.9101%; opacity: 1;"></div><div class="particle" style="width: 3.71582px; height: 3.71582px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 39.9997%; top: 6.12525%; opacity: 1;"></div><div class="particle" style="width: 2.38027px; height: 2.38027px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 86.486%; top: 76.3395%; opacity: 1;"></div><div class="particle" style="width: 2.62111px; height: 2.62111px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 31.9053%; top: 8.79826%; opacity: 1;"></div><div class="particle" style="width: 3.70394px; height: 3.70394px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 86.6677%; top: 76.0861%; opacity: 1;"></div><div class="particle" style="width: 5.83449px; height: 5.83449px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 78.7078%; top: 84.6534%; opacity: 1;"></div><div class="particle" style="width: 2.63249px; height: 2.63249px; background-color: rgb(255, 215, 0); box-shadow: rgb(255, 215, 0) 0px 0px 8px; left: 5.05525%; top: 47.7708%; opacity: 1;"></div></div>
+<img class="w-full h-full object-cover rounded-full relative z-10" data-alt="A high-quality 3D avatar of a top-performing student, rendered in a warm, friendly, minimalist aesthetic. The character has a gentle smile and is wearing modern glasses. The surrounding lighting is golden and soft, creating a prestigious winner's aura. The background is a clean, neutral studio environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXb3W3gUrg-gz-4m9AocgpsCt4P44YPckhEFG_bpODCp8aTxuI2hWfOaCO-ZE0S2ekyw-NCXZoXc8H4L6s3fmRBvwga3Nw4Kb5iBw90u-qN7qN1wSEAKuY_HJw--RYyXg6wjyApnLlTF6p8UX6GBp9kbVuMIuf3604-Q5Z5q-2GFaqf3yIRQW64ZGw0V0piim19_2zszHVvVXVh3XwopMN_50SkgXfz2ToN8XljusH4u0SObQVj_eTP3Uzx8lf1BINs5h81Q0XeQ">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-yellow-500 z-20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div class="absolute -bottom-1 -right-1 w-7 h-7 bg-yellow-400 rounded-full flex items-center justify-center text-[12px] font-bold text-white shadow-md z-20">1</div>
+</div>
+<div class="neumorphic-extruded px-3 py-6 rounded-t-xl w-28 h-32 flex flex-col items-center justify-end text-center border-t-2 border-yellow-200">
+<span class="font-label-mono text-[11px] font-bold block truncate w-full">Kenji Tanaka</span>
+<span class="font-label-mono text-primary text-[14px] font-black">15.8k</span>
+</div>
+</div>
+<!-- Rank 3 -->
+<div class="flex flex-col items-center">
+<div class="w-16 h-16 rounded-full bronze-glow p-1 mb-2 relative">
+<div class="portal-container bronze-portal" id="container-bronze">
+<div class="portal-ring portal-ring-1"></div>
+<div class="portal-ring portal-ring-2"></div>
+<div class="portal-ring portal-ring-3"></div>
+<div class="particle" style="width: 2.06538px; height: 2.06538px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 56.7983%; top: 94.4835%; opacity: 1;"></div><div class="particle" style="width: 3.91095px; height: 3.91095px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 31.1515%; top: 9.13763%; opacity: 1;"></div><div class="particle" style="width: 2.25037px; height: 2.25037px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 5.06569%; top: 47.5694%; opacity: 1;"></div><div class="particle" style="width: 3.45259px; height: 3.45259px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 45.001%; top: 94.7215%; opacity: 1;"></div><div class="particle" style="width: 3.05528px; height: 3.05528px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 33.4355%; top: 8.15961%; opacity: 1;"></div><div class="particle" style="width: 3.1206px; height: 3.1206px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 49.0695%; top: 94.9904%; opacity: 1;"></div><div class="particle" style="width: 4.68716px; height: 4.68716px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 52.5273%; top: 94.929%; opacity: 1;"></div><div class="particle" style="width: 3.1633px; height: 3.1633px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 6.42827%; top: 38.7526%; opacity: 1;"></div><div class="particle" style="width: 5.99357px; height: 5.99357px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 8.80829%; top: 31.8825%; opacity: 1;"></div><div class="particle" style="width: 3.02329px; height: 3.02329px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 71.5741%; top: 89.4913%; opacity: 1;"></div><div class="particle" style="width: 4.00459px; height: 4.00459px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 5.04574%; top: 47.9715%; opacity: 1;"></div><div class="particle" style="width: 3.41249px; height: 3.41249px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 73.0249%; top: 88.6633%; opacity: 1;"></div><div class="particle" style="width: 4.35812px; height: 4.35812px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 41.2982%; top: 5.84937%; opacity: 1;"></div><div class="particle" style="width: 2.64725px; height: 2.64725px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 5.10456%; top: 53.0659%; opacity: 1;"></div><div class="particle" style="width: 4.05738px; height: 4.05738px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 84.8035%; top: 78.5257%; opacity: 1;"></div><div class="particle" style="width: 4.09778px; height: 4.09778px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 81.3692%; top: 82.2641%; opacity: 1;"></div><div class="particle" style="width: 4.28533px; height: 4.28533px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 84.6626%; top: 21.3032%; opacity: 1;"></div><div class="particle" style="width: 5.92116px; height: 5.92116px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 20.1499%; top: 83.6745%; opacity: 1;"></div><div class="particle" style="width: 5.15579px; height: 5.15579px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 78.5631%; top: 15.2272%; opacity: 1;"></div><div class="particle" style="width: 3.51377px; height: 3.51377px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 89.1967%; top: 27.8953%; opacity: 1;"></div><div class="particle" style="width: 3.39497px; height: 3.39497px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 5.54918%; top: 57.0089%; opacity: 1;"></div><div class="particle" style="width: 2.91096px; height: 2.91096px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 70.6381%; top: 10.0116%; opacity: 1;"></div><div class="particle" style="width: 5.07906px; height: 5.07906px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 30.5453%; top: 9.42271%; opacity: 1;"></div><div class="particle" style="width: 5.41697px; height: 5.41697px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 92.0434%; top: 33.9579%; opacity: 1;"></div><div class="particle" style="width: 5.32534px; height: 5.32534px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 14.3654%; top: 77.4805%; opacity: 1;"></div><div class="particle" style="width: 2.71177px; height: 2.71177px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 89.8283%; top: 70.9452%; opacity: 1;"></div><div class="particle" style="width: 4.67363px; height: 4.67363px; background-color: rgb(205, 127, 50); box-shadow: rgb(205, 127, 50) 0px 0px 8px; left: 50.602%; top: 94.996%; opacity: 1;"></div></div>
+<img class="w-full h-full object-cover rounded-full relative z-10" data-alt="A friendly student avatar with short brown hair and a bright expression. The art style is minimalist 3D clay animation, focusing on soft shapes and tactile surfaces. The lighting is diffused and calm, with bronze highlights in the border to signify a third-place ranking in a competitive learning app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_zi_2_-MQpRTmfals0IFKxlSVJlkqllHc01rxI-YKzUkNwPkSfr1gg2VbASP3xvvQrywHJ6GW6PjdTYT7myxZZ85UStawwzKQOT01RVZw5uwLCBtJnwcUzqtGNzIbNyW5WH7Cwq_gJxTur-vBUpvvbU-jL1KHTNHt_YKcplr7NerK4JIPvVeBu3DqL7xAQ3a2gVNhUKf0LvmPg3wgehskeJzz8UWcVsBEtrluehEurY1rKBRQSAl0F9NeCKxmp0gkpzJusoPcoA">
+<div class="absolute -bottom-1 -right-1 w-6 h-6 bg-[#CD7F32] bg-opacity-80 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm z-20">3</div>
+</div>
+<div class="neumorphic-extruded px-3 py-3 rounded-t-xl w-24 h-20 flex flex-col items-center justify-end text-center">
+<span class="font-label-mono text-[10px] block truncate w-full">Ami Chen</span>
+<span class="font-label-mono text-primary text-[12px] font-bold">12.9k</span>
+</div>
+</div>
+</div>
+<!-- List Section -->
+<div class="space-y-gutter" id="leaderboard-list">
+<!-- Rank 4 -->
+<div class="neumorphic-flat p-md rounded-xl flex items-center gap-md hover:scale-[1.01] transition-transform active:scale-95">
+<span class="font-label-mono text-on-surface-variant w-6">4</span>
+<div class="w-12 h-12 rounded-full neumorphic-sunken p-1">
+<img class="w-full h-full object-cover rounded-full" data-alt="Close up avatar of a young woman with a bob haircut, 3D stylized character art. Neutral lighting, clean lines, tactile matte texture, high-quality rendering for a modern educational mobile app UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3FA0kZd8HTGVzfZiplxxZdNqKm3no8t6xeXu3TL4mU1J7AnoBatGqPIrczhXuNlDjASHh6hXJdYTAjITbA9Yv3lJJ5aRiz8xPMhGLO1vsv0re47XfFBHxfR-Ju2v1J0ZYn-CRTi0uxWkQWPlyLVxxP1cpIxjGz88Wp5XgZZL__v51RTCcGietdxwr2xjpGO5Eb_Mxn4JfH7g4Yddr3eB-r5PcuCGNXMAxsVbS9M6PKr59DvMzRorHV_iMQ6hApo_YNGVeBeQ87w">
+</div>
+<div class="flex-1">
+<h3 class="font-body-md font-semibold text-on-surface">Hiroshi M.</h3>
+<p class="font-label-mono text-[10px] text-on-surface-variant">LEVEL 24 • ZEN MASTER</p>
+</div>
+<div class="text-right">
+<span class="font-label-mono text-primary font-bold">11.4k</span>
+<p class="text-[10px] text-secondary font-bold">XP</p>
+</div>
+</div>
+<!-- Rank 5 -->
+<div class="neumorphic-flat p-md rounded-xl flex items-center gap-md hover:scale-[1.01] transition-transform">
+<span class="font-label-mono text-on-surface-variant w-6">5</span>
+<div class="w-12 h-12 rounded-full neumorphic-sunken p-1">
+<img class="w-full h-full object-cover rounded-full" data-alt="A minimalist 3D avatar of a male student wearing a hoodie, rendered with a soft plastic texture. The aesthetic is clean and modern, fitting for a premium Japanese language learning app. Cool blue lighting accents against a warm white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3Or_qutvR3uZ_rLDw5-xuIluwIzep5MQnRWvhZwzlcbFwxLKgLESzFDc0B1t8I8mvOUf-VMLURKVDkCs1Cm0ELOJ51IsGOKeFU4qZtbkx2xunZILr8-MEDwFgEfMyjIp3Y-H3TJbJ20GUWiSdn_0gFs-ElXri2KsdqYBS4nRM6JznVQaNaYerr-axs6kNObrIjW0a53t0Xc-Xdwd7_j3q9Owgy014emFLEKvOLmDqmahhfu21U3Qlt1HmVIkZejdgwZQfCVg23g">
+</div>
+<div class="flex-1">
+<h3 class="font-body-md font-semibold text-on-surface">Elena Kozlova</h3>
+<p class="font-label-mono text-[10px] text-on-surface-variant">LEVEL 22 • SCHOLAR</p>
+</div>
+<div class="text-right">
+<span class="font-label-mono text-primary font-bold">10.1k</span>
+<p class="text-[10px] text-secondary font-bold">XP</p>
+</div>
+</div>
+<!-- Rank 6 -->
+<div class="neumorphic-flat p-md rounded-xl flex items-center gap-md">
+<span class="font-label-mono text-on-surface-variant w-6">6</span>
+<div class="w-12 h-12 rounded-full neumorphic-sunken p-1">
+<img class="w-full h-full object-cover rounded-full" data-alt="A diverse female character avatar in a soft 3D stylized look. She has a warm smile and professional demeanor. The style is inspired by modern Japanese app design, featuring subtle gradients and soft shadows that give it a physical, touchable quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPqh-qlX0P_0wVohsiG9Jtrcl_JVXNSubeowygbDU1sNwk3e-YHP4UAkPzVlSFMd-fRSo6s0PDNvLF0IMfxZ-d84F1hNxDQR3ygr9K1W0iCP37irqKvFSsp0w1mbMgfO2em8AZkDWygt7Plwr5fPfcKFelqUD3U5M0EIV4oqA4cq5KiSlmYPsFGC5Hn7qGrL8Ex9UXlahDbZr1SjwvAINvOtpDyV4AMqgGSSxvNAQUzq70IXGqRsajJ_gJ16mQ8JWTqI46wNO8aw">
+</div>
+<div class="flex-1">
+<h3 class="font-body-md font-semibold text-on-surface">Marcus T.</h3>
+<p class="font-label-mono text-[10px] text-on-surface-variant">LEVEL 19 • INITIATE</p>
+</div>
+<div class="text-right">
+<span class="font-label-mono text-primary font-bold">9.8k</span>
+<p class="text-[10px] text-secondary font-bold">XP</p>
+</div>
+</div>
+</div>
+</main>
+<!-- User Pinned Rank -->
+<div class="fixed bottom-[84px] left-0 w-full px-margin-mobile z-40">
+<div class="neumorphic-extruded p-md rounded-2xl bg-secondary-container flex items-center gap-md border-2 border-white">
+<span class="font-label-mono text-on-secondary-container font-black w-6 text-lg">12</span>
+<div class="w-12 h-12 rounded-full neumorphic-sunken p-1 border border-white">
+<img class="w-full h-full object-cover rounded-full" data-alt="User's own profile avatar, a unique 3D character that represents progress and dedication. The character looks determined and happy. Style is tactile, with soft plastic surfaces and warm highlights. The background is a very light pastel blue to contrast with the primary red accents of the UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAC8U125vSPz3TlEVp6lAS1NWZZtZHY8UuYWEDLujZ-RidBBuykc2SFYJkjXWIoQltaxi09OG3wV25VlNS87UbX4gUdqwpZXtnYUlxNr58M4GARgi2Bv_BWuGla9_K2vtDBrgTmjXAvvu4_YiiwJbW2yYzoyualQlhMeXK8rvp5f6WP0jX0nUOcnX2COe2xxMQ_aq01qb83CS7Hlt1jFgIGHFaiqNNMp6x7sES7lhuv5Ouu_F0Zv4JR3nMrYPpk6zhXAAIJTWbvdQ">
+</div>
+<div class="flex-1">
+<h3 class="font-body-md font-bold text-on-secondary-container">You (Alex)</h3>
+<p class="font-label-mono text-[10px] text-on-secondary-container opacity-80">TOKYO TECH • SOPHOMORE</p>
+</div>
+<div class="text-right">
+<span class="font-label-mono text-primary font-black text-lg">7.2k</span>
+<p class="text-[10px] text-on-secondary-container font-bold">XP</p>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)] rounded-t-xl h-20">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_70}}">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-mono text-label-mono mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_82}}">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-mono text-label-mono mt-1">Courses</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-2 shadow-[inset_-2px_-2px_5_#FFFFFF,inset_2px_2px_5px_rgba(23,28,33,0.15)] scale-95 transition-all" href="{{DATA:SCREEN:SCREEN_39}}">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-mono text-label-mono mt-1">Teams</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_87}}">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-mono text-label-mono mt-1">Profile</span>
+</a>
+</nav>
+<script>
+        function switchTab(tab) {
+            const indicator = document.getElementById('tab-indicator');
+            const friendsBtn = document.getElementById('btn-friends');
+            const instBtn = document.getElementById('btn-institution');
+            const listContainer = document.getElementById('leaderboard-list');
+
+            if (tab === 'friends') {
+                indicator.style.transform = 'translateX(0)';
+                friendsBtn.classList.add('text-primary');
+                friendsBtn.classList.remove('text-on-surface-variant');
+                instBtn.classList.remove('text-primary');
+                instBtn.classList.add('text-on-surface-variant');
+                
+                updateList('friends');
+            } else {
+                indicator.style.transform = 'translateX(100%)';
+                instBtn.classList.add('text-primary');
+                instBtn.classList.remove('text-on-surface-variant');
+                friendsBtn.classList.remove('text-primary');
+                friendsBtn.classList.add('text-on-surface-variant');
+                
+                updateList('institution');
+            }
+        }
+
+        function updateList(type) {
+            const listContainer = document.getElementById('leaderboard-list');
+            listContainer.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (type === 'institution') {
+                    listContainer.innerHTML = `
+                        <div class="neumorphic-flat p-md rounded-xl flex items-center gap-md">
+                            <span class="font-label-mono text-on-surface-variant w-6">4</span>
+                            <div class="w-12 h-12 rounded-full neumorphic-sunken p-1">
+                                <div class="w-full h-full bg-surface-container-high rounded-full flex items-center justify-center font-bold text-primary">T</div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-body-md font-semibold text-on-surface">Takumi O.</h3>
+                                <p class="font-label-mono text-[10px] text-on-surface-variant">TOKYO TECH • CS DEPT</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-label-mono text-primary font-bold">11.9k</span>
+                                <p class="text-[10px] text-secondary font-bold">XP</p>
+                            </div>
+                        </div>
+                        <div class="neumorphic-flat p-md rounded-xl flex items-center gap-md">
+                            <span class="font-label-mono text-on-surface-variant w-6">5</span>
+                            <div class="w-12 h-12 rounded-full neumorphic-sunken p-1">
+                                <div class="w-full h-full bg-surface-container-high rounded-full flex items-center justify-center font-bold text-primary">K</div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-body-md font-semibold text-on-surface">Kenta W.</h3>
+                                <p class="font-label-mono text-[10px] text-on-surface-variant">TOKYO TECH • DESIGN</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-label-mono text-primary font-bold">11.2k</span>
+                                <p class="text-[10px] text-secondary font-bold">XP</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    listContainer.innerHTML = `
+                        <div class="neumorphic-flat p-md rounded-xl flex items-center gap-md">
+                            <span class="font-label-mono text-on-surface-variant w-6">4</span>
+                            <div class="w-12 h-12 rounded-full neumorphic-sunken p-1">
+                                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3FA0kZd8HTGVzfZiplxxZdNqKm3no8t6xeXu3TL4mU1J7AnoBatGqPIrczhXuNlDjASHh6hXJdYTAjITbA9Yv3lJJ5aRiz8xPMhGLO1vsv0re47XfFBHxfR-Ju2v1J0ZYn-CRTi0uxWkQWPlyLVxxP1cpIxjGz88Wp5XgZZL__v51RTCcGietdxwr2xjpGO5Eb_Mxn4JfH7g4Yddr3eB-r5PcuCGNXMAxsVbS9M6PKr59DvMzRorHV_iMQ6hApo_YNGVeBeQ87w" class="w-full h-full object-cover rounded-full">
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-body-md font-semibold text-on-surface">Hiroshi M.</h3>
+                                <p class="font-label-mono text-[10px] text-on-surface-variant">LEVEL 24 • ZEN MASTER</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-label-mono text-primary font-bold">11.4k</span>
+                                <p class="text-[10px] text-secondary font-bold">XP</p>
+                            </div>
+                        </div>
+                        <div class="neumorphic-flat p-md rounded-xl flex items-center gap-md">
+                            <span class="font-label-mono text-on-surface-variant w-6">5</span>
+                            <div class="w-12 h-12 rounded-full neumorphic-sunken p-1">
+                                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3Or_qutvR3uZ_rLDw5-xuIluwIzep5MQnRWvhZwzlcbFwxLKgLESzFDc0B1t8I8mvOUf-VMLURKVDkCs1Cm0ELOJ51IsGOKeFU4qZtbkx2xunZILr8-MEDwFgEfMyjIp3Y-H3TJbJ20GUWiSdn_0gFs-ElXri2KsdqYBS4nRM6JznVQaNaYerr-axs6kNObrIjW0a53t0Xc-Xdwd7_j3q9Owgy014emFLEKvOLmDqmahhfu21U3Qlt1HmVIkZejdgwZQfCVg23g" class="w-full h-full object-cover rounded-full">
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-body-md font-semibold text-on-surface">Elena Kozlova</h3>
+                                <p class="font-label-mono text-[10px] text-on-surface-variant">LEVEL 22 • SCHOLAR</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-label-mono text-primary font-bold">10.1k</span>
+                                <p class="text-[10px] text-secondary font-bold">XP</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                listContainer.style.opacity = '1';
+            }, 300);
+        }
+
+        // High Intensity Portal Particle System
+        function createPortalSpark(containerId, color) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            const size = Math.random() * 4 + 2;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.backgroundColor = color;
+            particle.style.boxShadow = `0 0 8px ${color}`;
+            
+            // Random angle and speed
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 2 + Math.random() * 4;
+            const orbitRadius = 45; // percentage of container
+            
+            // Starting position on the ring
+            const startX = 50 + Math.cos(angle) * orbitRadius;
+            const startY = 50 + Math.sin(angle) * orbitRadius;
+            
+            // Destination: Rotate slightly and fly out
+            const rotateSpeed = 0.5;
+            const flyOutDist = 15 + Math.random() * 20;
+            const endX = 50 + Math.cos(angle + rotateSpeed) * (orbitRadius + flyOutDist);
+            const endY = 50 + Math.sin(angle + rotateSpeed) * (orbitRadius + flyOutDist);
+
+            particle.style.left = startX + '%';
+            particle.style.top = startY + '%';
+            particle.style.opacity = '1';
+
+            container.appendChild(particle);
+
+            const animation = particle.animate([
+                { left: startX + '%', top: startY + '%', opacity: 1, transform: 'scale(1)' },
+                { left: endX + '%', top: endY + '%', opacity: 0, transform: 'scale(0.2)' }
+            ], {
+                duration: 400 + Math.random() * 300,
+                easing: 'ease-out'
+            });
+
+            animation.onfinish = () => particle.remove();
+        }
+
+        function initPortalEffects() {
+            // High speed emission for portal look
+            setInterval(() => createPortalSpark('container-gold', '#FFD700'), 40);
+            setInterval(() => createPortalSpark('container-silver', '#C0C0C0'), 80);
+            setInterval(() => createPortalSpark('container-bronze', '#CD7F32'), 100);
+        }
+
+        document.addEventListener('DOMContentLoaded', initPortalEffects);
+    </script>
+
+
+
+
+</body></html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BenGo - Courses</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=JetBrains+Mono:wght@500&amp;family=Inter:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#ffb3b3",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#40000a",
+                        "on-secondary-fixed": "#002201",
+                        "secondary-container": "#b9eeab",
+                        "secondary-fixed-dim": "#a1d494",
+                        "on-tertiary-container": "#f4f2ff",
+                        "surface-container-low": "#eff4fb",
+                        "surface-container": "#e9eef5",
+                        "inverse-on-surface": "#ecf1f8",
+                        "surface-bright": "#f6f9ff",
+                        "on-tertiary-fixed-variant": "#454652",
+                        "tertiary-fixed": "#e2e1f1",
+                        "on-surface-variant": "#5c3f3f",
+                        "outline": "#916f6e",
+                        "on-surface": "#171c21",
+                        "surface-variant": "#dee3ea",
+                        "secondary": "#3b6934",
+                        "primary-fixed": "#ffdad9",
+                        "on-secondary-fixed-variant": "#23501e",
+                        "secondary-fixed": "#bcf0ae",
+                        "primary": "#b1002c",
+                        "on-primary-fixed-variant": "#920022",
+                        "on-primary-container": "#fff1f0",
+                        "on-background": "#171c21",
+                        "on-secondary-container": "#3f6d38",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d5dae1",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#dee3ea",
+                        "surface": "#f6f9ff",
+                        "surface-container-high": "#e4e9f0",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#1a1b26",
+                        "tertiary": "#555663",
+                        "error": "#ba1a1a",
+                        "primary-container": "#dc143c",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#e6bdbc",
+                        "inverse-surface": "#2b3136",
+                        "tertiary-container": "#6e6e7c",
+                        "primary-fixed-dim": "#ffb3b3",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#c6c5d4",
+                        "surface-tint": "#bf0030",
+                        "background": "#f6f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "margin-mobile": "20px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "xl": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Montserrat"],
+                        "headline-lg": ["Montserrat"],
+                        "display-calligraphy": ["Montserrat"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                        "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f6f9ff;
+            font-family: 'Inter', sans-serif;
+            color: #171c21;
+        }
+
+        /* Neumorphic Extrusion */
+        .neumorph-card {
+            background: #f6f9ff;
+            box-shadow: -5px -5px 10px #FFFFFF, 5px 5px 10px rgba(23, 28, 33, 0.1);
+            border-radius: 1.5rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .neumorph-card:active {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.1);
+            transform: scale(0.98);
+        }
+
+        /* Neumorphic Well (Sunken) */
+        .neumorph-well {
+            background: #f6f9ff;
+            box-shadow: inset -5px -5px 10px #FFFFFF, inset 5px 5px 10px rgba(23, 28, 33, 0.1);
+            border-radius: 1rem;
+        }
+
+        /* Tactile Switch Button */
+        .tactile-switch {
+            width: 56px;
+            height: 32px;
+            border-radius: 999px;
+            background: #e9eef5;
+            box-shadow: inset 2px 2px 5px rgba(23, 28, 33, 0.1), inset -2px -2px 5px #FFFFFF;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .tactile-switch::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 24px;
+            height: 24px;
+            background: #f6f9ff;
+            border-radius: 50%;
+            box-shadow: -2px -2px 5px #FFFFFF, 2px 2px 5px rgba(23, 28, 33, 0.15);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .tactile-switch.active {
+            background: #bcf0ae;
+        }
+
+        .tactile-switch.active::after {
+            transform: translateX(24px);
+            background: #ffffff;
+        }
+
+        /* Custom Scrollbar for tactile feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f6f9ff;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dee3ea;
+            border-radius: 10px;
+        }
+
+        .paper-texture {
+            background-image: url("https://www.transparenttextures.com/patterns/p6.png");
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)] relative"><div class="flex items-center gap-3 flex-1">
+  <div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden neumorph-card">
+    <img class="w-full h-full object-cover" alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLesKF4t7QozBhZyxG0Btyi7E42REOPp5Z7RmYSVA8N2nGA5iPuPwXhiww-4oB-IAB0x41hbkLgHIcIWR4Uz0FJ2zoBsvob9rn5F8m_eZMWi9lhbMa8wc6FF8Vz4brRgJ6q9IQELQCXqTXTth1VkutTG7Q34waB4lpI4w3Kz-q293BuCNKsrZqLaTV9iRXEnMJv5R7Y3WCoiwaso2CQoNeslIv1lwnLty1BLMMmjS8MSPm4ICPaI_q2q6Xadt_d49-DWtC1KWx7Q">
+  </div>
+  <div class="flex flex-col">
+    <span class="font-label-mono text-[10px] text-primary leading-none">12 DAYS</span>
+    <span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest leading-none">2,450 XP</span>
+  </div>
+</div>
+<h1 class="font-display-calligraphy text-headline-lg-mobile text-primary absolute left-1/2 -translate-x-1/2">BenGo</h1>
+<div class="flex items-center gap-sm flex-1 justify-end">
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorph-card hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">leaderboard</span>
+  </button>
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorph-card hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">notifications</span>
+  </button>
+</div></header>
+<main class="mt-24 px-margin-mobile space-y-xl relative">
+<div class="absolute inset-0 paper-texture"></div>
+<!-- Available Exams Section -->
+<section class="space-y-md" id="available-exams">
+<div class="flex items-baseline justify-between">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Available Exams</h2>
+<span class="font-label-mono text-label-mono text-outline uppercase tracking-widest">Active</span>
+</div>
+<div class="grid grid-cols-1 gap-lg">
+<!-- JLPT N5 Main Card (Active) -->
+<div class="neumorph-card p-lg border border-white/50 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-label-mono text-label-mono text-secondary px-2 py-1 neumorph-well inline-block mb-sm">Level: N5</span>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-xs">JLPT N5 Proficiency</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-[240px]">Foundation level Japanese for daily communication basics.</p>
+</div>
+<div class="w-16 h-16 neumorph-well flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]">menu_book</span>
+</div>
+</div>
+<!-- Categories Sub-menu -->
+<div class="mt-lg pt-lg border-t border-surface-variant flex gap-md overflow-x-auto pb-2 no-scrollbar">
+<a href="{{DATA:SCREEN:SCREEN_19}}" class="flex-none neumorph-card px-md py-sm flex items-center gap-sm hover:scale-105 transition-transform"><span class="material-symbols-outlined text-secondary">translate</span><span class="font-label-mono text-label-mono">Vocabulary</span></a>
+<button class="flex-none neumorph-card px-md py-sm flex items-center gap-sm hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-tertiary">edit_note</span>
+<span class="font-label-mono text-label-mono">Grammar</span>
+</button>
+<button class="flex-none neumorph-card px-md py-sm flex items-center gap-sm hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-primary">draw</span>
+<span class="font-label-mono text-label-mono">Kanji</span>
+</button>
+</div>
+<div class="mt-md flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-surface-container-high flex items-center justify-center">
+<img class="w-full h-full rounded-full object-cover" data-alt="A miniature circular avatar of a student focused on reading, minimalist clean lighting, soft pastel palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWjhkyIBHqBNBQnSiJbX1tK7XqAvcG6tQsGQbLJsYpal2GKEIi-TF3SgWEPuiABgFlD_4WmDGzn2e36VP7o4W2s3yJ2sqNLUYBpfjfSOJwKfWsNecF8OOlKIO7mNHzW7RHNZybpbE2D7hh27Mye3GlNaS_TRKQ3RVdvTR26ruJph17WPRK1yU56KpFJDKhrtMYww9x6jU--p9Q84ivX8JzNcrjAHyJTQU1QoQmCvXn3tS53-C7sLSyf5yG1YkzpTXZ0ACKg32iEQ">
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-surface-container-high flex items-center justify-center">
+<img class="w-full h-full rounded-full object-cover" data-alt="A miniature circular avatar of a person writing in a notebook, minimalist clean lighting, soft pastel palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxoaxS3vfy-9DNsz32QF5WgBrq5OzpTEs62F2lzIqAzKx4sABM_YuJLw9Wluc1F_JMUnqHtwn9g4wb2_copWOX1WZT5elUOtMbRY2Wl5XM5qNWGrWqYXnFIQyzWuO2tQFv-00aDAzDmmOJV8aZRpziUI7fiCzv-verUoEVz7O5x57aNmQkWC9Vs04hrWhHBvnIqbfamhAosTM25Ssfh9PhKLKzpKYTt9IWbA_n9bjeUOTIuYjMGkhcTFy_AJ8w0BqDNf09UBunRA">
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-surface-container-high flex items-center justify-center font-label-mono text-[10px]">+12</div>
+</div>
+<div class="font-label-mono text-label-mono text-secondary flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                            Live Now
+                        </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Unlock Exams Section -->
+<section class="space-y-md" id="unlock-exams">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Unlock Exams</h2>
+<div class="grid grid-cols-1 gap-md">
+<!-- JLPT N4 Card -->
+<div class="neumorph-card p-md flex items-center justify-between group">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 neumorph-well flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">lock</span>
+</div>
+<div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-[18px] text-on-surface">JLPT N4</h4>
+<p class="font-label-mono text-label-mono text-outline">Limited Proficiency</p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-xs">
+<div class="tactile-switch" onclick="this.classList.toggle('active')"></div>
+<span class="font-label-mono text-[10px] text-outline uppercase">Unlock</span>
+</div>
+</div>
+<!-- JLPT N3 Card -->
+<div class="neumorph-card p-md flex items-center justify-between group">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 neumorph-well flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">lock</span>
+</div>
+<div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-[18px] text-on-surface">JLPT N3</h4>
+<p class="font-label-mono text-label-mono text-outline">Intermediate</p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-xs">
+<div class="tactile-switch" onclick="this.classList.toggle('active')"></div>
+<span class="font-label-mono text-[10px] text-outline uppercase">Unlock</span>
+</div>
+</div>
+<!-- JLPT N2 Card -->
+<div class="neumorph-card p-md flex items-center justify-between group">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 neumorph-well flex items-center justify-center text-outline opacity-50">
+<span class="material-symbols-outlined">lock_clock</span>
+</div>
+<div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-[18px] text-on-surface opacity-50">JLPT N2</h4>
+<p class="font-label-mono text-label-mono text-outline opacity-50">Pre-advanced</p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-xs">
+<div class="tactile-switch opacity-50 cursor-not-allowed"></div>
+<span class="font-label-mono text-[10px] text-outline uppercase">Locked</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Bento Mini -->
+<section class="grid grid-cols-2 gap-md pt-lg">
+<div class="neumorph-well p-md flex flex-col justify-between h-32">
+<span class="font-label-mono text-label-mono text-primary">EXP Boost</span>
+<div>
+<div class="text-[24px] font-bold">1.5x</div>
+<div class="w-full h-1.5 bg-surface-variant rounded-full mt-xs overflow-hidden">
+<div class="h-full bg-primary" style="width: 65%;"></div>
+</div>
+</div>
+</div>
+<div class="neumorph-card p-md flex flex-col justify-between h-32 text-secondary">
+<span class="material-symbols-outlined">workspace_premium</span>
+<div>
+<div class="text-[20px] font-bold">24 Day</div>
+<div class="font-label-mono text-label-mono opacity-80">Streak</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Nav Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface dark:bg-surface-container-high rounded-t-xl shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)] h-20">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_70}}">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-mono text-label-mono">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-2 shadow-[inset_-2px_-2px_5px_#FFFFFF,inset_2px_2px_5px_rgba(23,28,33,0.15)] scale-95 transition-all" href="{{DATA:SCREEN:SCREEN_82}}">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-mono text-label-mono">Courses</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_39}}">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-mono text-label-mono">Teams</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="{{DATA:SCREEN:SCREEN_87}}">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-mono text-label-mono">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for tactile buttons
+        document.querySelectorAll('.neumorph-card').forEach(button => {
+            button.addEventListener('touchstart', () => {
+                button.style.transform = 'scale(0.96)';
+            });
+            button.addEventListener('touchend', () => {
+                button.style.transform = 'scale(1)';
+            });
+        });
+
+        // Toggle Switch functionality is handled via inline onclick for simplicity
+    </script>
+
+
+
+
+
+
+
+
+</body></html>

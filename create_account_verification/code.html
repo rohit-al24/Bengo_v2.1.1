@@ -1,0 +1,252 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BenGo | Email Verification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;family=Montserrat:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "outline": "#916f6e",
+                    "surface-tint": "#bf0030",
+                    "on-primary-fixed": "#40000a",
+                    "secondary-fixed-dim": "#a1d494",
+                    "on-secondary-fixed": "#002201",
+                    "secondary-fixed": "#bcf0ae",
+                    "background": "#f6f9ff",
+                    "surface-container-highest": "#dee3ea",
+                    "surface": "#f6f9ff",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "on-primary-fixed-variant": "#920022",
+                    "surface-dim": "#d5dae1",
+                    "on-tertiary-container": "#f4f2ff",
+                    "primary-fixed": "#ffdad9",
+                    "surface-container": "#e9eef5",
+                    "on-primary-container": "#fff1f0",
+                    "on-surface": "#171c21",
+                    "on-background": "#171c21",
+                    "inverse-on-surface": "#ecf1f8",
+                    "tertiary-fixed": "#e2e1f1",
+                    "surface-variant": "#dee3ea",
+                    "tertiary": "#555663",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#b9eeab",
+                    "primary": "#b1002c",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#6e6e7c",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#eff4fb",
+                    "inverse-surface": "#2b3136",
+                    "secondary": "#3b6934",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#e6bdbc",
+                    "on-secondary-container": "#3f6d38",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e4e9f0",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "surface-bright": "#f6f9ff",
+                    "inverse-primary": "#ffb3b3",
+                    "primary-container": "#dc143c",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#5c3f3f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "lg": "24px",
+                    "xl": "48px",
+                    "gutter": "16px",
+                    "sm": "8px",
+                    "margin-mobile": "20px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Montserrat"],
+                    "headline-lg-mobile": ["Montserrat"],
+                    "display-calligraphy": ["Montserrat"],
+                    "body-md": ["Inter"],
+                    "label-mono": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Learning Mode Neumorphism */
+        .neumorphic-extruded {
+            box-shadow: -5px -5px 10px rgba(255, 255, 255, 1), 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+        
+        .neumorphic-sunken {
+            box-shadow: inset -5px -5px 10px rgba(255, 255, 255, 1), inset 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+
+        .neumorphic-button-active:active {
+            box-shadow: inset -5px -5px 10px rgba(255, 255, 255, 1), inset 5px 5px 10px rgba(23, 28, 33, 0.15);
+            transform: scale(0.98);
+        }
+
+        /* Custom progress bar "liquid" glow */
+        .zen-liquid {
+            box-shadow: inset 0 0 8px rgba(59, 105, 52, 0.4);
+            background: linear-gradient(90deg, #3b6934, #b9eeab);
+        }
+
+        /* Soft shimmer for background */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .animate-shimmer {
+            background: linear-gradient(90deg, #f6f9ff 0%, #ffffff 50%, #f6f9ff 100%);
+            background-size: 200% 100%;
+            animation: shimmer 8s infinite linear;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col font-body-md animate-shimmer overflow-x-hidden">
+<!-- Top Navigation Anchor -->
+<nav class="w-full top-0 sticky bg-surface z-50 flex justify-between items-center px-margin-mobile h-16 shadow-[-5px_-5px_10px_rgba(255,255,255,1),5px_5px_10px_rgba(23,28,33,0.15)]">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">arrow_back_ios_new</span>
+<span class="font-display-calligraphy text-headline-lg-mobile text-primary">BenGo</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 rounded-full neumorphic-sunken bg-surface-container-low">
+<span class="material-symbols-outlined text-secondary scale-75" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-label-mono text-label-mono text-secondary">3/4</span>
+</div>
+</nav>
+<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile py-xl space-y-xl max-w-lg mx-auto w-full">
+<!-- Progress Header -->
+<header class="w-full space-y-md text-center">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Verify Identity</h1>
+<p class="text-on-surface-variant font-body-md">We've sent a 6-digit code to <span class="font-bold text-primary italic">alex.j***@study.edu</span></p>
+<!-- Zen Progress Bar -->
+<div class="w-full h-4 bg-surface-container rounded-full neumorphic-sunken relative overflow-hidden mt-md">
+<div class="zen-liquid h-full w-3/4 rounded-full transition-all duration-1000 ease-out" id="progress-bar" style="width: 75%;"></div>
+</div>
+</header>
+<!-- OTP Input Area -->
+<section class="w-full flex flex-col items-center space-y-lg">
+<div class="flex justify-between w-full gap-sm sm:gap-md" id="otp-container">
+<input aria-label="Digit 1" class="w-12 h-16 sm:w-16 sm:h-20 text-center font-headline-lg-mobile text-headline-lg-mobile font-label-mono rounded-xl bg-surface neumorphic-sunken border-none focus:ring-2 focus:ring-primary outline-none transition-all" maxlength="1" type="text">
+<input aria-label="Digit 2" class="w-12 h-16 sm:w-16 sm:h-20 text-center font-headline-lg-mobile text-headline-lg-mobile font-label-mono rounded-xl bg-surface neumorphic-sunken border-none focus:ring-2 focus:ring-primary outline-none transition-all" maxlength="1" type="text">
+<input aria-label="Digit 3" class="w-12 h-16 sm:w-16 sm:h-20 text-center font-headline-lg-mobile text-headline-lg-mobile font-label-mono rounded-xl bg-surface neumorphic-sunken border-none focus:ring-2 focus:ring-primary outline-none transition-all" maxlength="1" type="text">
+<input aria-label="Digit 4" class="w-12 h-16 sm:w-16 sm:h-20 text-center font-headline-lg-mobile text-headline-lg-mobile font-label-mono rounded-xl bg-surface neumorphic-sunken border-none focus:ring-2 focus:ring-primary outline-none transition-all" maxlength="1" type="text">
+<input aria-label="Digit 5" class="w-12 h-16 sm:w-16 sm:h-20 text-center font-headline-lg-mobile text-headline-lg-mobile font-label-mono rounded-xl bg-surface neumorphic-sunken border-none focus:ring-2 focus:ring-primary outline-none transition-all" maxlength="1" type="text">
+<input aria-label="Digit 6" class="w-12 h-16 sm:w-16 sm:h-20 text-center font-headline-lg-mobile text-headline-lg-mobile font-label-mono rounded-xl bg-surface neumorphic-sunken border-none focus:ring-2 focus:ring-primary outline-none transition-all" maxlength="1" type="text">
+</div>
+<!-- Resend Logic -->
+<div class="flex flex-col items-center space-y-sm">
+<p class="text-label-mono font-label-mono text-on-surface-variant">Didn't receive the code?</p>
+<button class="text-primary font-bold hover:underline transition-all active:scale-95" id="resend-btn">
+                    Resend Code
+                </button>
+<span class="text-label-mono font-label-mono text-outline hidden" id="timer">0:59</span>
+</div>
+</section>
+<!-- Illustration Card (Tactile Study Context) -->
+<div class="w-full relative group">
+<div class="w-full h-48 rounded-xl neumorphic-extruded overflow-hidden relative">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="A high-quality minimalist still life featuring a Japanese mechanical keyboard, a brass ruler, and a pristine white envelope with a red wax seal, set on a textured cream desktop. Soft, diffused morning sunlight filters through a nearby window, casting long, gentle shadows. The aesthetic is tactile and serene, focusing on the physical sensation of premium study tools and the security of a physical letter." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBW70pyK8OI3o0w82cZXODzLMd7T9T7nhDndP_0gjtwac8vKQLoGouyEv8WLromxA0EPs-Fz0mhygT0Fc0IgYP05YgnaDnYruuEOzQml9pvxpvCMOnMA1rw_hRLt6PPYDM71rcCE0NXpJFc647CqlXpOU56o8KD-Jsogi94FkMQNO8lGYOWSf2tS4xIdaawzGoa71qSSyZDfIx17BUhaW9-eIIb2wIYqI23jIcaEwv7y5A0XpdlpbB0DH1eij2p2Fb01sRyxeqXQQ">
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent opacity-60"></div>
+<div class="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+<div class="flex gap-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="w-full pt-lg">
+<button class="w-full py-md rounded-xl bg-primary text-on-primary font-headline-lg-mobile text-headline-lg-mobile neumorphic-extruded neumorphic-button-active transition-all flex items-center justify-center gap-sm" onclick="window.location.href='{{DATA:SCREEN:SCREEN_48}}'">
+                Verify &amp; Continue
+                <span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</main>
+<!-- Support Content -->
+<footer class="p-margin-mobile text-center">
+<p class="text-label-mono font-label-mono text-outline uppercase tracking-widest opacity-50">BenGo Studio © 2024</p>
+</footer>
+<script>
+        // Simple OTP Focus Management
+        const inputs = document.querySelectorAll('#otp-container input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+
+        // Mock Timer for Resend
+        const resendBtn = document.getElementById('resend-btn');
+        const timerSpan = document.getElementById('timer');
+        
+        resendBtn.addEventListener('click', () => {
+            resendBtn.classList.add('hidden');
+            timerSpan.classList.remove('hidden');
+            let timeLeft = 59;
+            
+            const interval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    resendBtn.classList.remove('hidden');
+                    timerSpan.classList.add('hidden');
+                } else {
+                    timerSpan.textContent = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+                    timeLeft--;
+                }
+            }, 1000);
+        });
+
+        // Micro-interaction: Smooth entrance for the progress bar
+        window.addEventListener('DOMContentLoaded', () => {
+            const bar = document.getElementById('progress-bar');
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = '75%';
+            }, 300);
+        });
+    </script>
+
+
+</body></html>

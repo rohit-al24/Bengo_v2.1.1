@@ -1,0 +1,242 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>BenGo - Zen Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#ffdad9",
+                        "on-secondary-fixed": "#002201",
+                        "tertiary": "#555663",
+                        "surface-container-highest": "#dee3ea",
+                        "on-secondary-fixed-variant": "#23501e",
+                        "tertiary-container": "#6e6e7c",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#b9eeab",
+                        "on-surface": "#171c21",
+                        "inverse-primary": "#ffb3b3",
+                        "secondary-fixed": "#bcf0ae",
+                        "primary": "#b1002c",
+                        "inverse-on-surface": "#ecf1f8",
+                        "primary-container": "#dc143c",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#a1d494",
+                        "primary-fixed-dim": "#ffb3b3",
+                        "on-error": "#ffffff",
+                        "secondary": "#3b6934",
+                        "on-tertiary-fixed-variant": "#454652",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#3f6d38",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#eff4fb",
+                        "on-tertiary-fixed": "#1a1b26",
+                        "inverse-surface": "#2b3136",
+                        "surface": "#f6f9ff",
+                        "on-error-container": "#93000a",
+                        "background": "#f6f9ff",
+                        "surface-container": "#e9eef5",
+                        "on-primary-fixed": "#40000a",
+                        "on-background": "#171c21",
+                        "on-surface-variant": "#5c3f3f",
+                        "tertiary-fixed-dim": "#c6c5d4",
+                        "outline-variant": "#e6bdbc",
+                        "outline": "#916f6e",
+                        "on-primary-container": "#fff1f0",
+                        "surface-dim": "#d5dae1",
+                        "tertiary-fixed": "#e2e1f1",
+                        "surface-variant": "#dee3ea",
+                        "surface-bright": "#f6f9ff",
+                        "surface-container-high": "#e4e9f0",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#bf0030",
+                        "on-primary-fixed-variant": "#920022",
+                        "on-tertiary-container": "#f4f2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "24px",
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "xs": "4px",
+                        "xl": "48px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Montserrat"],
+                        "headline-lg-mobile": ["Montserrat"],
+                        "label-mono": ["JetBrains Mono"],
+                        "display-calligraphy": ["Montserrat"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Glassmorphic Elevated Tactile Card */
+        .tactile-card {
+            background: rgba(246, 249, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: -10px -10px 20px rgba(255, 255, 255, 0.6), 10px 10px 20px rgba(18, 22, 27, 0.05), inset 1px 1px 2px rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .neumorphic-sunken {
+            background: rgba(246, 249, 255, 0.5);
+            box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.7), inset 4px 4px 8px rgba(18, 22, 27, 0.06);
+            border: 1px solid transparent;
+        }
+        
+        .neumorphic-sunken:focus-within {
+            border: 1px solid rgba(220,20,60,0.2);
+            box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.8), inset 4px 4px 8px rgba(220, 20, 60, 0.08);
+        }
+
+        /* Deeply Extruded Crimson Key */
+        .premium-cta {
+            background: linear-gradient(145deg, #d40034 0%, #a30028 100%);
+            box-shadow: -6px -6px 12px rgba(255, 255, 255, 0.6), 
+                        6px 6px 16px rgba(177, 0, 44, 0.3), 
+                        inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+                        inset -2px -2px 4px rgba(0,0,0,0.2);
+            text-shadow: 0px 1px 2px rgba(0,0,0,0.3);
+            border: 1px solid #e3183d;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .premium-cta:hover {
+            transform: scale(1.02);
+            box-shadow: -8px -8px 16px rgba(255, 255, 255, 0.7), 
+                        8px 8px 20px rgba(177, 0, 44, 0.4), 
+                        inset 2px 2px 4px rgba(255, 255, 255, 0.5),
+                        inset -2px -2px 4px rgba(0,0,0,0.2);
+        }
+
+        .premium-cta:active {
+            background: linear-gradient(145deg, #a30028 0%, #d40034 100%);
+            box-shadow: inset 4px 4px 8px rgba(0,0,0,0.3), inset -4px -4px 8px rgba(255,255,255,0.1),
+                        0 0 10px rgba(227, 24, 61, 0.4);
+            transform: translateY(2px) scale(0.98);
+            border: 1px solid transparent;
+        }
+        
+        /* Circular Social Buttons */
+        .social-circle {
+            background: rgba(246, 249, 255, 0.8);
+            backdrop-filter: blur(5px);
+            box-shadow: -6px -6px 12px rgba(255, 255, 255, 0.9), 6px 6px 12px rgba(18, 22, 27, 0.08), inset 1px 1px 2px rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.8);
+            transition: all 0.2s ease;
+        }
+        
+        .social-circle:hover {
+            transform: translateY(-2px);
+            box-shadow: -8px -8px 16px rgba(255, 255, 255, 1), 8px 8px 16px rgba(18, 22, 27, 0.1), inset 1px 1px 2px rgba(255,255,255,0.9);
+        }
+
+        .social-circle:active {
+            box-shadow: inset -4px -4px 8px rgba(255, 255, 255, 0.8), inset 4px 4px 8px rgba(18, 22, 27, 0.1);
+            transform: scale(0.94);
+            border: 1px solid transparent;
+        }
+
+        body {
+            height: 100dvh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="relative flex flex-col font-body-md text-on-surface selection:bg-primary-fixed bg-transparent">
+
+<!-- Top Branding Section (Integrated & Centered) -->
+<header class="w-full z-10 pt-16 pb-8 flex flex-col items-center justify-center shrink-0">
+<div class="flex flex-col items-center">
+<h1 class="font-display-calligraphy text-[64px] text-primary-container tracking-tighter drop-shadow-md font-black">BenGo</h1>
+<div class="flex items-center gap-4 mt-4">
+<div class="h-[1px] w-8 bg-tertiary/30"></div>
+<p class="font-label-mono text-[11px] text-tertiary uppercase tracking-[0.3em] font-bold">Mastery Through Focus</p>
+<div class="h-[1px] w-8 bg-tertiary/30"></div>
+</div>
+</div>
+</header>
+<main class="flex-grow px-margin-mobile flex flex-col items-center justify-center z-10 w-full pb-8">
+<!-- Central Cohesive Card -->
+<div class="w-full max-w-sm flex flex-col justify-center h-full max-h-[550px]">
+<div class="tactile-card rounded-[32px] p-8 mb-10 w-full">
+<div class="space-y-8">
+<!-- Email Field -->
+<div class="space-y-3">
+<label class="font-label-mono text-[10px] text-tertiary ml-2 font-bold uppercase tracking-widest">Email Address</label>
+<div class="neumorphic-sunken rounded-2xl p-1 flex items-center px-4 transition-all h-14">
+<span class="material-symbols-outlined text-primary-container/70 text-[20px] mr-3">mail</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-label-mono text-[14px] text-on-surface placeholder:text-outline-variant/60" placeholder="student@bengo.edu" type="email">
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-3">
+<label class="font-label-mono text-[10px] text-tertiary ml-2 font-bold uppercase tracking-widest">Password</label>
+<div class="neumorphic-sunken rounded-2xl p-1 flex items-center px-4 transition-all h-14">
+<span class="material-symbols-outlined text-primary-container/70 text-[20px] mr-3">lock</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-label-mono text-[16px] text-on-surface placeholder:text-outline-variant/60 tracking-widest" placeholder="••••••••" type="password">
+</div>
+</div>
+<!-- Main CTA -->
+<button class="w-full premium-cta rounded-2xl py-4 mt-6 font-headline-lg-mobile text-[16px] text-white uppercase tracking-[0.15em] font-bold cursor-pointer" onclick="window.location.href='{{DATA:SCREEN:SCREEN_70}}'">
+            Enter Session
+        </button>
+</div>
+</div>
+<!-- Social Login Divider -->
+<div class="flex items-center gap-4 mb-8 px-4">
+<div class="h-[1px] flex-grow bg-outline-variant/30"></div>
+<span class="font-label-mono text-[10px] text-tertiary/80 font-bold tracking-widest uppercase">Or Connect</span>
+<div class="h-[1px] flex-grow bg-outline-variant/30"></div>
+</div>
+<!-- Social Buttons (Circular) -->
+<div class="flex justify-center gap-8 mb-auto">
+<button class="social-circle w-16 h-16 rounded-full flex items-center justify-center"><img alt="Google" class="w-7 h-7 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFG-U7JZXWaHkO_z3Yw2xq4-SS_l44Gbg7_VZUmW7_MT_jbLdRElGwNwox0tuRgTqWfTE2DzfIvKmjoD3zAXQZPyj8aCBVuHUBsnLJrFwqgXCUPlq-Hz5gvYoFnSwtoOdCI1P1EUkAjC7HY8fdvYpxQkoOix_vA6RjRELiQQsydHymztPJgi8RefCEGth0cTaAgbZy7Z95GpDM4KsljEG0DNxDooRHV5KaLJwvq84dPIAcctWvFgRivR9wIlBW7WsR5LsuWVpdpRP8"></button>
+<button class="social-circle w-16 h-16 rounded-full flex items-center justify-center">
+<img alt="Apple" class="w-7 h-7 opacity-80" src="https://lh3.googleusercontent.com/aida/AP1WRLvyZeAYY2D4rQRVh7U8_Ru1dYuGnNeQhj9j-6RzGb55u8F0FRfrmX0lEf9MuS2fuBqo7F3I_GoWmgmMm9wQ8NpOkohmNRZBy8DCb5VEyXZDboKgJr8Hf2_xtQae87cnGD4HJ2GuLOoC5qnlr6eQxJYVeTlzhVbH_HLCVzgYZyi2ArQipfp4ILjXo8Wfeaf6ddgm_K-bdzDp2zNGGjY36l3q2J6ctiwXF1Ls4E1NtXOBC9CGfkx_RDWj">
+</button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full pb-10 pt-4 flex flex-col items-center justify-center z-10 shrink-0">
+<div class="flex items-center gap-3">
+<p class="font-body-md text-[13px] text-tertiary">New to the Dojo?</p>
+<button class="text-primary-container font-label-mono text-[12px] font-bold tracking-widest uppercase hover:underline underline-offset-4 transition-all cursor-pointer" onclick="window.location.href='{{DATA:SCREEN:SCREEN_46}}'">
+        Create Account
+    </button>
+</div>
+</footer>
+
+
+
+
+</body></html>

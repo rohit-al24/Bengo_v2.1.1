@@ -1,0 +1,494 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>BenGo - Vocabulary Learning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bf0030",
+                    "on-primary-fixed": "#40000a",
+                    "surface-variant": "#dee3ea",
+                    "surface-bright": "#f6f9ff",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#eff4fb",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "inverse-on-surface": "#ecf1f8",
+                    "outline": "#916f6e",
+                    "on-secondary-container": "#3f6d38",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface": "#f6f9ff",
+                    "on-secondary-fixed": "#002201",
+                    "secondary-fixed-dim": "#a1d494",
+                    "surface-dim": "#d5dae1",
+                    "secondary": "#3b6934",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#e2e1f1",
+                    "background": "#f6f9ff",
+                    "on-surface": "#171c21",
+                    "inverse-surface": "#2b3136",
+                    "on-surface-variant": "#5c3f3f",
+                    "secondary-fixed": "#bcf0ae",
+                    "on-background": "#171c21",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "tertiary": "#555663",
+                    "surface-container": "#e9eef5",
+                    "primary-container": "#dc143c",
+                    "on-primary-container": "#fff1f0",
+                    "on-primary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#dee3ea",
+                    "inverse-primary": "#ffb3b3",
+                    "on-error-container": "#93000a",
+                    "primary": "#b1002c",
+                    "primary-fixed": "#ffdad9",
+                    "secondary-container": "#b9eeab",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "tertiary-container": "#6e6e7c",
+                    "outline-variant": "#e6bdbc",
+                    "on-tertiary-container": "#f4f2ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#920022",
+                    "surface-container-high": "#e4e9f0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "48px",
+                    "unit": "4px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "gutter": "16px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Montserrat"],
+                    "display-calligraphy": ["Montserrat"],
+                    "body-md": ["Inter"],
+                    "label-mono": ["JetBrains Mono"],
+                    "headline-lg": ["Montserrat"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f6f9ff;
+            color: #171c21;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .neumorphic-well {
+            background: #f6f9ff;
+            box-shadow: inset -4px -4px 8px #ffffff, inset 4px 4px 8px rgba(23, 28, 33, 0.08);
+        }
+
+        .tactile-button {
+            background: #f6f9ff;
+            box-shadow: -4px -4px 10px #ffffff, 4px 4px 10px rgba(23, 28, 33, 0.15);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+
+        .tactile-button:active {
+            box-shadow: inset -2px -2px 5px #ffffff, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+            transform: scale(0.96);
+        }
+
+        .engraved-text {
+            color: #3b6934;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.8), -1px -1px 1px rgba(0,0,0,0.05);
+        }
+
+        /* Modal Overlay Styles */
+        #hint-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(23, 28, 33, 0.4);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #hint-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #hint-modal-content {
+            background: #f6f9ff;
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            border-radius: 32px 32px 0 0;
+            box-shadow: 0 -20px 40px rgba(0,0,0,0.1);
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            position: relative;
+            padding-bottom: 40px;
+        }
+
+        #hint-modal-overlay.active #hint-modal-content {
+            transform: translateY(0);
+        }
+
+        /* Fixed Close Button Area */
+        .modal-header-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(246, 249, 255, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: flex-end;
+            border-bottom: 1px solid rgba(23, 28, 33, 0.05);
+        }
+
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen pb-32">
+<!-- Modal Overlay for Hints -->
+<div id="hint-modal-overlay" class="">
+<div id="hint-modal-content">
+<div class="modal-header-sticky">
+<button class="tactile-button w-12 h-12 rounded-full flex items-center justify-center text-error" id="close-hint-modal">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="px-lg" id="modal-body-content">
+            <div class="text-center mb-lg pt-4">
+                <div class="flex flex-col items-center gap-xs">
+                    <span class="font-headline-lg engraved-text japanese-text text-[48px] mb-2">こんにちは</span>
+                    <button class="tactile-button w-14 h-14 rounded-full flex items-center justify-center text-primary mb-2">
+                        <span class="material-symbols-outlined text-[28px]">volume_up</span>
+                    </button>
+                    <span class="text-on-surface-variant font-medium text-xl">Hello</span>
+                </div>
+            </div>
+
+            <div class="space-y-lg">
+                <div class="p-md bg-surface-container-low rounded-2xl border border-outline-variant/20 shadow-sm">
+                    <h4 class="font-label-mono text-[10px] text-outline uppercase tracking-widest mb-sm">My Personal Mnemonic</h4>
+                    <div class="neumorphic-well rounded-xl p-md">
+                        <p class="text-on-surface italic text-lg leading-relaxed">"Konnichiwa... 'Can I watch' ya learn Japanese?"</p>
+                    </div>
+                </div>
+
+                <div class="space-y-md">
+                    <div class="flex justify-between items-center px-1">
+                        <h4 class="font-label-mono text-[10px] text-outline uppercase tracking-widest">Community Hints (4)</h4>
+                        <button class="tactile-button px-4 py-2 rounded-lg flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-primary text-[18px]">add</span>
+                            <span class="font-label-mono text-[10px] text-primary font-bold uppercase">Add Yours</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-col gap-sm">
+                        <!-- Default/Featured Hint -->
+                        <div class="neumorphic-well rounded-xl p-md flex gap-md items-start">
+                            <div class="w-10 h-10 rounded-full border-2 border-primary-fixed bg-surface flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-primary text-[20px]">stars</span>
+                            </div>
+                            <div class="bg-primary-container/5 border border-primary/10 rounded-lg p-sm flex-grow">
+                                <p class="text-primary italic text-sm">"Sounds like 'can each of ya' say hi!"</p>
+                            </div>
+                        </div>
+                        
+            <div class="neumorphic-well rounded-xl p-md flex gap-md items-start mb-sm">
+                <img class="w-10 h-10 rounded-full border-2 border-surface object-cover flex-shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA">
+                <div class="bg-secondary-container/10 border border-secondary/10 rounded-lg p-sm flex-grow">
+                    <p class="text-on-surface-variant italic text-sm">"こんにちは is such a classic greeting!"</p>
+                </div>
+            </div>
+        
+            <div class="neumorphic-well rounded-xl p-md flex gap-md items-start mb-sm">
+                <img class="w-10 h-10 rounded-full border-2 border-surface object-cover flex-shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA">
+                <div class="bg-secondary-container/10 border border-secondary/10 rounded-lg p-sm flex-grow">
+                    <p class="text-on-surface-variant italic text-sm">"Always makes me smile to hear this."</p>
+                </div>
+            </div>
+        
+            <div class="neumorphic-well rounded-xl p-md flex gap-md items-start mb-sm">
+                <img class="w-10 h-10 rounded-full border-2 border-surface object-cover flex-shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA">
+                <div class="bg-secondary-container/10 border border-secondary/10 rounded-lg p-sm flex-grow">
+                    <p class="text-on-surface-variant italic text-sm">"Try saying it with a slight bow."</p>
+                </div>
+            </div>
+        
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+</div>
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)] transition-all" id="top-bar"><div class="flex items-center gap-3 flex-1"><div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden neumorphic-extruded"><img class="w-full h-full object-cover" alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA"></div><div class="flex flex-col"><span class="font-label-mono text-[10px] text-primary leading-none">12 DAYS</span><span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest leading-none">2,450 XP</span></div></div><h1 class="font-display-calligraphy text-headline-lg-mobile text-primary absolute left-1/2 -translate-x-1/2">BenGo</h1><div class="flex items-center gap-sm flex-1 justify-end"><button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity"><span class="material-symbols-outlined text-primary">leaderboard</span></button><button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity"><span class="material-symbols-outlined text-primary">notifications</span></button></div></header>
+<main class="mt-24 px-margin-mobile max-w-lg mx-auto">
+<nav class="mb-md" id="learning-header"><div class="flex flex-col items-center text-center gap-sm mb-lg">
+<div class="bg-surface-container-low border border-outline-variant/20 px-md py-1 rounded-full shadow-sm">
+<span class="font-label-mono text-[10px] text-outline uppercase tracking-[0.2em] leading-none">Level 1 • Vocabulary • Lesson 4</span>
+</div>
+<h2 class="font-display-calligraphy text-headline-lg text-on-surface tracking-tight mt-1">
+    Learning <span class="text-primary">Mode</span>
+</h2>
+<div class="w-12 h-1 bg-primary-fixed rounded-full opacity-30 mt-1"></div>
+</div></nav>
+<div class="neumorphic-well rounded-xl overflow-hidden p-xs" id="vocabulary-container">
+<div class="bg-surface-container rounded-lg">
+<!-- Table Header -->
+<div class="grid grid-cols-[1fr_0.8fr_0.4fr] border-b border-outline-variant/30 px-md py-sm font-label-mono text-label-mono text-outline uppercase tracking-widest text-[10px]">
+<div class="">Japanese</div>
+<div class="">English</div>
+<div class="text-right">Study</div>
+</div>
+<div class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<div class="vocabulary-row" id="row-1">
+<div class="flex items-center justify-between px-md py-lg gap-sm relative">
+<div class="flex items-center gap-xs">
+<div class="font-headline-lg-mobile text-[18px] engraved-text leading-none japanese-text">こんにちは</div>
+<button class="tactile-button w-7 h-7 rounded-lg flex items-center justify-center text-primary scale-90" onclick="event.stopPropagation()">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="text-on-surface-variant font-medium text-sm truncate english-text">Hello</div>
+<div class="flex justify-end items-center gap-sm">
+<div class="avatar-stack-mini flex -space-x-2 mr-1">
+<img class="w-6 h-6 rounded-full border border-surface shadow-sm object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA">
+<div class="w-6 h-6 rounded-full border border-surface shadow-sm bg-secondary flex items-center justify-center text-[8px] font-bold text-on-secondary">+3</div>
+</div>
+<button class="hint-trigger-btn tactile-button w-10 h-10 rounded-xl flex items-center justify-center text-primary" onclick="openHintModal('こんにちは', 'Hello', 'Konnichiwa... \'Can I watch\' ya learn Japanese?', 3)">
+<span class="material-symbols-outlined">lightbulb</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="vocabulary-row" id="row-2">
+<div class="flex items-center justify-between px-md py-lg gap-sm relative">
+<div class="flex items-center gap-xs">
+<div class="font-headline-lg-mobile text-[18px] engraved-text leading-none japanese-text">ありがとう</div>
+<button class="tactile-button w-7 h-7 rounded-lg flex items-center justify-center text-primary scale-90">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="text-on-surface-variant font-medium text-sm truncate english-text">Thank you</div>
+<div class="flex justify-end items-center gap-sm">
+<div class="avatar-stack-mini flex -space-x-2 mr-1">
+<img class="w-6 h-6 rounded-full border border-surface shadow-sm object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA">
+<div class="w-6 h-6 rounded-full border border-surface shadow-sm bg-secondary flex items-center justify-center text-[8px] font-bold text-on-secondary">+1</div>
+</div>
+<button class="hint-trigger-btn tactile-button w-10 h-10 rounded-xl flex items-center justify-center text-primary" onclick="openHintModal('ありがとう', 'Thank you', 'Harry got toe? No, Arigato!', 1)">
+<span class="material-symbols-outlined">lightbulb</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="vocabulary-row" id="row-3">
+<div class="flex items-center justify-between px-md py-lg gap-sm relative">
+<div class="flex items-center gap-xs">
+<div class="font-headline-lg-mobile text-[18px] engraved-text leading-none japanese-text">サハラ</div>
+<button class="tactile-button w-7 h-7 rounded-lg flex items-center justify-center text-primary scale-90">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="text-on-surface-variant font-medium text-sm truncate english-text">Sahara</div>
+<div class="flex justify-end items-center gap-sm">
+<div class="avatar-stack-mini flex -space-x-2 mr-1">
+<img class="w-6 h-6 rounded-full border border-surface shadow-sm object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA">
+<div class="w-6 h-6 rounded-full border border-surface shadow-sm bg-secondary flex items-center justify-center text-[8px] font-bold text-on-secondary">+2</div>
+</div>
+<button class="hint-trigger-btn tactile-button w-10 h-10 rounded-xl flex items-center justify-center text-primary" onclick="openHintModal('サハラ', 'Sahara', 'Sahara is hot!', 2)">
+<span class="material-symbols-outlined">lightbulb</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-md pt-md" id="quick-actions">
+<button class="tactile-button py-md rounded-xl flex items-center justify-center gap-sm text-on-surface-variant group">
+<span class="material-symbols-outlined group-active:text-primary">history</span>
+<span class="font-label-mono text-sm">Full Review</span>
+</button>
+<button class="tactile-button py-md rounded-xl flex items-center justify-center gap-sm text-on-surface-variant group">
+<span class="material-symbols-outlined group-active:text-primary">star</span>
+<span class="font-label-mono text-sm">Favorite All</span>
+</button>
+</div>
+<div class="mt-xl text-center pb-8" id="focus-env">
+<p class="font-label-mono text-label-mono text-outline uppercase mb-md">Focus Environment</p>
+<div class="flex justify-center gap-lg">
+<button class="tactile-button w-12 h-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">nature</span>
+</button>
+<button class="tactile-button w-12 h-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">water_drop</span>
+</button>
+<button class="tactile-button w-12 h-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">spa</span>
+</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface h-20 rounded-t-xl shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)] transition-all" id="bottom-nav">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-mono text-label-mono mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-2 shadow-[inset_-2px_-2px_5px_#FFFFFF,inset_2px_2px_5px_rgba(23,28,33,0.15)] scale-95 transition-all" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-mono text-label-mono mt-1">Courses</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-mono text-label-mono mt-1">Teams</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-mono text-label-mono mt-1">Profile</span>
+</a>
+</nav>
+<script>
+    const modalOverlay = document.getElementById('hint-modal-overlay');
+    const modalContent = document.getElementById('modal-body-content');
+    const closeBtn = document.getElementById('close-hint-modal');
+    
+    // Store scroll position
+    let scrollPos = 0;
+
+    function openHintModal(japanese, english, mnemonic, communityCount) {
+        // Save current scroll position
+        scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Mock community hints based on count
+        const mockHints = [
+            { user: "Hiroshi", text: `"${japanese} is such a classic greeting!"`, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA" },
+            { user: "Sarah", text: `"Always makes me smile to hear this."`, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA" },
+            { user: "Ken", text: `"Try saying it with a slight bow."`, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzLncK8HHMMXmFeYXLrLdAsirPejUcpgXj_KQQTVKoI3skru7GfTm0GNHMaK0au5KmP9FF5BKbFYRA8tD52mkOKln-sQttf8XZLMAj_uZni4uW5mo98oTgWbJ05vwoN1GHMJObRDvzKcYPM-_ZogNk3Tdjz5HK7b8H7ZEiLn09A8S2GLRBJjYo-0AmmTpWODnUS4h4PvtJWNbj1tbZ6F6XvM2M6asEMn6d7w22Xdk7OIfIBtz9mBfV3okld-ha5EUACUKUAANMnA" }
+        ].slice(0, communityCount);
+
+        const communityHintsHtml = mockHints.map(hint => `
+            <div class="neumorphic-well rounded-xl p-md flex gap-md items-start mb-sm">
+                <img class="w-10 h-10 rounded-full border-2 border-surface object-cover flex-shrink-0" src="${hint.img}"/>
+                <div class="bg-secondary-container/10 border border-secondary/10 rounded-lg p-sm flex-grow">
+                    <p class="text-on-surface-variant italic text-sm">${hint.text}</p>
+                </div>
+            </div>
+        `).join('');
+
+        modalContent.innerHTML = `
+            <div class="text-center mb-lg pt-4">
+                <div class="flex flex-col items-center gap-xs">
+                    <span class="font-headline-lg engraved-text japanese-text text-[48px] mb-2">${japanese}</span>
+                    <button class="tactile-button w-14 h-14 rounded-full flex items-center justify-center text-primary mb-2">
+                        <span class="material-symbols-outlined text-[28px]">volume_up</span>
+                    </button>
+                    <span class="text-on-surface-variant font-medium text-xl">${english}</span>
+                </div>
+            </div>
+
+            <div class="space-y-lg">
+                <div class="p-md bg-surface-container-low rounded-2xl border border-outline-variant/20 shadow-sm">
+                    <h4 class="font-label-mono text-[10px] text-outline uppercase tracking-widest mb-sm">My Personal Mnemonic</h4>
+                    <div class="neumorphic-well rounded-xl p-md">
+                        <p class="text-on-surface italic text-lg leading-relaxed">"${mnemonic}"</p>
+                    </div>
+                </div>
+
+                <div class="space-y-md">
+                    <div class="flex justify-between items-center px-1">
+                        <h4 class="font-label-mono text-[10px] text-outline uppercase tracking-widest">Community Hints (${communityCount + 1})</h4>
+                        <button class="tactile-button px-4 py-2 rounded-lg flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-primary text-[18px]">add</span>
+                            <span class="font-label-mono text-[10px] text-primary font-bold uppercase">Add Yours</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-col gap-sm">
+                        <!-- Default/Featured Hint -->
+                        <div class="neumorphic-well rounded-xl p-md flex gap-md items-start">
+                            <div class="w-10 h-10 rounded-full border-2 border-primary-fixed bg-surface flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-primary text-[20px]">stars</span>
+                            </div>
+                            <div class="bg-primary-container/5 border border-primary/10 rounded-lg p-sm flex-grow">
+                                <p class="text-primary italic text-sm">"Sounds like 'can each of ya' say hi!"</p>
+                            </div>
+                        </div>
+                        ${communityHintsHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        // Return to saved scroll position
+        window.scrollTo(0, scrollPos);
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+
+    // Close on overlay click
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            closeModal();
+        }
+    });
+
+    // Tactile button feedback
+    document.querySelectorAll('.tactile-button').forEach(button => {
+        button.addEventListener('touchstart', () => {
+            button.style.transform = 'scale(0.96)';
+        }, { passive: true });
+        
+        button.addEventListener('touchend', () => {
+            button.style.transform = '';
+        }, { passive: true });
+    });
+</script>
+
+
+</body></html>

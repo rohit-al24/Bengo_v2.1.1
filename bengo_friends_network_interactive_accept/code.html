@@ -1,0 +1,449 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>BenGo - Friends &amp; People</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&amp;family=JetBrains+Mono:wght@500&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#ffb3b3",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#40000a",
+                    "on-secondary-fixed": "#002201",
+                    "secondary-container": "#b9eeab",
+                    "secondary-fixed-dim": "#a1d494",
+                    "on-tertiary-container": "#f4f2ff",
+                    "surface-container-low": "#eff4fb",
+                    "surface-container": "#e9eef5",
+                    "inverse-on-surface": "#ecf1f8",
+                    "surface-bright": "#f6f9ff",
+                    "on-tertiary-fixed-variant": "#454652",
+                    "tertiary-fixed": "#e2e1f1",
+                    "on-surface-variant": "#5c3f3f",
+                    "outline": "#916f6e",
+                    "on-surface": "#171c21",
+                    "surface-variant": "#dee3ea",
+                    "secondary": "#3b6934",
+                    "primary-fixed": "#ffdad9",
+                    "on-secondary-fixed-variant": "#23501e",
+                    "secondary-fixed": "#bcf0ae",
+                    "primary": "#b1002c",
+                    "on-primary-fixed-variant": "#920022",
+                    "on-primary-container": "#fff1f0",
+                    "on-background": "#171c21",
+                    "on-secondary-container": "#3f6d38",
+                    "error-container": "#ffdad6",
+                    "surface-dim": "#d5dae1",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#dee3ea",
+                    "surface": "#f6f9ff",
+                    "surface-container-high": "#e4e9f0",
+                    "on-primary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b26",
+                    "tertiary": "#555663",
+                    "error": "#ba1a1a",
+                    "primary-container": "#dc143c",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#e6bdbc",
+                    "inverse-surface": "#2b3136",
+                    "tertiary-container": "#6e6e7c",
+                    "primary-fixed-dim": "#ffb3b3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#c6c5d4",
+                    "surface-tint": "#bf0030",
+                    "background": "#f6f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "margin-mobile": "20px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "xl": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Montserrat"],
+                    "headline-lg": ["Montserrat"],
+                    "display-calligraphy": ["Montserrat"],
+                    "label-mono": ["JetBrains Mono"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "display-calligraphy": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .neumorphic-extruded {
+            box-shadow: -5px -5px 10px #FFFFFF, 5px 5px 10px rgba(23, 28, 33, 0.15);
+        }
+        .neumorphic-sunken {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+        }
+        .neumorphic-button:active {
+            box-shadow: inset -2px -2px 5px #FFFFFF, inset 2px 2px 5px rgba(23, 28, 33, 0.15);
+            transform: scale(0.98);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f6f9ff;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* Particle Canvas */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Card Fall Animation */
+        .card-exit-animation {
+            animation: cardFallOut 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes cardFallOut {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            20% { transform: translateY(-10px) rotate(1deg); opacity: 1; }
+            100% { transform: translateY(100px) rotate(-5deg); opacity: 0; }
+        }
+
+        /* Toast Animation */
+        #success-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 60;
+        }
+        #success-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md text-on-background">
+<canvas id="particle-canvas" width="391" height="1209"></canvas>
+<!-- Success Toast -->
+<div class="px-lg py-sm bg-secondary text-on-secondary rounded-full shadow-lg font-label-mono text-label-mono flex items-center gap-xs" id="success-toast">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+    Added to Friends!
+</div>
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-sm bg-surface shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)]"><div class="flex items-center gap-3 flex-1">
+  <div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden neumorphic-extruded">
+    <img class="w-full h-full object-cover" alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4e93O2TUwg5FKTmmA1V_dyNOBJHBmzYuBIqz-BvYKF4IWreRiCxPIHC0KCbewA8tel_HxUFjXEdmnMTwDFXqqXziaB92NwLuCxLZSFH-_d3y9ZQ1ElN_uVfri_zlvKNcLNCmpS9Xgafqci5gcC3PsnDzhYwuf4miUrnZoAmxKnjrDVd4HfkGQCPEIUuv-wnroMQzU2oGYu9L1a4JQjSYF7JSZwts90OcUrO6A4gZdxjLkD58lmXACfCe9xoNIQ_KvaL__IvaSTg">
+  </div>
+  <div class="flex flex-col">
+    <span class="font-label-mono text-[10px] text-primary leading-none">12 DAYS</span>
+    <span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest leading-none">2,450 XP</span>
+  </div>
+</div>
+<h1 class="font-display-calligraphy text-headline-lg-mobile text-primary absolute left-1/2 -translate-x-1/2">BenGo</h1>
+<div class="flex items-center gap-sm flex-1 justify-end">
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">leaderboard</span>
+  </button>
+  <button class="w-10 h-10 flex items-center justify-center rounded-xl neumorphic-extruded hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary">notifications</span>
+  </button>
+</div></header>
+<main class="pt-24 pb-32 px-margin-mobile max-w-2xl mx-auto space-y-lg">
+<!-- Search Section -->
+<section class="space-y-sm">
+<div class="relative flex items-center">
+<div class="absolute left-4 text-outline">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</div>
+<input class="w-full pl-12 pr-4 py-4 rounded-xl bg-surface-container neumorphic-sunken border-none focus:ring-2 focus:ring-primary/20 font-label-mono text-label-mono placeholder:text-outline-variant" placeholder="Find usernames..." type="text">
+</div>
+</section>
+<!-- Incoming Requests Section -->
+<section class="space-y-md transition-all duration-500" id="incoming-requests" style="opacity: 0.5;">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Incoming Requests</h2>
+<span class="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono text-[10px]" id="request-badge">1 NEW</span>
+</div>
+<div class="space-y-lg">
+<!-- Request Card 1 -->
+
+</div>
+</section>
+<!-- Friends List Section -->
+<section class="space-y-md">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Friends</h2>
+<div class="grid grid-cols-1 gap-lg">
+<!-- Friend Entry 1 -->
+<div class="p-md rounded-xl bg-surface-container-low neumorphic-extruded flex items-center gap-md hover:scale-[1.01] transition-transform cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
+<img class="w-full h-full object-cover" data-alt="A portrait of a cheerful female student with glasses and short brown hair, surrounded by a bright, airy library background. The image has a warm, inviting atmosphere with soft sunlight, created in a clean, professional digital art style suitable for a modern educational application's profile section." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrMzorPLcTdBomch4qeClSXNgHdluilhX0XVJz3DqWFXJFj3PSorhmqWC-DNd6XrhONGZq8TwIo32upMKov7lj4djy9kYSvUYY40bg09jTgjSoDx9WCeV2nqmRMY37IF60G-SbXBmL0w3lhIP0MRfNUtIgprPbs0I-ArlqopUzaN1BfP3FF2etbfY78mepSo-mV44hbfPU3DDJatIGFwqsM6p8RNNpMeje46uPhwdxLmocdV92LFWRSmCIfTk9nV2C1OUqvWmetw">
+</div>
+<div class="flex-grow min-w-0">
+<h3 class="font-headline-lg-mobile text-body-md text-on-surface truncate">Hana_StudyNotes</h3>
+<div class="flex items-center gap-xs font-label-mono text-label-mono text-secondary">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                            Online
+                        </div>
+</div>
+<a class="font-label-mono text-label-mono text-primary flex items-center gap-xs hover:underline decoration-primary-fixed shrink-0" href="#">
+                        View Profile
+                        <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<!-- Friend Entry 2 -->
+<div class="p-md rounded-xl bg-surface-container-low neumorphic-extruded flex items-center gap-md hover:scale-[1.01] transition-transform cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 grayscale opacity-70">
+<img class="w-full h-full object-cover" data-alt="A minimalist profile picture of a serious student focused on his work, wearing a dark hoodie. The lighting is low-key and dramatic, casting soft shadows. The overall aesthetic is calm and focused, with a clean color palette of slate blues and grays that aligns with the Learning Mode of the BenGo platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO3xGLoBf-ZIjsfXYQmSIJJ-qy90si6h_uNeX_4zjGQ195UKDU9siwMms8v1-feqY5Is6V3JjuYu6SdP-WT5vmdMCXzY-EJYniqY_yBamWhFbaXIEZ29dx4NMe3gzmfH8hupJUT5o1e5h6i5EEmWc_k4QwhKxodUCA_3JBF73dkqfTdweP8nv1EXiumJ64E73s1vnxX49tcoPQFlxck4TRkbHjT1Az_gB6rxLgkqguNOU_Lt7WIoEDWIOgyskZ4Lbo95GdNkWC6Q">
+</div>
+<div class="flex-grow min-w-0">
+<h3 class="font-headline-lg-mobile text-body-md text-on-surface truncate">Taka_88</h3>
+<div class="flex items-center gap-xs font-label-mono text-label-mono text-outline">
+                            Offline
+                        </div>
+</div>
+<a class="font-label-mono text-label-mono text-primary flex items-center gap-xs hover:underline decoration-primary-fixed shrink-0" href="#">
+                        View Profile
+                        <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<!-- Friend Entry 3 -->
+<div class="p-md rounded-xl bg-surface-container-low neumorphic-extruded flex items-center gap-md hover:scale-[1.01] transition-transform cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
+<img class="w-full h-full object-cover" data-alt="An artistic profile picture of a female creative student holding a digital stylus, with a background featuring soft geometric shapes and vibrant pastel gradients. The lighting is soft and flattering, emphasizing a mood of creativity and innovation. The style is modern, high-end digital illustration for a social learning interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbXPD51-J8o6SVI5G4vDpXSAcIPLHmF_PNPL7mrYNhMdPKPnIBF7w-JYqu0CXwSjqHfWm3bn3nALzkc3A8XqSdCdjHQZMmi4O-M37lkum_4tNerNol8HcZXaN6W8uc6_kUpM73Ehewc_57UZa6eCkYBqUOeh330dkOA1WNzAGVXkYbWNIc9PT26G-w6X8u6LkC2QfgNSa_xltxWfgPYBscpfXAZ7FxWuql6vfDf0SZNir3Os0WlDR6WQ8I-xqWHpVbrZvZj--AJQ">
+</div>
+<div class="flex-grow min-w-0">
+<h3 class="font-headline-lg-mobile text-body-md text-on-surface truncate">Miku_Art</h3>
+<div class="flex items-center gap-xs font-label-mono text-label-mono text-secondary">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                            Online
+                        </div>
+</div>
+<a class="font-label-mono text-label-mono text-primary flex items-center gap-xs hover:underline decoration-primary-fixed shrink-0" href="#">
+                        View Profile
+                        <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+</div>
+</section>
+<!-- Suggested People (Contextual Bonus) -->
+<section class="space-y-md">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Suggested</h2>
+<div class="flex gap-lg overflow-x-auto pb-lg snap-x">
+<div class="snap-center min-w-[140px] p-md rounded-xl bg-surface neumorphic-extruded flex flex-col items-center gap-sm text-center">
+<div class="w-16 h-16 rounded-full overflow-hidden neumorphic-sunken border-4 border-surface p-1">
+<img class="w-full h-full object-cover rounded-full" data-alt="A close-up portrait of an ambitious young man with a slight smile, set against a blurred urban background with cool blue and teal lighting. The aesthetic is clean and professional, using high-end digital art techniques to create a relatable and inspiring peer profile image for a collaborative study platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDc0oNF4acpXJS4HWJB3Oh3tBm44-pm16oXt6JV6YjCNJlSDpEJejGpbJj3Ju2qrsaPwRVoK3igr7ytE5SXg1B-OkvMf64zJGSuMCCNAq1h25upv-oWx75iVvXeQnHbh4CaPWxfzJxBFIar3_8UOTamKvF7uoonnDskKFSD_HiIsWyt4uP_v7SGVjUFpdL2Wjoh2Vmamg3EkswjF8YmwHHOeNCqQdxIEyDAQ84EWBU258Vp3jSp2C2XecYtc-50iLtYMASmdzGL9Q">
+</div>
+<div>
+<p class="font-headline-lg-mobile text-sm text-on-surface">Ren_02</p>
+<p class="font-label-mono text-[10px] text-outline">In Your Team</p>
+</div>
+<button class="w-full py-1 rounded-lg bg-surface neumorphic-sunken text-primary font-label-mono text-xs">Add</button>
+</div>
+<div class="snap-center min-w-[140px] p-md rounded-xl bg-surface neumorphic-extruded flex flex-col items-center gap-sm text-center">
+<div class="w-16 h-16 rounded-full overflow-hidden neumorphic-sunken border-4 border-surface p-1">
+<img class="w-full h-full object-cover rounded-full" data-alt="A portrait of a serene female student reading a book by a window, with soft glowing particles in the air. The mood is peaceful and deeply focused, reflecting the Zen Learning mode of the application. The color palette features soft creams and muted greens, rendered in a beautiful, high-detail digital painterly style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAujJv13PqsTOmY_BZsmu-vAuUW0wNfWz2ndZbuY2rtdNfy3T4HU7U-XJb3QkNCKrAquynf4AU14MjaszidZgPH-wrR9vu8VMusZ9LvgqQFoyMLvg_hc24_dNr7nr-bV9d3QIm06-UdQ5w9T_iyt7kAgOB6eeYO1WG1Gs5QdR6NffrCnSm8hQyBlhyjZTgsPQzKvltPXkYZwMj5nEEkFZaG4abGmXbJL92jK4fa81NOn0BklxjhJolJ3vXansW-f7r5W4aHqSw0NA">
+</div>
+<div>
+<p class="font-headline-lg-mobile text-sm text-on-surface">Aoi_Study</p>
+<p class="font-label-mono text-[10px] text-outline">Mutual Friend</p>
+</div>
+<button class="w-full py-1 rounded-lg bg-surface neumorphic-sunken text-primary font-label-mono text-xs">Add</button>
+</div>
+<div class="snap-center min-w-[140px] p-md rounded-xl bg-surface neumorphic-extruded flex flex-col items-center gap-sm text-center">
+<div class="w-16 h-16 rounded-full overflow-hidden neumorphic-sunken border-4 border-surface p-1">
+<img class="w-full h-full object-cover rounded-full" data-alt="A energetic digital avatar of a young woman with bright highlights in her hair, wearing a high-tech sweatshirt. The setting is a vibrant digital workspace with neon glowing lines. This image bridges the gap between focused study and competitive gaming aesthetics, fitting the BenGo dual-mode personality perfectly." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeHgnj2jg1rAa0rIeMA2D_cxy1gWCYTQnCGrSoumyUTiH3f9rUQkpJxY0H2ZzLqCNry4ovDprHVXJcQfj5xqmlKG1ZTB_Xu-f5i2Dl7DTtt-Xnl4vRTciE3J3JSXlYRBwGo8P1P3Qof7HQl-pvVPpHOSmUtgoRgxqxFGW8yy7i80DYFgigJshEAHpJjC2obg8Vn0qbLaPrR8Gm8Tja0_Cq1Yc6V5wyppYZ5LufPM1fX4NY4gO_yhJKaiVqOZmHm_QTZHrV6551eg">
+</div>
+<div>
+<p class="font-headline-lg-mobile text-sm text-on-surface">Yumi_Vibe</p>
+<p class="font-label-mono text-[10px] text-outline">Top Learner</p>
+</div>
+<button class="w-full py-1 rounded-lg bg-surface neumorphic-sunken text-primary font-label-mono text-xs">Add</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface shadow-[-5px_-5px_10px_#FFFFFF,5px_5px_10px_rgba(23,28,33,0.15)] rounded-t-xl h-20">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-mono text-label-mono mt-1">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-mono text-label-mono mt-1">Courses</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-mono text-label-mono mt-1">Teams</span>
+</div>
+<!-- Profile is Active for "Friends & People" context as it usually falls under Social/Account -->
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-2 shadow-[inset_-2px_-2px_5px_#FFFFFF,inset_2px_2px_5px_rgba(23,28,33,0.15)] scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-mono text-label-mono mt-1">Profile</span>
+</div>
+</nav>
+<script>
+    // --- Particle System Logic ---
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            // Spread outwards
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 2 + Math.random() * 6;
+            this.vx = Math.cos(angle) * velocity;
+            this.vy = Math.sin(angle) * velocity - 2; // Initial upward boost
+            this.gravity = 0.15;
+            this.friction = 0.98;
+            this.opacity = 1;
+            this.size = 2 + Math.random() * 4;
+            // Use secondary green from theme
+            this.color = '#3b6934';
+            this.life = 0;
+            this.maxLife = 100 + Math.random() * 50;
+        }
+
+        update() {
+            this.vx *= this.friction;
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life++;
+            this.opacity = 1 - (this.life / this.maxLife);
+        }
+
+        draw() {
+            ctx.globalAlpha = this.opacity;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            // Sprinkle shape (small rectangle or pill)
+            ctx.roundRect(this.x, this.y, this.size, this.size * 2, this.size / 2);
+            ctx.fill();
+        }
+    }
+
+    function createExplosion(x, y) {
+        for (let i = 0; i < 40; i++) {
+            particles.push(new Particle(x, y));
+        }
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles = particles.filter(p => p.opacity > 0);
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // --- Interaction Handlers ---
+    function handleAccept(button, cardId) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+
+        // 1. Particle Burst
+        const rect = button.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        createExplosion(centerX, centerY);
+
+        // 2. Card Animation
+        card.classList.add('card-exit-animation');
+
+        // 3. Update Badge (mock)
+        const badge = document.getElementById('request-badge');
+        if (badge) {
+            badge.innerText = "1 NEW";
+            badge.classList.add('scale-110');
+            setTimeout(() => badge.classList.remove('scale-110'), 200);
+        }
+
+        // 4. Success State Toast
+        const toast = document.getElementById('success-toast');
+        setTimeout(() => {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }, 400);
+
+        // 5. Clean up DOM after animation
+        setTimeout(() => {
+            card.remove();
+            // If no more requests, maybe hide the section or show a message
+            const requestsSection = document.querySelector('#incoming-requests .space-y-lg');
+            if (requestsSection && requestsSection.children.length === 0) {
+                 document.getElementById('incoming-requests').style.opacity = '0.5';
+            }
+        }, 600);
+    }
+
+    // Micro-interactions for tactile buttons
+    document.querySelectorAll('.neumorphic-button').forEach(button => {
+        button.addEventListener('touchstart', () => {
+            button.classList.remove('neumorphic-extruded');
+            button.classList.add('neumorphic-sunken');
+        });
+        button.addEventListener('touchend', () => {
+            button.classList.remove('neumorphic-sunken');
+            button.classList.add('neumorphic-extruded');
+        });
+        button.addEventListener('mousedown', () => {
+            button.classList.remove('neumorphic-extruded');
+            button.classList.add('neumorphic-sunken');
+        });
+        button.addEventListener('mouseup', () => {
+            button.classList.remove('neumorphic-sunken');
+            button.classList.add('neumorphic-extruded');
+        });
+    });
+</script>
+
+
+
+
+</body></html>
