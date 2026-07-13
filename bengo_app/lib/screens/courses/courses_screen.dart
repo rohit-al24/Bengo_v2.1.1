@@ -548,7 +548,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
                           final progress = progressByRankId[rank['id'] as int];
                           final isCompleted = progress?['is_completed'] == true;
                           final isCurrent = progress?['is_current'] == true;
-                          final progressLabel = isCompleted ? 'Completed' : (isCurrent ? 'Current rank' : 'Locked');
+                          final firstRankId = ranks.isNotEmpty ? ranks.first['id'] as int? : null;
+                          final isFirstRank = firstRankId != null && rank['id'] == firstRankId;
+                          final hasProgress = progress != null;
+                          final canOpen = hasProgress || isFirstRank;
+                          final progressLabel = isCompleted
+                              ? 'Completed'
+                              : canOpen
+                                  ? 'Current rank'
+                                  : 'Locked';
                           final icon = (rank['icon'] ?? '🏆').toString();
                           final percent = ((progress?['progress_pct'] as num?) ?? 0).toDouble();
                           return Container(
@@ -593,20 +601,22 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                   children: [
                                     Expanded(
                                       child: ElevatedButton(
-                                        onPressed: () async {
-                                          if (progress != null) {
-                                            await ApiService.instance.activateRank(progress['id'] as int);
-                                          }
-                                          if (!mounted) return;
-                                          Navigator.pop(sheetContext);
-                                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => CourseCategoriesScreen(level: exam['level'] ?? 'N5', examId: examId)));
-                                        },
+                                        onPressed: canOpen
+                                            ? () async {
+                                                if (progress != null) {
+                                                  await ApiService.instance.activateRank(progress['id'] as int);
+                                                }
+                                                if (!mounted) return;
+                                                Navigator.pop(sheetContext);
+                                                Navigator.of(context).push(MaterialPageRoute(builder: (_) => CourseCategoriesScreen(level: exam['level'] ?? 'N5', examId: examId)));
+                                              }
+                                            : null,
                                         style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                                        child: Text(isCompleted ? 'Review this rank' : 'Open this rank'),
+                                        child: Text(isCompleted ? 'Review this rank' : (canOpen ? 'Open this rank' : 'Locked')),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    if (isCompleted || isCurrent)
+                                    if (canOpen && (isCompleted || isCurrent))
                                       Expanded(
                                         child: OutlinedButton(
                                           onPressed: () async {

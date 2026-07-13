@@ -277,9 +277,17 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
 
   Widget _buildProgressCard() {
     final total = _categories.fold<int>(0, (sum, c) {
-      final count = c['lessons_count'] ?? c['lessons']?.length ?? 0;
+      final count = c['lessons_count'] ?? (c['lessons'] as List?)?.length ?? 0;
       return sum + (count as int);
     });
+    final completed = (_currentRank != null)
+        ? (_currentRank!['completed_lessons'] as int? ?? 0)
+        : 0;
+    final totalLessons = (_currentRank != null)
+        ? (_currentRank!['total_lessons'] as int? ?? total)
+        : total;
+    final progress = totalLessons > 0 ? (completed / totalLessons).clamp(0.0, 1.0) : 0.0;
+    final rankName = (_currentRank?['rank_name'] ?? 'Current rank').toString();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
@@ -306,7 +314,7 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
                           color: Colors.white70,
                           letterSpacing: 1)),
                   const SizedBox(height: 4),
-                  Text('${_categories.length} Categories',
+                  Text(rankName,
                       style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -315,12 +323,20 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: 0.0,
+                      value: progress,
                       backgroundColor: Colors.white.withOpacity(0.2),
                       valueColor:
                           const AlwaysStoppedAnimation<Color>(Colors.white),
                       minHeight: 6,
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${(progress * 100).toStringAsFixed(0)}% · $completed/$totalLessons lessons',
+                    style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70),
                   ),
                 ],
               ),
@@ -337,7 +353,7 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: Colors.white)),
-                Text('total lessons',
+                Text('available lessons',
                     style:
                         GoogleFonts.inter(fontSize: 10, color: Colors.white70)),
               ],

@@ -157,7 +157,17 @@ class UnlockExamView(APIView):
             exam = Exam.objects.get(pk=pk, is_active=True)
         except Exam.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=404)
+
         unlock, created = UserExamUnlock.objects.get_or_create(user=request.user, exam=exam)
+
+        # Ensure the lowest rank for the unlocked exam is available to the user.
+        first_rank = Rank.objects.filter(exam=exam).order_by('order').first()
+        if first_rank:
+            UserRankProgress.objects.get_or_create(
+                user=request.user,
+                rank=first_rank,
+                defaults={'is_current': True, 'is_completed': False},
+            )
         return Response({'unlocked': True, 'created': created})
 
 
