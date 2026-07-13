@@ -22,11 +22,40 @@ class UserRankProgressSerializer(serializers.ModelSerializer):
     rank_order = serializers.IntegerField(source='rank.order', read_only=True)
     rank_color = serializers.CharField(source='rank.color', read_only=True)
     rank_icon  = serializers.CharField(source='rank.icon', read_only=True)
+    exam_id    = serializers.IntegerField(source='rank.exam_id', read_only=True)
+    exam_title = serializers.CharField(source='rank.exam.title', read_only=True)
+    pass_percentage = serializers.IntegerField(source='rank.pass_percentage', read_only=True)
+    total_lessons = serializers.SerializerMethodField()
+    completed_lessons = serializers.SerializerMethodField()
+    progress_pct = serializers.SerializerMethodField()
+    has_certificate = serializers.SerializerMethodField()
 
     class Meta:
         model  = UserRankProgress
-        fields = ['id', 'rank', 'rank_name', 'rank_order', 'rank_color', 'rank_icon',
+        fields = ['id', 'rank', 'rank_name', 'rank_order', 'rank_color', 'rank_icon', 'exam_id', 'exam_title',
+                  'pass_percentage', 'total_lessons', 'completed_lessons', 'progress_pct', 'has_certificate',
                   'is_completed', 'is_current', 'completed_at', 'unlocked_at']
+
+    def get_total_lessons(self, obj):
+        return obj.rank.lessons.filter(is_active=True).count() if obj.rank else 0
+
+    def get_completed_lessons(self, obj):
+        if not obj.rank:
+            return 0
+        return obj.rank.lessons.filter(is_active=True, user_progress__user=obj.user, user_progress__is_completed=True).count()
+
+    def get_progress_pct(self, obj):
+        total = self.get_total_lessons(obj)
+        if total == 0:
+            return 0.0
+        completed = self.get_completed_lessons(obj)
+        return round((completed / total) * 100, 2)
+
+    def get_has_certificate(self, obj):
+        if not obj.rank:
+            return False
+        from apps.certificates.models import UserCertificate
+        return UserCertificate.objects.filter(user=obj.user, certificate__rank=obj.rank).exists()
 
 
 class TestLogSerializer(serializers.ModelSerializer):

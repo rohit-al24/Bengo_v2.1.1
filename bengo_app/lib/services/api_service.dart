@@ -334,6 +334,21 @@ class ApiService {
     return _decodeList(res);
   }
 
+  Future<Map<String, dynamic>> activateRank(int progressId) async {
+    final res = await _req('POST', '/ranks/progress/$progressId/activate/');
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> resetRank(int progressId) async {
+    final res = await _req('POST', '/ranks/progress/$progressId/reset/');
+    return _decode(res);
+  }
+
+  Future<List<dynamic>> getRankLogs(int progressId) async {
+    final res = await _req('GET', '/ranks/progress/$progressId/logs/');
+    return _decodeList(res);
+  }
+
   Future<Map<String, dynamic>> upgradeRank(int rankId) async {
     _cachedMe = null;
     final res = await _req('POST', '/ranks/progress/upgrade/', body: {'rank_id': rankId});

@@ -9,6 +9,7 @@ from .serializers import (RankSerializer, UserRankProgressSerializer,
                            DailyRevisionConfigSerializer, DailyRevisionAttemptSerializer)
 from apps.courses.models import Lesson, Category, BankQuestion
 from apps.progress.models import UserLessonProgress, UserExamUnlock
+from apps.certificates.models import Certificate, UserCertificate
 
 
 class RankViewSet(viewsets.ModelViewSet):
@@ -26,13 +27,66 @@ class RankViewSet(viewsets.ModelViewSet):
 
 
 class UserRankProgressViewSet(viewsets.ReadOnlyModelViewSet):
-    """Read user's rank progress. Supports upgrades."""
+    """Read user's rank progress. Supports upgrades and rank replay."""
     serializer_class   = UserRankProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return UserRankProgress.objects.filter(user=self.request.user) \
             .select_related('rank', 'rank__exam')
+
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        progress = self.get_object()
+        if not progress.rank:
+            return Response({'error': 'Rank not found'}, status=404)
+
+        UserRankProgress.objects.filter(user=request.user, rank__exam=progress.rank.exam).update(is_current=False)
+        progress.is_current = True
+        progress.is_completed = progress.is_completed or False
+        progress.save(update_fields=['is_current'])
+        return Response(UserRankProgressSerializer(progress).data)
+
+    @action(detail=True, methods=['post'])
+    def reset(self, request, pk=None):
+        progress = self.get_object()
+        if not progress.rank:
+            return Response({'error': 'Rank not found'}, status=404)
+
+        UserRankProgress.objects.filter(user=request.user, rank__exam=progress.rank.exam).update(is_current=False)
+        progress.is_current = True
+        progress.is_completed = False
+        progress.completed_at = None
+        progress.save(update_fields=['is_current', 'is_completed', 'completed_at'])
+
+        UserLessonProgress.objects.filter(user=request.user, lesson__rank=progress.rank).update(
+            is_completed=False,
+            best_score=0.0,
+            attempts=0,
+            last_attempt=None,
+        )
+        return Response(UserRankProgressSerializer(progress).data)
+
+    @action(detail=True, methods=['get'])
+    def logs(self, request, pk=None):
+        progress = self.get_object()
+        if not progress.rank:
+            return Response({'error': 'Rank not found'}, status=404)
+
+        logs = TestLog.objects.filter(user=request.user, rank=progress.rank).select_related('lesson').order_by('-created_at')
+        return Response([
+            {
+                'id': log.id,
+                'lesson_name': log.lesson.name,
+                'score_pct': log.score_pct,
+                'correct': log.correct,
+                'wrong': log.wrong,
+                'timed_out': log.timed_out,
+                'passed': log.passed,
+                'created_at': log.created_at,
+            }
+            for log in logs
+        ])
 
     @action(detail=False, methods=['post'])
     def upgrade(self, request):
@@ -97,6 +151,10 @@ def _mark_rank_progress_for_lesson(user, lesson, rank, passed):
             progress.is_completed = True
             progress.completed_at = timezone.now()
             progress.save(update_fields=['is_completed', 'completed_at'])
+
+            cert = Certificate.objects.filter(rank=rank, is_active=True).first()
+            if cert:
+                UserCertificate.objects.get_or_create(user=user, certificate=cert)
 
     return progress
 

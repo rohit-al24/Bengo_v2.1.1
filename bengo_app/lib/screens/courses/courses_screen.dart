@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_text_styles.dart';
 import '../../utils/app_decorations.dart';
@@ -248,14 +249,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
           } catch (_) {}
           return;
         }
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => CourseCategoriesScreen(
-              level: exam['level'] ?? 'N5',
-              examId: exam['id'] as int,
-            ),
-          ),
-        );
+        await _showRankJourneySheet(exam);
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -487,6 +481,246 @@ class _CoursesScreenState extends State<CoursesScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _showRankJourneySheet(Map<String, dynamic> exam) async {
+    final examId = exam['id'] as int?;
+    if (examId == null) return;
+
+    try {
+      final ranks = await ApiService.instance.getRanksForExam(examId);
+      final progressData = await ApiService.instance.getMyRankProgress();
+      final rankProgresses = progressData.whereType<Map<String, dynamic>>().where((p) => (p['exam_id'] as int?) == examId).toList();
+      final progressByRankId = <int, Map<String, dynamic>>{};
+      for (final p in rankProgresses) {
+        final rankId = p['rank'] as int?;
+        if (rankId != null) progressByRankId[rankId] = Map<String, dynamic>.from(p);
+      }
+
+      if (!mounted) return;
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) {
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.8,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder: (scrollContext, controller) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(width: 48, height: 5, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(99))),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(exam['title'] ?? 'Exam', style: AppTextStyles.headlineMedium),
+                                const SizedBox(height: 4),
+                                Text('Choose a rank path to continue, review, or replay.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                              ],
+                            ),
+                          ),
+                          IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: controller,
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                        itemCount: ranks.length,
+                        itemBuilder: (context, index) {
+                          final rank = ranks[index] as Map<String, dynamic>;
+                          final progress = progressByRankId[rank['id'] as int];
+                          final isCompleted = progress?['is_completed'] == true;
+                          final isCurrent = progress?['is_current'] == true;
+                          final progressLabel = isCompleted ? 'Completed' : (isCurrent ? 'Current rank' : 'Locked');
+                          final icon = (rank['icon'] ?? '🏆').toString();
+                          final percent = ((progress?['progress_pct'] as num?) ?? 0).toDouble();
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: isCompleted ? AppColors.accentGreen.withAlpha(12) : AppColors.bgLight,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: isCompleted ? AppColors.accentGreen.withAlpha(60) : AppColors.borderLight),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(icon, style: const TextStyle(fontSize: 20)),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(rank['name'] ?? 'Rank', style: AppTextStyles.headlineSmall)),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(color: isCompleted ? AppColors.accentGreen : AppColors.primary, borderRadius: BorderRadius.circular(999)),
+                                      child: Text(progressLabel, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                if (progress != null) ...[
+                                  Text('${progress['completed_lessons'] ?? 0}/${progress['total_lessons'] ?? 0} lessons completed · ${percent.toStringAsFixed(0)}%', style: AppTextStyles.bodySmall),
+                                  const SizedBox(height: 8),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(999),
+                                    child: LinearProgressIndicator(
+                                      value: percent / 100,
+                                      minHeight: 6,
+                                      backgroundColor: AppColors.borderLight,
+                                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () async {
+                                          if (progress != null) {
+                                            await ApiService.instance.activateRank(progress['id'] as int);
+                                          }
+                                          if (!mounted) return;
+                                          Navigator.pop(sheetContext);
+                                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => CourseCategoriesScreen(level: exam['level'] ?? 'N5', examId: examId)));
+                                        },
+                                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                                        child: Text(isCompleted ? 'Review this rank' : 'Open this rank'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    if (isCompleted || isCurrent)
+                                      Expanded(
+                                        child: OutlinedButton(
+                                          onPressed: () async {
+                                            if (progress != null) {
+                                              await ApiService.instance.resetRank(progress['id'] as int);
+                                            }
+                                            if (!mounted) return;
+                                            Navigator.pop(sheetContext);
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rank reset and ready to replay.')));
+                                          },
+                                          child: const Text('Reset'),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                if (isCompleted)
+                                  TextButton.icon(
+                                    onPressed: () async {
+                                      if (progress == null) return;
+                                      final logs = await ApiService.instance.getRankLogs(progress['id'] as int);
+                                      if (!mounted) return;
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (detailContext) => DraggableScrollableSheet(
+                                          expand: false,
+                                          initialChildSize: 0.7,
+                                          minChildSize: 0.5,
+                                          maxChildSize: 0.95,
+                                          builder: (detailScrollContext, detailController) => Container(
+                                            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                                            child: Column(
+                                              children: [
+                                                const SizedBox(height: 10),
+                                                Container(width: 48, height: 5, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(99))),
+                                                const SizedBox(height: 12),
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                                  child: Row(
+                                                    children: [
+                                                      Expanded(child: Text('Rank history', style: AppTextStyles.headlineMedium)),
+                                                      IconButton(onPressed: () => Navigator.pop(detailContext), icon: const Icon(Icons.close_rounded)),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Expanded(
+                                                  child: ListView.builder(
+                                                    controller: detailController,
+                                                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                                                    itemCount: logs.length,
+                                                    itemBuilder: (logContext, logIndex) {
+                                                      final log = logs[logIndex] as Map<String, dynamic>;
+                                                      return Container(
+                                                        margin: const EdgeInsets.only(bottom: 10),
+                                                        padding: const EdgeInsets.all(12),
+                                                        decoration: BoxDecoration(color: AppColors.bgLight, borderRadius: BorderRadius.circular(14)),
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            Text(log['lesson_name']?.toString() ?? 'Lesson', style: AppTextStyles.labelMedium),
+                                                            const SizedBox(height: 4),
+                                                            Text('${(log['score_pct'] as num?)?.toStringAsFixed(0) ?? '0'}% · ${log['correct'] ?? 0}/${log['wrong'] ?? 0} correct/wrong', style: AppTextStyles.bodySmall),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                                  child: SizedBox(
+                                                    width: double.infinity,
+                                                    child: ElevatedButton(
+                                                      onPressed: () async {
+                                                        final certificates = await ApiService.instance.getMyCertificates();
+                                                        final cert = certificates.whereType<Map<String, dynamic>>().firstWhere(
+                                                          (item) => (item['certificate'] as Map<String, dynamic>?)?['rank'] == rank['id'],
+                                                          orElse: () => <String, dynamic>{},
+                                                        );
+                                                        final url = ((cert['certificate'] as Map<String, dynamic>?)?['template_url'] ?? '').toString();
+                                                        if (url.isNotEmpty) {
+                                                          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                                                        }
+                                                      },
+                                                      child: const Text('Open certificate'),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.history_rounded),
+                                    label: const Text('View logs'),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    } catch (_) {}
   }
 
   Widget _buildUpgradeButton(Map<String, dynamic> exam, Map<String, dynamic> nextRank) {
