@@ -8,7 +8,7 @@ SECRET_KEY = 'django-bengo-secret-key-change-in-production-2024'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'jback2.zynix.us', 'jadmin.zynix.us']
 
 # Application definition
 INSTALLED_APPS = [
@@ -118,46 +118,70 @@ SIMPLE_JWT = {
 }
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = True  # Dev only; disable in production
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = False
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:5000',
     'http://localhost:5173',
     'http://localhost:8000',
+    'http://localhost:8881',
     'http://localhost:9100',
     'http://localhost:9101',
     'http://localhost:9102',
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
     'http://127.0.0.1:5000',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8000',
+    'http://127.0.0.1:8881',
     'http://127.0.0.1:9100',
     'http://127.0.0.1:9101',
     'http://127.0.0.1:9102',
+    'https://localhost:8881',
+    'https://127.0.0.1:8881',
+    'http://jadmin.zynix.us',
+    'https://jadmin.zynix.us',
+    'http://jback2.zynix.us',
+    'https://jback2.zynix.us',
 ]
-# Allow all localhost ports (Flutter web uses dynamic ports)
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^http://localhost:\d+$',
+    r'^https://localhost:\d+$',
     r'^http://127\.0\.0\.1:\d+$',
+    r'^https://127\.0\.0\.1:\d+$',
     r'^http://(localhost|127\.0\.0\.1):(1\d{4}|[0-9]{4,5})$',
+    r'^https://(localhost|127\.0\.0\.1):(1\d{4}|[0-9]{4,5})$',
 ]
+CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
+CORS_ALLOW_HEADERS = ['*']
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:5000',
     'http://localhost:5173',
     'http://localhost:8000',
+    'http://localhost:8881',
     'http://localhost:9100',
     'http://localhost:9101',
     'http://localhost:9102',
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
     'http://127.0.0.1:5000',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8000',
+    'http://127.0.0.1:8881',
     'http://127.0.0.1:9100',
     'http://127.0.0.1:9101',
     'http://127.0.0.1:9102',
+    'https://localhost:8881',
+    'https://127.0.0.1:8881',
+    'http://jadmin.zynix.us',
+    'https://jadmin.zynix.us',
+    'http://jback2.zynix.us',
+    'https://jback2.zynix.us',
 ]
 
 # Email configuration for OTP and user verification.

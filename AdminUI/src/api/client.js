@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE = 'http://localhost:8000/api';
+const BASE = 'https://jback2.zynix.us/api';
 
 const api = axios.create({ baseURL: BASE });
 

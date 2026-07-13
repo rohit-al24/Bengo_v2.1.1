@@ -429,12 +429,6 @@ class AdminLessonDetailView(APIView):
         try: return Lesson.objects.get(pk=pk)
         except Lesson.DoesNotExist: return None
 
-    def get(self, request, pk):
-        if not is_admin(request.user): return Response({'detail': 'Forbidden.'}, status=403)
-        lesson = self._get(pk)
-        if not lesson: return Response({'detail': 'Not found.'}, status=404)
-        return Response(LessonSerializer(lesson, context={'request': request}).data)
-
     def patch(self, request, pk):
         if not is_admin(request.user): return Response({'detail': 'Forbidden.'}, status=403)
         lesson = self._get(pk)

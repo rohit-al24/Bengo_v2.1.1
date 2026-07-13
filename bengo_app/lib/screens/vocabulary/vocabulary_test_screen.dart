@@ -114,21 +114,12 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen>
             opts.addAll((q['options'] as List).map((o) => o.toString()));
           } else {
             opts.add(correct);
-            for (var k in ['wrong_1', 'wrong_2', 'wrong_3']) {
+            for (var k in ['wrong_1', 'wrong_2', 'wrong_3', 'wrong_4']) {
               final v = q[k]?.toString();
               if (v != null && v.isNotEmpty) opts.add(v);
             }
-          }
-          if (opts.length > 4) {
-            opts.removeWhere((o) => o == correct);
             opts.shuffle();
-            opts.insertAll(0, [correct]);
-            final onlyFour = [correct, ...opts.where((o) => o != correct).take(3)];
-            opts
-              ..clear()
-              ..addAll(onlyFour);
           }
-          opts.shuffle();
           final ci = opts.indexOf(correct);
           return {'target': target, 'options': opts, 'correct': ci < 0 ? 0 : ci};
         }).toList();
