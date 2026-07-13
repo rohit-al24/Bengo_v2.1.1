@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../widgets/bengo_avatar.dart';
+import '../../widgets/bengo_header.dart';
 import '../friends/friends_screen.dart';
 
 // ── Tokens ────────────────────────────────────────────────────────────────────
@@ -97,6 +98,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
+                    // ── App header ────────────────────────────────────────────
+                    const SliverToBoxAdapter(child: BenGoHeader()),
                     // ── Hero banner ──────────────────────────────────────────
                     SliverToBoxAdapter(
                       child: _ProfileHero(
@@ -525,139 +528,167 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final screenH = MediaQuery.of(context).size.height;
+
     return Container(
+      height: screenH * 0.92,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottom),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                    color: _kBorderLight,
-                    borderRadius: BorderRadius.circular(100)),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Edit Profile',
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 22, fontWeight: FontWeight.w700, color: _kInk),
-            ),
-            const SizedBox(height: 20),
-
-            // Avatar section
-            Text(
-              'AVATAR',
-              style: GoogleFonts.inter(
-                fontSize: 10, fontWeight: FontWeight.w800,
-                color: _kMuted, letterSpacing: 1.5),
-            ),
-            const SizedBox(height: 12),
-
-            // Currently selected avatar preview
-            Row(
+      child: Column(
+        children: [
+          // ── Drag handle + title ──────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                BenGoAvatar(avatarId: _avatarId, size: 60, showRing: true),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                        color: _kBorderLight,
+                        borderRadius: BorderRadius.circular(100)),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Edit Profile',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 22, fontWeight: FontWeight.w700, color: _kInk),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Pick your avatar below, then confirm your name.',
+                  style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // ── Scrollable: avatar section ──────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section label
+                  Text(
+                    'CHOOSE AVATAR',
+                    style: GoogleFonts.inter(
+                      fontSize: 10, fontWeight: FontWeight.w800,
+                      color: _kMuted, letterSpacing: 1.5),
+                  ),
+                  const SizedBox(height: 10),
+                  // Preview row
+                  Row(
                     children: [
-                      Text(
-                        avatarById(_avatarId).label,
-                        style: GoogleFonts.spaceGrotesk(
-                          fontSize: 16, fontWeight: FontWeight.w700, color: _kInk),
-                      ),
-                      Text(
-                        avatarById(_avatarId).label,
-                        style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                      BenGoAvatar(avatarId: _avatarId, size: 56, showRing: true),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          avatarById(_avatarId).label,
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 16, fontWeight: FontWeight.w700, color: _kInk),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Avatar picker grid
-            BenGoAvatarPicker(
-              selectedId: _avatarId,
-              onSelect: (id) => setState(() => _avatarId = id),
-            ),
-            const SizedBox(height: 20),
-
-            // Name fields
-            Text(
-              'NAME',
-              style: GoogleFonts.inter(
-                fontSize: 10, fontWeight: FontWeight.w800,
-                color: _kMuted, letterSpacing: 1.5),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: _EditField(label: 'First name', ctrl: _firstCtrl)),
-                const SizedBox(width: 10),
-                Expanded(child: _EditField(label: 'Last name', ctrl: _lastCtrl)),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            if (_error.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _kFieldTint,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _kFieldBorder),
-                ),
-                child: Text(_error,
-                    style: GoogleFonts.inter(fontSize: 12, color: _kAccent)),
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            // Save button
-            GestureDetector(
-              onTap: _saving ? null : _save,
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFC41230), Color(0xFFE0183A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  const SizedBox(height: 14),
+                  // Avatar grid
+                  BenGoAvatarPicker(
+                    selectedId: _avatarId,
+                    onSelect: (id) => setState(() => _avatarId = id),
                   ),
-                  borderRadius: BorderRadius.circular(100),
-                  boxShadow: const [
-                    BoxShadow(color: _kAccentShadow, blurRadius: 0, offset: Offset(0, 4)),
-                    BoxShadow(color: Color(0x18C41230), blurRadius: 12, offset: Offset(0, 8)),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Pinned: name fields + save button ──────────────────────────
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: _kBorderLight)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 20,
+                  offset: Offset(0, -6),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + bottom),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'YOUR NAME',
+                  style: GoogleFonts.inter(
+                    fontSize: 10, fontWeight: FontWeight.w800,
+                    color: _kMuted, letterSpacing: 1.5),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: _EditField(label: 'First name', ctrl: _firstCtrl)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _EditField(label: 'Last name', ctrl: _lastCtrl)),
                   ],
                 ),
-                child: Center(
-                  child: _saving
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : Text(
-                          'Save Changes',
-                          style: GoogleFonts.inter(
-                            fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
-                        ),
+                if (_error.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _kFieldTint,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kFieldBorder),
+                    ),
+                    child: Text(_error,
+                        style: GoogleFonts.inter(fontSize: 12, color: _kAccent)),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                // Save button
+                GestureDetector(
+                  onTap: _saving ? null : _save,
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFC41230), Color(0xFFE0183A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(100),
+                      boxShadow: const [
+                        BoxShadow(color: _kAccentShadow, blurRadius: 0, offset: Offset(0, 4)),
+                        BoxShadow(color: Color(0x18C41230), blurRadius: 12, offset: Offset(0, 8)),
+                      ],
+                    ),
+                    child: Center(
+                      child: _saving
+                          ? const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : Text(
+                              'Save Changes',
+                              style: GoogleFonts.inter(
+                                fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+                            ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

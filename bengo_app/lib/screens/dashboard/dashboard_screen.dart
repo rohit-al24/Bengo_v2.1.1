@@ -1,7 +1,9 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/bengo_avatar.dart';
 import '../../widgets/bengo_header.dart';
 import '../daily_revision/daily_revision_screen.dart';
@@ -24,6 +26,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic> _user = {};
   bool _loading = true;
+  bool _welcomeShown = false;
 
   @override
   void initState() {
@@ -36,7 +39,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loading = true);
     try {
       final me = await ApiService.instance.getMe();
-      if (mounted) setState(() { _user = me; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _user = me;
+          _loading = false;
+        });
+        if (!_welcomeShown) {
+          _welcomeShown = true;
+          Timer(const Duration(seconds: 2), () {
+            if (mounted) {
+              NotificationService.instance.showNotification(
+                title: 'Welcome to BenGo, ${me['first_name'] ?? me['username']}!',
+                message: 'Start learning or revision to unlock new badges!',
+                icon: Icons.emoji_events_rounded,
+              );
+            }
+          });
+        }
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }

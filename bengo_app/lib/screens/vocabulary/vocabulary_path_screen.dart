@@ -41,11 +41,56 @@ class VocabularyPathScreen extends StatefulWidget {
 
 class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
   List<dynamic> _currentLessons = [];
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _currentLessons = widget.apiLessons ?? [];
+    // Auto-scroll to the current lesson after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToActive());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Find the index of the last completed or first active lesson and scroll to it.
+  void _scrollToActive() {
+    final lessons = _lessons;
+    if (lessons.isEmpty) return;
+
+    // Find the last completed lesson index, or first active, or 0
+    int targetIndex = 0;
+    for (int i = 0; i < lessons.length; i++) {
+      if (lessons[i]['isCompleted'] == true) targetIndex = i;
+    }
+    // If none completed, try first active
+    if (targetIndex == 0) {
+      for (int i = 0; i < lessons.length; i++) {
+        if (lessons[i]['isActive'] == true) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (targetIndex == 0) return; // nothing to scroll to
+
+    const double nodeSpacing = 130.0;
+    const double headerApprox = 200.0; // approximate header height
+    final double offset = headerApprox + targetIndex * nodeSpacing - 120;
+
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      _scrollController.animateTo(
+        offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 900),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   Future<void> _refreshLessons() async {
@@ -145,10 +190,16 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
+                controller: _scrollController,
                 physics: const BouncingScrollPhysics(),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: _buildZigzagPath(context),
+                  // LayoutBuilder gives us the available width so we can
+                  // compute symmetric left/right positions at runtime.
+                  child: LayoutBuilder(
+                    builder: (ctx, constraints) =>
+                        _buildZigzagPath(ctx, constraints.maxWidth),
+                  ),
                 ),
               ),
             ),
@@ -241,23 +292,39 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
     );
   }
 
-  // ── Zigzag path (logic identical, styling improved) ─────────────────────────
-  Widget _buildZigzagPath(BuildContext context) {
+  // ── Centered zigzag path ────────────────────────────────────────────────────
+  Widget _buildZigzagPath(BuildContext context, double availableWidth) {
     const double nodeSize = 68.0;
-    const double leftX = 52.0;
-    const double rightX = 214.0;
-    const double nodeSpacing = 128.0;
+    const double nodeSpacing = 130.0;
+    // Horizontal offset from center: how far left/right each column sits.
+    // Keep nodes 56 px from each edge so label text never clips.
+    const double edgePad = 56.0;
+    final double center = availableWidth / 2;
+    // The path swings between center-offset and center+offset.
+    // We want nodes to be roughly 36% of width apart from center.
+    final double swing = (availableWidth * 0.28).clamp(70.0, 130.0);
+    // leftX / rightX are the LEFT edge of each node container.
+    final double leftX = center - swing - nodeSize / 2;
+    final double rightX = center + swing - nodeSize / 2;
+
+    // Painter uses center of each node (add nodeSize/2)
+    final double painterLeftX = leftX + nodeSize / 2;
+    final double painterRightX = rightX + nodeSize / 2;
+
+    final totalHeight = nodeSpacing * _lessons.length + 40;
 
     return SizedBox(
-      width: double.infinity,
+      width: availableWidth,
+      height: totalHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
+          // Curved path lines
           CustomPaint(
-            size: Size(300, nodeSpacing * _lessons.length + 40),
+            size: Size(availableWidth, totalHeight),
             painter: _PathPainter(
-              leftX: leftX + nodeSize / 2,
-              rightX: rightX + nodeSize / 2,
+              leftX: painterLeftX,
+              rightX: painterRightX,
               nodeSize: nodeSize,
               nodeSpacing: nodeSpacing,
               lessonCompletion: _lessons
@@ -265,33 +332,32 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
                   .toList(),
             ),
           ),
-          SizedBox(
-            height: nodeSpacing * _lessons.length + 40,
-            child: Stack(
-              children: List.generate(_lessons.length, (i) {
-                final lesson = _lessons[i];
-                final isLeft = i % 2 == 0;
-                final xPos = isLeft ? leftX : rightX;
-                final yPos = i * nodeSpacing + 20.0;
+          // Nodes
+          ...List.generate(_lessons.length, (i) {
+            final lesson = _lessons[i];
+            final isLeft = i % 2 == 0;
+            final xPos = isLeft ? leftX : rightX;
+            final yPos = i * nodeSpacing + 20.0;
 
-                return Positioned(
-                  left: xPos,
-                  top: yPos,
-                  child: _LessonNode(
-                    lesson: lesson,
-                    nodeSize: nodeSize,
-                    isCompleted: lesson['isCompleted'] as bool,
-                    isActive: lesson['isActive'] as bool,
-                    isLocked: lesson['isLocked'] as bool,
-                    isLeft: isLeft,
-                    onTap: (lesson['isLocked'] as bool)
-                        ? null
-                        : () => _showLessonSheet(context, lesson),
-                  ),
-                );
-              }),
-            ),
-          ),
+            return Positioned(
+              left: xPos,
+              top: yPos,
+              child: _LessonNode(
+                lesson: lesson,
+                nodeSize: nodeSize,
+                isCompleted: lesson['isCompleted'] as bool,
+                isActive: lesson['isActive'] as bool,
+                isLocked: lesson['isLocked'] as bool,
+                isLeft: isLeft,
+                availableWidth: availableWidth,
+                leftNodeCenter: painterLeftX,
+                rightNodeCenter: painterRightX,
+                onTap: (lesson['isLocked'] as bool)
+                    ? null
+                    : () => _showLessonSheet(context, lesson),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -372,8 +438,7 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
                         lesson['question_timer_seconds'] as int? ?? 30,
                     hasOverallTimer:
                         lesson['has_overall_timer'] as bool? ?? false,
-                    overallTimerSeconds:
-                        lesson['overall_timer_seconds'] as int?,
+                    overallTimerSeconds: lesson['overall_timer_seconds'] as int?,
                     passPct: lesson['pass_percentage'] as int? ?? 70,
                   ),
                 ));
@@ -439,7 +504,7 @@ class _PathPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PathPainter old) => false;
+  bool shouldRepaint(_PathPainter old) => true;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -453,6 +518,9 @@ class _LessonNode extends StatelessWidget {
   final bool isActive;
   final bool isLocked;
   final bool isLeft;
+  final double availableWidth;
+  final double leftNodeCenter;
+  final double rightNodeCenter;
   final VoidCallback? onTap;
 
   const _LessonNode({
@@ -462,6 +530,9 @@ class _LessonNode extends StatelessWidget {
     required this.isActive,
     required this.isLocked,
     required this.isLeft,
+    required this.availableWidth,
+    required this.leftNodeCenter,
+    required this.rightNodeCenter,
     this.onTap,
   });
 
@@ -499,8 +570,13 @@ class _LessonNode extends StatelessWidget {
       shadows = const [];
     }
 
-    final label = lesson['title'] as String;
-    final subtitle = lesson['subtitle'] as String;
+    // Label width = space from node edge to screen edge, minus 8px gutter
+    final String label = lesson['title'] as String;
+    final String subtitle = lesson['subtitle'] as String;
+    final double labelWidth = isLeft
+        ? (leftNodeCenter - nodeSize / 2 - 8).clamp(60.0, 120.0)
+        : (availableWidth - rightNodeCenter - nodeSize / 2 - 8)
+            .clamp(60.0, 120.0);
 
     return GestureDetector(
       onTap: onTap,
@@ -523,9 +599,9 @@ class _LessonNode extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: isActive ? 30 : 24),
           ),
           const SizedBox(height: 7),
-          // Label
+          // Label — width fills the space between node and screen edge
           SizedBox(
-            width: 94,
+            width: labelWidth,
             child: Column(
               crossAxisAlignment:
                   isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,

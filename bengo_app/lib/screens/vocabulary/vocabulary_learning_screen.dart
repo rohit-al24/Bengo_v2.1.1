@@ -1,14 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_text_styles.dart';
 import '../../services/api_service.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/bengo_header.dart';
 import '../../utils/app_decorations.dart';
-
-
 
 class VocabularyLearningScreen extends StatefulWidget {
   final int lessonNumber;
@@ -38,7 +37,7 @@ class _VocabularyLearningScreenState extends State<VocabularyLearningScreen> {
   Map<String, dynamic> _me = {};
   bool _loading = true;
   String _error = '';
-  int _selectedFocusEnv = 0;
+  bool _studyCompleted = false;
 
   // track which rows currently show the red-X (hint open)
   final Set<int> _hintOpen = {};
@@ -49,6 +48,13 @@ class _VocabularyLearningScreenState extends State<VocabularyLearningScreen> {
     _loadStudyItems();
   }
 
+  String _getCompletionKey() {
+    final userId = _me['id'] ?? 'guest';
+    final rId = widget.rankId ?? 'norank';
+    final lId = widget.lessonId ?? widget.lessonNumber;
+    return 'study_completed_${userId}_${rId}_${lId}';
+  }
+
   Future<void> _loadStudyItems() async {
     if (widget.lessonId == null) { _setFallback(); return; }
     setState(() { _loading = true; _error = ''; });
@@ -57,6 +63,15 @@ class _VocabularyLearningScreenState extends State<VocabularyLearningScreen> {
       try {
         final me = await ApiService.instance.getMe();
         _me = me;
+      } catch (_) {}
+
+      // Load SharedPreferences to check completion status
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final key = _getCompletionKey();
+        setState(() {
+          _studyCompleted = prefs.getBool(key) ?? false;
+        });
       } catch (_) {}
 
       final data = await ApiService.instance.getLessonStudy(widget.lessonId!);
@@ -103,6 +118,15 @@ class _VocabularyLearningScreenState extends State<VocabularyLearningScreen> {
         lessonId: widget.lessonId!,
         rankId: widget.rankId,
       );
+      // Save completion state
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getCompletionKey();
+      await prefs.setBool(key, true);
+      if (mounted) {
+        setState(() {
+          _studyCompleted = true;
+        });
+      }
     } catch (_) {}
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -216,62 +240,55 @@ class _VocabularyLearningScreenState extends State<VocabularyLearningScreen> {
         },
       ),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            const SliverToBoxAdapter(child: BenGoHeader(isSubPage: true)),
-            SliverToBoxAdapter(child: _buildHeader()),
+        child: Column(
+          children: [
+            // Pinned Header
+            const BenGoHeader(isSubPage: true),
+            // Pinned Title
+            _buildHeader(),
             if (_error.isNotEmpty)
-              SliverToBoxAdapter(child: _buildErrorBanner()),
-            if (_loading)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 48),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                ),
-              )
-            else if (_vocab.isEmpty)
-              SliverToBoxAdapter(child: _buildEmpty())
-            else ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: _buildVocabTable(context),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: _buildActionButtons(),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton.icon(
-                      onPressed: _markStudyComplete,
-                      icon: const Icon(Icons.check_circle_rounded, size: 20),
-                      label: Text('Complete Study',
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accentGreen,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
-                      ),
+              _buildErrorBanner(),
+            
+            // Scrollable Vocab Content
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : _vocab.isEmpty
+                      ? _buildEmpty()
+                      : SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Column(
+                            children: [
+                              _buildVocabTable(context),
+                              const SizedBox(height: 100), // padding to prevent occlusion by pinned bottom button
+                            ],
+                          ),
+                        ),
+            ),
+
+            // Pinned Bottom Action Button (shows only if study NOT yet completed for this lesson+rank)
+            if (!_loading && _vocab.isNotEmpty && !_studyCompleted)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: _markStudyComplete,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accentGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Claim Learning XP',
+                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                  child: _buildFocusEnvironment(),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -419,64 +436,6 @@ class _VocabularyLearningScreenState extends State<VocabularyLearningScreen> {
       ],
     );
   }
-
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(child: _actionBtn(Icons.history_rounded, 'Full\nReview')),
-        const SizedBox(width: 12),
-        Expanded(child: _actionBtn(Icons.star_border_rounded, 'Favorite\nAll')),
-      ],
-    );
-  }
-
-  Widget _actionBtn(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: AppDecorations.skeuomorphicCard(radius: 14),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.textSecondary, size: 22),
-          const SizedBox(height: 6),
-          Text(label, textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.3)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFocusEnvironment() {
-    final icons = [Icons.park_outlined, Icons.water_drop_outlined, Icons.spa_outlined];
-    return Column(
-      children: [
-        Text('FOCUS ENVIRONMENT', style: AppTextStyles.captionUpper),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: icons.asMap().entries.map((e) {
-            final sel = _selectedFocusEnv == e.key;
-            return GestureDetector(
-              onTap: () => setState(() => _selectedFocusEnv = e.key),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                width: 48, height: 48,
-                decoration: AppDecorations.skeuomorphicCard(
-                  radius: 24,
-                  color: sel ? AppColors.accentGreen.withOpacity(0.15) : Colors.white,
-                  pressed: sel,
-                ),
-                child: Icon(e.value,
-                    color: sel ? AppColors.accentGreen : AppColors.textMuted, size: 22),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-
 
   Widget _buildHeader() {
     final rName = widget.rankName.isNotEmpty ? '${widget.rankName.toUpperCase()} • ' : '';

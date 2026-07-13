@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/bengo_avatar.dart';
 import '../screens/friends/friends_screen.dart';
 import '../screens/leaderboard/leaderboard_screen.dart';
@@ -122,13 +123,7 @@ class _BenGoHeaderState extends State<BenGoHeader>
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _IconBtn(
-                            icon: Icons.people_alt_rounded,
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (_) => const FriendsScreen()),
-                            ),
-                          ),
+                          const _FriendsIconBtn(),
                         ],
                       ),
                 ],
@@ -300,6 +295,162 @@ class _AnimatedLogoText extends StatelessWidget {
               letterSpacing: -0.6,
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _FriendsIconBtn extends StatefulWidget {
+  const _FriendsIconBtn();
+
+  @override
+  State<_FriendsIconBtn> createState() => _FriendsIconBtnState();
+}
+
+class _FriendsIconBtnState extends State<_FriendsIconBtn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animCtrl;
+  late final Animation<double> _translateY;
+  late final Animation<double> _opacity;
+  late final Animation<double> _scale;
+  bool _pressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _translateY = Tween<double>(begin: 0.0, end: -35.0).animate(
+      CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic),
+    );
+
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.0), weight: 50),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.0), weight: 30),
+    ]).animate(_animCtrl);
+
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.3), weight: 30),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.3, end: 1.0), weight: 70),
+    ]).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutBack));
+
+    NotificationService.instance.newRequestAnimationTrigger.addListener(_onNewRequest);
+  }
+
+  void _onNewRequest() {
+    if (mounted) {
+      _animCtrl.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    NotificationService.instance.newRequestAnimationTrigger.removeListener(_onNewRequest);
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: NotificationService.instance.pendingRequestsNotifier,
+      builder: (context, pendingCount, _) {
+        return Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapUp: (_) {
+                setState(() => _pressed = false);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const FriendsScreen()),
+                );
+              },
+              onTapCancel: () => setState(() => _pressed = false),
+              child: AnimatedScale(
+                scale: _pressed ? 0.92 : 1.0,
+                duration: const Duration(milliseconds: 100),
+                child: AnimatedBuilder(
+                  animation: _animCtrl,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _scale.value,
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F2FA),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFEDE9F4)),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(Icons.people_alt_rounded, size: 18, color: _kMuted),
+                            if (pendingCount > 0)
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: _kAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            
+            // Floating "+1" animated text
+            AnimatedBuilder(
+              animation: _animCtrl,
+              builder: (context, child) {
+                if (_animCtrl.isDismissed) return const SizedBox.shrink();
+                return Positioned(
+                  top: _translateY.value,
+                  child: Opacity(
+                    opacity: _opacity.value,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _kAccent,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _kAccent.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '+1',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         );
       },
     );

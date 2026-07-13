@@ -65,6 +65,9 @@ class ApiService {
   }
 
   Future<void> clearTokens() async {
+    try {
+      await _req('POST', '/auth/logout/');
+    } catch (_) {}
     _cachedMe = null;
     currentUserNotifier.value = null;
     final prefs = await SharedPreferences.getInstance();
@@ -276,6 +279,13 @@ class ApiService {
   Future<List<dynamic>> getFriends() async {
     final res = await _req('GET', '/community/friends/');
     return _decodeList(res);
+  }
+
+  Future<Map<String, dynamic>> removeFriend(int friendId) async {
+    final res = await _req('DELETE', '/community/friends/remove/', body: {
+      'friend_id': friendId,
+    });
+    return _decode(res);
   }
 
   Future<List<dynamic>> getIncomingRequests() async {

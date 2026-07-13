@@ -37,6 +37,7 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
   bool _loading = false;
   String _examTitle = '';
   Map<String, dynamic>? _currentRank;
+  Map<String, dynamic> _userData = {};       // real user stats
 
   // Static fallback icons mapped by category title
   static final _iconMap = <String, Map<String, dynamic>>{
@@ -109,11 +110,26 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
   @override
   void initState() {
     super.initState();
+    _loadUserStats();
     if (widget.examId != null) {
       _loadFromApi();
     } else {
       _categories = List<dynamic>.from(_staticCategories);
     }
+  }
+
+  /// Load real user XP + streak for the stats card
+  Future<void> _loadUserStats() async {
+    try {
+      // Try cache first via notifier, then fall back to API
+      final cached = ApiService.instance.currentUserNotifier.value;
+      if (cached != null) {
+        if (mounted) setState(() => _userData = cached);
+        return;
+      }
+      final me = await ApiService.instance.getMe();
+      if (mounted) setState(() => _userData = me);
+    } catch (_) {}
   }
 
   Future<void> _loadFromApi() async {
@@ -311,7 +327,7 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
     );
   }
 
-  // ── Overall progress card (red gradient) ────────────────────────────────────
+  // ── Overall progress card (dark gradient + real stats) ─────────────────────
   Widget _buildProgressCard() {
     final total = _categories.fold<int>(0, (sum, c) {
       final count = c['lessons_count'] ?? (c['lessons'] as List?)?.length ?? 0;
@@ -327,6 +343,13 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
         total > 0 ? (completed / total).clamp(0.0, 1.0) : 0.0;
     final rankName =
         (_currentRank?['rank_name'] ?? 'Current rank').toString();
+    final rankIcon =
+        (_currentRank?['rank_icon'] ?? '🏆').toString().trim();
+    final displayRankIcon = rankIcon.isNotEmpty ? rankIcon : '🏆';
+
+    // Real user data
+    final xp = (_userData['xp'] ?? 0) as int;
+    final streak = (_userData['streak_days'] ?? 0) as int;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -334,87 +357,107 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFFC41230), Color(0xFF8B0D21)],
+            colors: [Color(0xFF1B1B1D), Color(0xFF2E1A1F)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x40C41230),
-              blurRadius: 0,
-              offset: Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Color(0x20C41230),
-              blurRadius: 14,
+              color: Color(0x30000000),
+              blurRadius: 20,
               offset: Offset(0, 8),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'OVERALL PROGRESS',
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white60,
-                      letterSpacing: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
+            // Top row: rank badge + level pill
+            Row(
+              children: [
+                Text(displayRankIcon,
+                    style: const TextStyle(fontSize: 20)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
                     rankName,
                     style: GoogleFonts.spaceGrotesk(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  ClipRRect(
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(100),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 7,
-                      backgroundColor: Colors.white.withOpacity(0.25),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.white),
+                    border: Border.all(
+                        color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: Text(
+                    'JLPT ${widget.level}',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white70,
+                      letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${(progress * 100).toStringAsFixed(0)}%  ·  $completed / $total lessons',
-                    style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w500),
-                  ),
-                ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 7,
+                backgroundColor: Colors.white.withOpacity(0.15),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFFC41230)),
               ),
             ),
-            const SizedBox(width: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            const SizedBox(height: 8),
+            Text(
+              total > 0
+                  ? '$completed of $total lessons completed · ${(progress * 100).toStringAsFixed(0)}%'
+                  : 'Start your first lesson to track progress',
+              style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.white54,
+                  fontWeight: FontWeight.w500),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Bottom: real XP + streak stat chips
+            Row(
               children: [
-                const Icon(Icons.emoji_events_rounded,
-                    color: Colors.amber, size: 34),
-                const SizedBox(height: 6),
-                Text(
-                  '$total',
-                  style: GoogleFonts.spaceGrotesk(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white),
+                _StatTile(
+                  emoji: '⚡',
+                  value: xp > 999
+                      ? '${(xp / 1000).toStringAsFixed(1)}k'
+                      : '$xp',
+                  label: 'XP Earned',
                 ),
-                Text(
-                  'lessons',
-                  style: GoogleFonts.inter(fontSize: 10, color: Colors.white60),
+                const SizedBox(width: 10),
+                _StatTile(
+                  emoji: '🔥',
+                  value: '$streak',
+                  label: streak == 1 ? 'Day Streak' : 'Day Streak',
+                ),
+                const SizedBox(width: 10),
+                _StatTile(
+                  emoji: '📚',
+                  value: '$total',
+                  label: 'Lessons',
                 ),
               ],
             ),
@@ -542,6 +585,55 @@ class _CourseCategoriesScreenState extends State<CourseCategoriesScreen> {
               ),
               child: const Icon(Icons.chevron_right_rounded,
                   color: _kAccent, size: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── _StatTile ─────────────────────────────────────────────────────────────────
+class _StatTile extends StatelessWidget {
+  final String emoji;
+  final String value;
+  final String label;
+  const _StatTile({
+    required this.emoji,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.12)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                color: Colors.white54,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),

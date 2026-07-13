@@ -27,12 +27,140 @@ def get_tokens(user):
 def _send_email_verification_code(email: str, code: str) -> None:
     subject = 'Your BenGo verification code'
     body = f'Your BenGo verification code is {code}.\n\nUse this code to complete your registration.'
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Your BenGo Verification Code</title>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                background-color: #FAF8F5;
+                margin: 0;
+                padding: 0;
+                -webkit-font-smoothing: antialiased;
+            }}
+            .wrapper {{
+                width: 100%;
+                background-color: #FAF8F5;
+                padding: 40px 0;
+            }}
+            .container {{
+                max-width: 480px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 20px;
+                border: 1px solid #EAE5E1;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.02);
+                overflow: hidden;
+            }}
+            .header {{
+                background-color: #C41230;
+                padding: 28px;
+                text-align: center;
+            }}
+            .header h1 {{
+                color: #ffffff;
+                font-size: 24px;
+                margin: 0;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+            }}
+            .content {{
+                padding: 36px 28px;
+                color: #1B1B1D;
+                line-height: 1.6;
+            }}
+            .greeting {{
+                font-size: 18px;
+                font-weight: 700;
+                margin-top: 0;
+                margin-bottom: 12px;
+                color: #1B1B1D;
+            }}
+            .intro-text {{
+                font-size: 14px;
+                color: #555558;
+                margin-bottom: 20px;
+            }}
+            .code-container {{
+                background-color: #FDF3F5;
+                border: 1.5px solid #EDD5D8;
+                border-radius: 14px;
+                padding: 20px;
+                text-align: center;
+                margin: 28px 0;
+            }}
+            .code-label {{
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 1.5px;
+                color: #C41230;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }}
+            .code-value {{
+                font-size: 36px;
+                font-weight: 800;
+                letter-spacing: 5px;
+                color: #C41230;
+                font-family: "Courier New", Courier, monospace;
+                margin: 0;
+            }}
+            .info-note {{
+                font-size: 12px;
+                color: #8A8A8F;
+                text-align: center;
+                margin-top: 16px;
+            }}
+            .footer {{
+                background-color: #FAF8F5;
+                padding: 20px;
+                text-align: center;
+                border-top: 1px solid #EAE5E1;
+                font-size: 11px;
+                color: #8A8A8F;
+            }}
+            .footer p {{
+                margin: 4px 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="container">
+                <div class="header">
+                    <h1>BenGo</h1>
+                </div>
+                <div class="content">
+                    <p class="greeting">Verify your email address</p>
+                    <p class="intro-text">Thank you for joining BenGo! Please use the following 6-digit verification code to complete your registration. This code is active for 15 minutes.</p>
+                    <div class="code-container">
+                        <div class="code-label">Verification Code</div>
+                        <div class="code-value">{code}</div>
+                    </div>
+                    <p class="info-note">If you did not request this code, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; {timezone.now().year} BenGo. All rights reserved.</p>
+                    <p>Designed to help you master Japanese with ease.</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
     send_mail(
         subject,
         body,
         None,
         [email],
         fail_silently=False,
+        html_message=html_content,
     )
 
 
@@ -140,6 +268,16 @@ class LoginView(APIView):
                 'tokens': tokens,
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user.last_active = timezone.now() - timedelta(minutes=10)
+        user.save(update_fields=['last_active'])
+        return Response({'detail': 'Logged out successfully.'})
 
 
 class MeView(APIView):

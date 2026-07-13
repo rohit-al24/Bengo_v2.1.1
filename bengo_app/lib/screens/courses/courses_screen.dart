@@ -32,11 +32,25 @@ class _CoursesScreenState extends State<CoursesScreen> {
   String _error = '';
   final Map<int, Map<String, dynamic>> _rankByExamId = {};
   final Map<int, Map<String, dynamic>> _upgradeMetaByExamId = {};
+  Map<String, dynamic> _userData = {};          // real user xp/streak
 
   @override
   void initState() {
     super.initState();
     _loadExams();
+    _loadUserStats();
+  }
+
+  Future<void> _loadUserStats() async {
+    try {
+      final cached = ApiService.instance.currentUserNotifier.value;
+      if (cached != null) {
+        if (mounted) setState(() => _userData = cached);
+        return;
+      }
+      final me = await ApiService.instance.getMe();
+      if (mounted) setState(() => _userData = me);
+    } catch (_) {}
   }
 
   Future<void> _loadExams() async {
@@ -304,7 +318,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
     );
   }
 
-  // ── Unlocked exam card ─────────────────────────────────────────────────────
   Widget _buildExamCard(Map<String, dynamic> exam, {required bool unlocked}) {
     final examId = exam['id'] as int?;
     final currentRank = examId == null ? null : _rankByExamId[examId];
@@ -312,8 +325,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
     final canUpgrade = upgradeMeta?['canUpgrade'] == true;
     final nextRank = (upgradeMeta?['nextRank'] as Map<String, dynamic>?) ??
         const <String, dynamic>{};
+    final rankName = (currentRank?['rank_name'] ?? '').toString();
+    final rankIcon = (currentRank?['rank_icon'] ?? '🏆').toString();
 
-    return GestureDetector(
+    return _TappableCard(
       onTap: () async {
         if (!unlocked) {
           try {
@@ -324,94 +339,155 @@ class _CoursesScreenState extends State<CoursesScreen> {
         }
         await _showRankJourneySheet(exam);
       },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: _kSurface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _kBorderLight),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4))
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Level badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _kGreenTint,
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(color: _kGreenBorder),
-                  ),
-                  child: Text(
-                    'Level: ${exam['level']}',
-                    style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: _kGreenText,
-                        fontWeight: FontWeight.w700),
-                  ),
-                ),
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: _kFieldTint,
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(color: _kFieldBorder),
-                  ),
-                  child: const Icon(Icons.menu_book_rounded,
-                      color: _kAccent, size: 22),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              exam['title'] ?? '',
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: _kInk,
-                height: 1.2,
-                letterSpacing: -0.4,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Hero header — dark gradient ──────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1B1B1D), Color(0xFF2E1A1F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            const SizedBox(height: 6),
-            Text(
-              exam['description'] ?? '',
-              style: GoogleFonts.inter(fontSize: 13, color: _kMuted, height: 1.5),
-            ),
-            const SizedBox(height: 12),
-            _buildRankBadge(currentRank),
-            if (canUpgrade) ...[
-              const SizedBox(height: 10),
-              _buildUpgradeButton(exam, nextRank),
-            ],
-            const SizedBox(height: 16),
-            Divider(color: _kBorderLight, height: 1),
-            const SizedBox(height: 14),
-            Row(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _SubjectChip(icon: Icons.g_translate_rounded, label: 'Vocabulary'),
-                const SizedBox(width: 10),
-                _SubjectChip(icon: Icons.edit_note_rounded, label: 'Grammar'),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Level chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _kGreenText.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(color: _kGreenText.withOpacity(0.35)),
+                        ),
+                        child: Text(
+                          'Level: ${exam['level']}',
+                          style: GoogleFonts.inter(
+                            fontSize: 10, color: _kGreenText, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        exam['title'] ?? '',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: -0.4,
+                          height: 1.15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        exam['description'] ?? '',
+                        style: GoogleFonts.inter(
+                          fontSize: 12, color: Colors.white60, height: 1.5),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withOpacity(0.15)),
+                  ),
+                  child: const Icon(Icons.menu_book_rounded, color: Colors.white70, size: 24),
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+
+          // ── Body ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Rank badge row
+                Row(
+                  children: [
+                    Text(rankIcon, style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        rankName.isNotEmpty ? 'Current rank: $rankName' : 'Start learning',
+                        style: GoogleFonts.inter(
+                          fontSize: 12, fontWeight: FontWeight.w600, color: _kAccent),
+                      ),
+                    ),
+                    // Subject chips inline
+                    _SubjectChip(icon: Icons.g_translate_rounded, label: 'Vocab'),
+                    const SizedBox(width: 6),
+                    _SubjectChip(icon: Icons.edit_note_rounded, label: 'Grammar'),
+                  ],
+                ),
+
+                if (canUpgrade) ...[
+                  const SizedBox(height: 10),
+                  _buildUpgradeButton(exam, nextRank),
+                ],
+
+                const SizedBox(height: 14),
+
+                // ── Big CTA ──────────────────────────────────────────────
+                Container(
+                  height: 50,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFC41230), Color(0xFFE0183A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: _kAccentShadow,
+                        blurRadius: 14,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'OPEN EXAM',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   // ── Locked exam row ────────────────────────────────────────────────────────
   Widget _buildLockedExamCard(Map<String, dynamic> exam) {
-    return GestureDetector(
+    return _TappableCard(
       onTap: () async {
         try {
           await ApiService.instance.unlockExam(exam['id'] as int);
@@ -422,28 +498,21 @@ class _CoursesScreenState extends State<CoursesScreen> {
           );
         } catch (_) {}
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: _kSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _kBorderLight),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x05000000), blurRadius: 6, offset: Offset(0, 2))
-          ],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
+            // Lock icon block
             Container(
-              width: 40,
-              height: 40,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xFFF5F5F7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
               ),
               child: const Icon(Icons.lock_outline_rounded,
-                  color: Color(0xFFB0B0B0), size: 20),
+                  color: Color(0xFFB0B0B0), size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -452,31 +521,39 @@ class _CoursesScreenState extends State<CoursesScreen> {
                 children: [
                   Text(
                     exam['title'] ?? '',
-                    style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: _kInk),
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _kInk,
+                    ),
                   ),
+                  const SizedBox(height: 3),
                   Text(
-                    '${exam['level']} · Tap to unlock',
+                    'Level ${exam['level']} · Tap to unlock now',
                     style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 10),
+            // Unlock CTA pill
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               decoration: BoxDecoration(
-                color: _kFieldTint,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFC41230), Color(0xFFE0183A)],
+                ),
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: _kFieldBorder),
+                boxShadow: const [
+                  BoxShadow(color: _kAccentShadow, blurRadius: 8, offset: Offset(0, 3)),
+                ],
               ),
               child: Text(
                 'UNLOCK',
                 style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: _kAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                     letterSpacing: 0.5),
               ),
             ),
@@ -1232,8 +1309,24 @@ class _CoursesScreenState extends State<CoursesScreen> {
     }
   }
 
-  // ── Boost card ─────────────────────────────────────────────────────────────
+  // ── Your Progress card (real data) ────────────────────────────────────────
   Widget _buildBoostCard() {
+    final xp = (_userData['xp'] ?? 0) as int;
+    final streak = (_userData['streak_days'] ?? 0) as int;
+    final firstName = (_userData['first_name'] ?? '').toString().trim();
+    final greeting = firstName.isNotEmpty ? 'Hi, $firstName 👋' : 'Your Progress';
+
+    // XP milestones: 0 → 500 → 1000 → 2500 → 5000 → 10000
+    const milestones = [500, 1000, 2500, 5000, 10000];
+    int milestone = milestones.firstWhere((m) => xp < m, orElse: () => 10000);
+    final xpProgress = (xp / milestone).clamp(0.0, 1.0);
+    final xpDisplay = xp > 999
+        ? '${(xp / 1000).toStringAsFixed(1)}k'
+        : '$xp';
+    final milestoneDisplay = milestone >= 1000
+        ? '${(milestone / 1000).toStringAsFixed(0)}k XP'
+        : '$milestone XP';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1245,65 +1338,123 @@ class _CoursesScreenState extends State<CoursesScreen> {
               color: Color(0x07000000), blurRadius: 10, offset: Offset(0, 3))
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'EXP BOOST',
-                  style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: _kAccent,
-                      letterSpacing: 1.4),
+          // Header
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      greeting,
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: _kInk,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Keep up the momentum!',
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: _kMuted),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '1.5×',
-                  style: GoogleFonts.spaceGrotesk(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: _kInk),
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(100),
-                  child: LinearProgressIndicator(
-                    value: 0.6,
-                    backgroundColor: _kBorderLight,
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(_kAccent),
-                    minHeight: 6,
+              ),
+              // Streak badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: streak > 0
+                      ? const Color(0xFFFFF7ED)
+                      : const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: streak > 0
+                        ? const Color(0xFFFED7AA)
+                        : _kBorderLight,
                   ),
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      streak > 0 ? '🔥' : '💤',
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(width: 6),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$streak',
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: _kInk,
+                          ),
+                        ),
+                        Text(
+                          streak == 1 ? 'Day' : 'Days',
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: _kMuted),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+          Divider(color: _kBorderLight, height: 1),
+          const SizedBox(height: 16),
+
+          // XP progress
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'TOTAL XP',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: _kMuted,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              Text(
+                '$xpDisplay / $milestoneDisplay',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: _kAccent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: LinearProgressIndicator(
+              value: xpProgress,
+              backgroundColor: _kBorderLight,
+              valueColor: const AlwaysStoppedAnimation<Color>(_kAccent),
+              minHeight: 8,
             ),
           ),
-          const SizedBox(width: 24),
-          Column(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: _kGreenTint,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _kGreenBorder),
-                ),
-                child: const Icon(Icons.military_tech_rounded,
-                    color: _kGreenText, size: 30),
-              ),
-              const SizedBox(height: 8),
-              Text('24 Day',
-                  style: GoogleFonts.spaceGrotesk(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: _kInk)),
-              Text('Streak',
-                  style: GoogleFonts.inter(fontSize: 11, color: _kMuted)),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            xp == 0
+                ? 'Complete a lesson to earn your first XP!'
+                : '$xp XP earned · ${((1 - xpProgress) * milestone).toInt()} XP to next milestone',
+            style: GoogleFonts.inter(fontSize: 11, color: _kMuted),
           ),
         ],
       ),
@@ -1336,7 +1487,7 @@ class _SubjectChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: _kBg,
         borderRadius: BorderRadius.circular(100),
@@ -1345,12 +1496,71 @@ class _SubjectChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: _kMuted),
-          const SizedBox(width: 6),
+          Icon(icon, size: 12, color: _kMuted),
+          const SizedBox(width: 5),
           Text(label,
               style: GoogleFonts.inter(
-                  fontSize: 11, color: _kMuted, fontWeight: FontWeight.w500)),
+                  fontSize: 10, color: _kMuted, fontWeight: FontWeight.w500)),
         ],
+      ),
+    );
+  }
+}
+
+// ── Tappable card wrapper ──────────────────────────────────────────────────────
+class _TappableCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  const _TappableCard({required this.child, this.onTap});
+
+  @override
+  State<_TappableCard> createState() => _TappableCardState();
+}
+
+class _TappableCardState extends State<_TappableCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap?.call();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.975 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          decoration: BoxDecoration(
+            color: _kSurface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: _pressed ? _kAccent.withOpacity(0.35) : _kBorderLight,
+            ),
+            boxShadow: _pressed
+                ? const [
+                    BoxShadow(
+                      color: Color(0x18C41230),
+                      blurRadius: 20,
+                      offset: Offset(0, 6),
+                    ),
+                  ]
+                : const [
+                    BoxShadow(
+                      color: Color(0x08000000),
+                      blurRadius: 16,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }
