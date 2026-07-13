@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Rank, UserRankProgress, TestLog, XPConfig
+from .models import Rank, UserRankProgress, TestLog, XPConfig, DailyRevisionConfig, DailyRevisionAttempt
 from apps.courses.models import Exam, Category, Lesson
 
 
@@ -54,4 +54,16 @@ class XPConfigSerializer(serializers.ModelSerializer):
         model  = XPConfig
         fields = ['id', 'rank', 'lesson', 'lesson_name', 'lesson_order',
                   'lesson_type', 'category_name', 'study_xp', 'test_xp']
+
+
+class DailyRevisionConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyRevisionConfig
+        fields = ['timer_minutes', 'per_question_xp', 'overall_completion_xp', 'streak_count', 'daily_limit', 'updated_at']
+
+
+class DailyRevisionAttemptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyRevisionAttempt
+        fields = ['id', 'total', 'correct', 'wrong', 'timed_out', 'score_pct', 'xp_gained', 'streak_gained', 'created_at']
 

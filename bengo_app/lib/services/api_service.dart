@@ -411,6 +411,38 @@ class ApiService {
     return data;
   }
 
+  Future<Map<String, dynamic>> getDailyRevisionSession() async {
+    final res = await _req('GET', '/ranks/logs/daily_revision_session/');
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> submitDailyRevision({
+    required int total,
+    required int correct,
+    required int wrong,
+    required int timedOut,
+  }) async {
+    final res = await _req('POST', '/ranks/logs/daily_revision_submit/', body: {
+      'total': total,
+      'correct': correct,
+      'wrong': wrong,
+      'timed_out': timedOut,
+    });
+    final data = _decode(res);
+    if (_cachedMe != null) {
+      if (data.containsKey('total_xp')) {
+        _cachedMe!['xp'] = data['total_xp'];
+      }
+      if (data.containsKey('streak_days')) {
+        _cachedMe!['streak_days'] = data['streak_days'];
+      }
+      currentUserNotifier.value = Map<String, dynamic>.from(_cachedMe!);
+      await _saveUserToStorage(_cachedMe!);
+    } else {
+      await getMe(forceRefresh: true);
+    }
+    return data;
+  }
 
   // ── Certificates ───────────────────────────────────────────────────────────
   Future<List<dynamic>> getMyCertificates() async {

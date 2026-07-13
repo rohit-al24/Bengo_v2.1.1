@@ -1,12 +1,14 @@
+import random
 from django.utils import timezone
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Rank, UserRankProgress, TestLog, XPConfig
+from .models import Rank, UserRankProgress, TestLog, XPConfig, DailyRevisionConfig, DailyRevisionAttempt
 from .serializers import (RankSerializer, UserRankProgressSerializer,
-                           TestLogSerializer, XPConfigSerializer)
-from apps.courses.models import Lesson, Category
-from apps.progress.models import UserLessonProgress
+                           TestLogSerializer, XPConfigSerializer,
+                           DailyRevisionConfigSerializer, DailyRevisionAttemptSerializer)
+from apps.courses.models import Lesson, Category, BankQuestion
+from apps.progress.models import UserLessonProgress, UserExamUnlock
 
 
 class RankViewSet(viewsets.ModelViewSet):
@@ -106,6 +108,153 @@ class TestLogViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return TestLog.objects.filter(user=self.request.user).select_related('lesson', 'rank')
+
+    def _get_daily_revision_config(self):
+        return DailyRevisionConfig.objects.get_or_create(
+            pk=1,
+            defaults={
+                'timer_minutes': 10,
+                'per_question_xp': 5,
+                'overall_completion_xp': 10,
+                'streak_count': 1,
+                'daily_limit': 1,
+            },
+        )[0]
+
+    def _build_daily_revision_questions(self, user):
+        unlocked_exam_ids = UserExamUnlock.objects.filter(user=user).values_list('exam_id', flat=True)
+        completed_lessons = Lesson.objects.filter(
+            category__exam_id__in=unlocked_exam_ids,
+            is_active=True,
+            lesson_type__in=[Lesson.STUDY, Lesson.EXAM],
+            user_progress__user=user,
+            user_progress__is_completed=True,
+        ).distinct()
+
+        questions = []
+        for lesson in completed_lessons:
+            if lesson.test_source == Lesson.FROM_STUDY:
+                items = list(lesson.study_items.all())
+                random.shuffle(items)
+                for item in items:
+                    options = [item.correct_answer, item.wrong_1, item.wrong_2, item.wrong_3, item.wrong_4]
+                    options = [opt for opt in options if opt and opt.strip()]
+                    if len(options) < 2:
+                        continue
+                    options = options[:4]
+                    if item.correct_answer not in options:
+                        options[0] = item.correct_answer
+                    random.shuffle(options)
+                    questions.append({
+                        'id': f'{lesson.id}-{item.id}',
+                        'lesson_id': lesson.id,
+                        'lesson_name': lesson.name,
+                        'target': item.target,
+                        'options': options,
+                        'correct_answer': item.correct_answer,
+                        'correct_index': options.index(item.correct_answer),
+                    })
+            else:
+                active_banks = lesson.question_banks.filter(is_active=True)
+                bank_questions = list(BankQuestion.objects.filter(bank__in=active_banks))
+                random.shuffle(bank_questions)
+                for question in bank_questions[:max(lesson.test_questions_count, 20)]:
+                    options = [question.correct_answer, question.wrong_1, question.wrong_2, question.wrong_3, question.wrong_4]
+                    options = [opt for opt in options if opt and opt.strip()]
+                    if len(options) < 2:
+                        continue
+                    options = options[:4]
+                    if question.correct_answer not in options:
+                        options[0] = question.correct_answer
+                    random.shuffle(options)
+                    questions.append({
+                        'id': f'{lesson.id}-{question.id}',
+                        'lesson_id': lesson.id,
+                        'lesson_name': lesson.name,
+                        'target': question.target,
+                        'options': options,
+                        'correct_answer': question.correct_answer,
+                        'correct_index': options.index(question.correct_answer),
+                    })
+
+        random.shuffle(questions)
+        return questions[:40]
+
+    @action(detail=False, methods=['get', 'post'])
+    def daily_revision_config(self, request):
+        cfg = self._get_daily_revision_config()
+        if request.method == 'GET':
+            return Response(DailyRevisionConfigSerializer(cfg).data)
+
+        if not request.user.is_staff:
+            return Response({'detail': 'Admin access required.'}, status=403)
+
+        serializer = DailyRevisionConfigSerializer(cfg, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def daily_revision_session(self, request):
+        cfg = self._get_daily_revision_config()
+        questions = self._build_daily_revision_questions(request.user)
+        today = timezone.now().date()
+        attempts_today = DailyRevisionAttempt.objects.filter(user=request.user, created_at__date=today).count()
+        return Response({
+            'config': DailyRevisionConfigSerializer(cfg).data,
+            'questions': questions,
+            'attempts_today': attempts_today,
+            'attempt_limit': cfg.daily_limit,
+            'remaining_attempts': max(0, cfg.daily_limit - attempts_today),
+        })
+
+    @action(detail=False, methods=['post'])
+    def daily_revision_submit(self, request):
+        cfg = self._get_daily_revision_config()
+        today = timezone.now().date()
+        attempts_today = DailyRevisionAttempt.objects.filter(user=request.user, created_at__date=today).count()
+        if attempts_today >= cfg.daily_limit:
+            return Response({'detail': 'Daily revision limit reached.', 'remaining_attempts': 0}, status=400)
+
+        total = int(request.data.get('total', 0))
+        correct = int(request.data.get('correct', 0))
+        wrong = int(request.data.get('wrong', 0))
+        timed_out = int(request.data.get('timed_out', 0))
+        score_pct = round((correct / total) * 100, 2) if total > 0 else 0.0
+        xp_gained = cfg.overall_completion_xp + (correct * cfg.per_question_xp)
+        streak_gained = cfg.streak_count
+
+        attempt = DailyRevisionAttempt.objects.create(
+            user=request.user,
+            total=total,
+            correct=correct,
+            wrong=wrong,
+            timed_out=timed_out,
+            score_pct=score_pct,
+            xp_gained=xp_gained,
+            streak_gained=streak_gained,
+        )
+
+        request.user.xp += xp_gained
+        today_dt = timezone.now().date()
+        from datetime import timedelta
+        if request.user.last_study_date == today_dt - timedelta(days=1):
+            request.user.streak_days = (request.user.streak_days or 0) + streak_gained
+        elif request.user.last_study_date != today_dt:
+            request.user.streak_days = streak_gained
+        else:
+            request.user.streak_days = (request.user.streak_days or 0) + streak_gained
+        request.user.last_study_date = today_dt
+        request.user.save(update_fields=['xp', 'streak_days', 'last_study_date'])
+
+        return Response({
+            'attempt': DailyRevisionAttemptSerializer(attempt).data,
+            'xp_gained': xp_gained,
+            'streak_gained': streak_gained,
+            'total_xp': request.user.xp,
+            'streak_days': request.user.streak_days,
+            'score_pct': score_pct,
+        })
 
     def create(self, request, *args, **kwargs):
         data = request.data

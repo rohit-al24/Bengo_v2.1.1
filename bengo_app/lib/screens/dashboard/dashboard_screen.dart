@@ -5,6 +5,7 @@ import '../../utils/app_text_styles.dart';
 import '../../utils/app_decorations.dart';
 import '../../services/api_service.dart';
 import '../../widgets/bengo_header.dart';
+import '../daily_revision/daily_revision_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -181,7 +182,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DailyRevisionScreen()),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),

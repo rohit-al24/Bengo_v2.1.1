@@ -98,3 +98,42 @@ class XPConfig(models.Model):
     def __str__(self):
         return f"{self.rank.name} / {self.lesson.name} — study:{self.study_xp} test:{self.test_xp}"
 
+
+class DailyRevisionConfig(models.Model):
+    """Global config for the daily revision experience."""
+    timer_minutes = models.PositiveIntegerField(default=10)
+    per_question_xp = models.PositiveIntegerField(default=5)
+    overall_completion_xp = models.PositiveIntegerField(default=10)
+    streak_count = models.PositiveIntegerField(default=1)
+    daily_limit = models.PositiveIntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name='daily_revision_configs')
+
+    class Meta:
+        verbose_name = 'Daily Revision Config'
+        verbose_name_plural = 'Daily Revision Configs'
+
+    def __str__(self):
+        return f"Daily revision config ({self.timer_minutes}m / {self.daily_limit} attempts/day)"
+
+
+class DailyRevisionAttempt(models.Model):
+    """Tracks each daily revision attempt completed by a user."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name='daily_revision_attempts')
+    total = models.PositiveIntegerField(default=0)
+    correct = models.PositiveIntegerField(default=0)
+    wrong = models.PositiveIntegerField(default=0)
+    timed_out = models.PositiveIntegerField(default=0)
+    score_pct = models.FloatField(default=0.0)
+    xp_gained = models.PositiveIntegerField(default=0)
+    streak_gained = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} | {self.correct}/{self.total} | {self.xp_gained} XP"
+

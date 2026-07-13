@@ -12,6 +12,7 @@ import UserManagement  from './pages/UserManagement';
 import RankExamList    from './pages/Ranks/RankExamList';
 import ExamRankDetail  from './pages/Ranks/ExamRankDetail';
 import XPConfigPage    from './pages/Ranks/XPConfigPage';
+import DailyRevisionPage from './pages/DailyRevisionPage';
 import CertExamList    from './pages/Certificates/CertExamList';
 import CertExamDetail  from './pages/Certificates/CertExamDetail';
 
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/" element={<RequireAdmin><Layout /></RequireAdmin>}>
           <Route index element={<Dashboard />} />
           {/* Course Editor */}
+          <Route path="daily-revision" element={<DailyRevisionPage />} />
           <Route path="courses" element={<ExamList />} />
           <Route path="courses/:examId" element={<ExamDetail />} />
           <Route path="courses/:examId/categories/:catId" element={<CategoryDetail />} />
