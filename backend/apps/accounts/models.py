@@ -19,6 +19,7 @@ class Role(models.Model):
 class User(AbstractUser):
     email           = models.EmailField(unique=True)
     avatar          = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar_id       = models.CharField(max_length=10, default='a1', blank=True)
     xp              = models.IntegerField(default=0)
     streak_days     = models.IntegerField(default=0)
     last_study_date = models.DateField(null=True, blank=True)

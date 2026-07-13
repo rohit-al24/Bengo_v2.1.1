@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'avatar',
-            'xp', 'streak_days', 'last_study_date', 'institution',
+            'avatar_id', 'xp', 'streak_days', 'last_study_date', 'institution',
             'preferred_level', 'learning_goal', 'roles', 'date_joined'
         ]
         read_only_fields = ['id', 'date_joined']
@@ -28,6 +28,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(required=False, allow_blank=True)
     preferred_level = serializers.CharField(required=False, allow_blank=True)
     learning_goal = serializers.CharField(required=False, allow_blank=True)
+    avatar_id = serializers.CharField(required=False, allow_blank=True, default='a1')
     password = serializers.CharField(write_only=True, min_length=6)
     password2 = serializers.CharField(write_only=True)
 
@@ -35,7 +36,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'email', 'password', 'password2',
-            'first_name', 'last_name', 'preferred_level', 'learning_goal',
+            'first_name', 'last_name', 'preferred_level', 'learning_goal', 'avatar_id',
         ]
 
     def validate(self, data):
@@ -63,6 +64,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         last_name = validated_data.pop('last_name', '')
         preferred_level = validated_data.pop('preferred_level', '')
         learning_goal = validated_data.pop('learning_goal', '')
+        avatar_id = validated_data.pop('avatar_id', 'a1')
 
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -73,6 +75,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         user.preferred_level = preferred_level
         user.learning_goal = learning_goal
+        user.avatar_id = avatar_id
         user.save()
 
         role, _ = Role.objects.get_or_create(name=Role.USER)
@@ -81,13 +84,29 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email    = serializers.EmailField()
+    email    = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        user = authenticate(username=data['email'], password=data['password'])
+        identifier = data['email'].strip()
+        user = None
+
+        if '@' in identifier:
+            try:
+                user = User.objects.get(email__iexact=identifier)
+            except User.DoesNotExist:
+                user = None
+        else:
+            try:
+                user = User.objects.get(username__iexact=identifier)
+            except User.DoesNotExist:
+                user = None
+
+        if user is not None:
+            user = authenticate(username=user.email, password=data['password'])
+
         if not user:
-            raise serializers.ValidationError('Invalid email or password.')
+            raise serializers.ValidationError('Invalid username/email or password.')
         if not user.is_active:
             raise serializers.ValidationError('Account is disabled.')
         data['user'] = user
@@ -98,7 +117,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'username', 'avatar', 'institution',
+            'username', 'avatar', 'avatar_id', 'institution',
             'first_name', 'last_name', 'preferred_level', 'learning_goal',
         ]
 

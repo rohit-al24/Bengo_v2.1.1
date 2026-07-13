@@ -1,10 +1,15 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../utils/app_colors.dart';
-import '../utils/app_text_styles.dart';
-import '../utils/app_decorations.dart';
 import '../services/api_service.dart';
+import '../widgets/bengo_avatar.dart';
+import '../screens/friends/friends_screen.dart';
 import '../screens/leaderboard/leaderboard_screen.dart';
+
+// ── Tokens ────────────────────────────────────────────────────────────────────
+const _kAccent = Color(0xFFC41230);
+const _kInk = Color(0xFF1B1B1D);
+const _kMuted = Color(0xFF8A8A8F);
 
 class BenGoHeader extends StatefulWidget {
   final bool isSubPage;
@@ -22,13 +27,26 @@ class BenGoHeader extends StatefulWidget {
   State<BenGoHeader> createState() => _BenGoHeaderState();
 }
 
-class _BenGoHeaderState extends State<BenGoHeader> {
+class _BenGoHeaderState extends State<BenGoHeader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerCtrl;
+
   @override
   void initState() {
     super.initState();
     if (ApiService.instance.currentUserNotifier.value == null) {
       ApiService.instance.getMe();
     }
+    _shimmerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -38,159 +56,248 @@ class _BenGoHeaderState extends State<BenGoHeader> {
       builder: (context, user, _) {
         final streak = user?['streak_days'] ?? 0;
         final xp = user?['xp'] ?? 0;
-        final username = user?['username']?.toString() ?? '';
-        final avatarLetter =
-            username.isNotEmpty ? username[0].toUpperCase() : '';
+        final avatarId = user?['avatar_id']?.toString() ?? 'a1';
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Container(
-            decoration:
-                AppDecorations.softPanel(color: AppColors.bgWhite, radius: 24),
+            decoration: BoxDecoration(
+              // Subtle warm-to-cool gradient surface
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFFFFFFFF),
+                  Color(0xFFFBF8FF),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: const Color(0xFFEDE9F4),
+                width: 1,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x08000000),
+                  blurRadius: 20,
+                  offset: Offset(0, 6),
+                ),
+              ],
+            ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               child: Row(
                 children: [
-                  // Left portion: Avatar + Stats (or Back button + Stats)
+                  // ── Left side ───────────────────────────────────────────
                   if (widget.isSubPage) ...[
-                    GestureDetector(
+                    _IconBtn(
+                      icon: Icons.arrow_back_rounded,
                       onTap: widget.onBackTap ?? () => Navigator.pop(context),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: AppDecorations.skeuomorphicCard(radius: 14),
-                        child: const Icon(
-                          Icons.arrow_back_rounded,
-                          size: 22,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
                     ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$streak DAYS',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Text(
-                          '$xp XP',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: AppColors.primary.withAlpha(77),
-                            width: 1.5),
-                        color: AppColors.primary.withAlpha(23),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(20),
-                            offset: const Offset(0, 10),
-                            blurRadius: 18,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          avatarLetter.isNotEmpty ? avatarLetter : 'U',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$streak DAYS',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Text(
-                          '$xp XP',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(width: 12),
+                    _HeaderStats(streak: streak, xp: xp),
+                  ] else ...[  
+                    BenGoAvatar(avatarId: avatarId, size: 42, showRing: true),
+                    const SizedBox(width: 12),
+                    _HeaderStats(streak: streak, xp: xp),
                   ],
 
                   const Spacer(),
-                  // Center: Logo text
-                  Text(
-                    'BenGo',
-                    style: AppTextStyles.brandNameSmall.copyWith(fontSize: 24),
-                  ),
+
+                  // ── Logo ────────────────────────────────────────────────
+                  _AnimatedLogoText(ctrl: _shimmerCtrl),
+
                   const Spacer(),
 
-                  // Right portion: Pill Actions or custom actions
+                  // ── Right actions ────────────────────────────────────────
                   widget.rightActions ??
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (_) => const LeaderboardScreen()),
-                              );
-                            },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration:
-                                  AppDecorations.skeuomorphicCard(radius: 14),
-                              child: const Icon(
-                                Icons.bar_chart_rounded,
-                                color: AppColors.textSecondary,
-                                size: 22,
-                              ),
+                          _IconBtn(
+                            icon: Icons.bar_chart_rounded,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const LeaderboardScreen()),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration:
-                                AppDecorations.skeuomorphicCard(radius: 14),
-                            child: const Icon(
-                              Icons.notifications_outlined,
-                              color: AppColors.textSecondary,
-                              size: 22,
+                          const SizedBox(width: 8),
+                          _IconBtn(
+                            icon: Icons.people_alt_rounded,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const FriendsScreen()),
                             ),
                           ),
                         ],
                       ),
                 ],
               ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Avatar circle ─────────────────────────────────────────────────────────────
+class _Avatar extends StatelessWidget {
+  final String letter;
+  const _Avatar({required this.letter});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFC41230), Color(0xFF8B0D21)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x30C41230),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          letter,
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Streak / XP stats ─────────────────────────────────────────────────────────
+class _HeaderStats extends StatelessWidget {
+  final dynamic streak;
+  final dynamic xp;
+  const _HeaderStats({required this.streak, required this.xp});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🔥', style: TextStyle(fontSize: 11)),
+            const SizedBox(width: 3),
+            Text(
+              '$streak days',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: _kInk,
+              ),
+            ),
+          ],
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('⚡', style: TextStyle(fontSize: 10)),
+            const SizedBox(width: 3),
+            Text(
+              '$xp XP',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: _kMuted,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ── Icon button ───────────────────────────────────────────────────────────────
+class _IconBtn extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _IconBtn({required this.icon, required this.onTap});
+
+  @override
+  State<_IconBtn> createState() => _IconBtnState();
+}
+
+class _IconBtnState extends State<_IconBtn> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F2FA),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFEDE9F4)),
+          ),
+          child: Icon(widget.icon, size: 18, color: _kMuted),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Animated shimmer logo text ────────────────────────────────────────────────
+class _AnimatedLogoText extends StatelessWidget {
+  final AnimationController ctrl;
+  const _AnimatedLogoText({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: ctrl,
+      builder: (_, __) {
+        final t = ctrl.value; // 0→1 repeating
+        // shimmer offset — sweeps left to right
+        final shimmerX = -1.5 + t * 3.5;
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => LinearGradient(
+            begin: Alignment(shimmerX - 0.6, 0),
+            end: Alignment(shimmerX + 0.6, 0),
+            colors: const [
+              Color(0xFF1B1B1D),
+              Color(0xFFC41230),
+              Color(0xFF1B1B1D),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ).createShader(bounds),
+          child: Text(
+            'BenGo',
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: _kInk,
+              letterSpacing: -0.6,
             ),
           ),
         );

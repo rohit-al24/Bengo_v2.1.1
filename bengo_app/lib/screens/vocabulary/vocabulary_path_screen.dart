@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/app_colors.dart';
-import '../../utils/app_text_styles.dart';
 import '../../widgets/bengo_app_bar.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/api_service.dart';
@@ -9,12 +8,23 @@ import 'topic_wise_study_screen.dart';
 import 'vocabulary_learning_screen.dart';
 import 'vocabulary_test_screen.dart';
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const _kBg = Color(0xFFFAF8F5);
+const _kSurface = Color(0xFFFFFFFF);
+const _kAccent = Color(0xFFC41230);
+const _kAccentShadow = Color(0x35C41230);
+const _kInk = Color(0xFF1B1B1D);
+const _kMuted = Color(0xFF8A8A8F);
+const _kBorderLight = Color(0xFFEAE5E1);
+const _kFieldTint = Color(0xFFFDF3F5);
+const _kFieldBorder = Color(0xFFEDD5D8);
+
 class VocabularyPathScreen extends StatefulWidget {
   final String level;
   final String category;
   final int? examId;
   final int? catId;
-  final List<dynamic>? apiLessons; // real lessons from API
+  final List<dynamic>? apiLessons;
 
   const VocabularyPathScreen({
     super.key,
@@ -86,7 +96,6 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
     'Weather & Seasons',
   ];
 
-  /// Returns the effective lesson list — API data if available, else static.
   List<Map<String, dynamic>> get _lessons {
     if (_currentLessons.isNotEmpty) {
       final visibleLessons = _currentLessons.where((lesson) {
@@ -122,7 +131,7 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F9FF),
+      backgroundColor: _kBg,
       bottomNavigationBar: BenGoBottomNav(
         currentIndex: 1,
         onTap: (i) {
@@ -132,7 +141,7 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildAppBar(context),
+            const BenGoAppBar(showBack: true),
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
@@ -149,107 +158,113 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return const BenGoAppBar(showBack: true);
-  }
-
+  // ── Path header ─────────────────────────────────────────────────────────────
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+    final lessons = _lessons;
+    final totalLessons = lessons.length;
+    final completedLessons =
+        lessons.where((l) => l['isCompleted'] == true).length;
+    final progressLabel = '$completedLessons/$totalLessons';
+    final mastery = totalLessons > 0
+        ? ((completedLessons / totalLessons) * 100).toStringAsFixed(0)
+        : '0';
+
+    return Container(
+      color: _kBg,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       child: Column(
         children: [
-          // Level badge
+          // Level + category badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(24),
+              color: _kAccent,
+              borderRadius: BorderRadius.circular(100),
+              boxShadow: const [
+                BoxShadow(
+                    color: _kAccentShadow,
+                    blurRadius: 0,
+                    offset: Offset(0, 3)),
+              ],
             ),
             child: Text(
-              widget.level,
+              '${widget.level}  ·  ${widget.category}',
               style: GoogleFonts.inter(
-                  fontSize: 15,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white),
+                  color: Colors.white,
+                  letterSpacing: 0.3),
             ),
           ),
           const SizedBox(height: 12),
           Text(
             '${widget.level} ${widget.category} Path',
-            style: GoogleFonts.inter(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF171C21)),
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: _kInk,
+              letterSpacing: -0.4,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           // Stats row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _statPill('PROGRESS', '1/10'),
-              Container(
-                width: 1,
-                height: 28,
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                color: const Color(0xFFDEE3EA),
-              ),
-              _statPill('MASTERY', '80%'),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: _kSurface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _kBorderLight),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x07000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3))
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _StatPill(label: 'PROGRESS', value: progressLabel),
+                Container(
+                  width: 1,
+                  height: 30,
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  color: _kBorderLight,
+                ),
+                _StatPill(label: 'MASTERY', value: '$mastery%'),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _statPill(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF5C3F3F),
-              letterSpacing: 1),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary),
-        ),
-      ],
-    );
-  }
-
+  // ── Zigzag path (logic identical, styling improved) ─────────────────────────
   Widget _buildZigzagPath(BuildContext context) {
-    // Each node alternates: even index → left-center, odd → right-center
-    // We use a fixed-width canvas-style layout
-    const double nodeSize = 64.0;
-    const double leftX = 60.0;
-    const double rightX = 220.0;
-    const double nodeSpacing = 120.0;
-    const double totalWidth = 300.0;
+    const double nodeSize = 68.0;
+    const double leftX = 52.0;
+    const double rightX = 214.0;
+    const double nodeSpacing = 128.0;
 
     return SizedBox(
       width: double.infinity,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Draw connecting curves in the background
           CustomPaint(
-            size: Size(totalWidth, nodeSpacing * _lessons.length + 40),
+            size: Size(300, nodeSpacing * _lessons.length + 40),
             painter: _PathPainter(
               leftX: leftX + nodeSize / 2,
               rightX: rightX + nodeSize / 2,
               nodeSize: nodeSize,
               nodeSpacing: nodeSpacing,
-              count: _lessons.length,
+              lessonCompletion: _lessons
+                  .map<bool>((l) => l['isCompleted'] == true)
+                  .toList(),
             ),
           ),
-          // Lesson nodes on top
           SizedBox(
             height: nodeSpacing * _lessons.length + 40,
             child: Stack(
@@ -259,21 +274,17 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
                 final xPos = isLeft ? leftX : rightX;
                 final yPos = i * nodeSpacing + 20.0;
 
-                final isCompleted = lesson['isCompleted'] as bool;
-                final isActive = lesson['isActive'] as bool;
-                final isLocked = lesson['isLocked'] as bool;
-
                 return Positioned(
                   left: xPos,
                   top: yPos,
                   child: _LessonNode(
                     lesson: lesson,
                     nodeSize: nodeSize,
-                    isCompleted: isCompleted,
-                    isActive: isActive,
-                    isLocked: isLocked,
+                    isCompleted: lesson['isCompleted'] as bool,
+                    isActive: lesson['isActive'] as bool,
+                    isLocked: lesson['isLocked'] as bool,
                     isLeft: isLeft,
-                    onTap: isLocked
+                    onTap: (lesson['isLocked'] as bool)
                         ? null
                         : () => _showLessonSheet(context, lesson),
                   ),
@@ -293,7 +304,6 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
     final hasBank = lesson['has_active_bank'] as bool? ?? false;
     final testSrc = lesson['test_source']?.toString() ?? 'from_study';
 
-    // exam lesson → go directly to test
     if (lessonType == 'exam') {
       Navigator.of(context)
           .push(MaterialPageRoute(
@@ -314,7 +324,6 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
       return;
     }
 
-    // study lesson — show sheet
     final canTest = hasBank || testSrc == 'from_study';
 
     showModalBottomSheet(
@@ -326,7 +335,6 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
         canTest: canTest,
         onStudy: () async {
           Navigator.pop(ctx);
-          // Topic-wise → TopicWiseStudyScreen
           if (showType == 'topic_wise' && lessonId != null) {
             await Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => TopicWiseStudyScreen(
@@ -338,7 +346,6 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
               ),
             ));
           } else {
-            // Full row → VocabularyLearningScreen
             await Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => VocabularyLearningScreen(
                 lessonNumber: lesson['number'] as int,
@@ -378,60 +385,56 @@ class _VocabularyPathScreenState extends State<VocabularyPathScreen> {
   }
 }
 
-// ─── Custom Painter for the winding path ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// PATH PAINTER (logic identical, stroke upgraded)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class _PathPainter extends CustomPainter {
   final double leftX;
   final double rightX;
   final double nodeSize;
   final double nodeSpacing;
-  final int count;
+  final List<bool> lessonCompletion;
 
   _PathPainter({
     required this.leftX,
     required this.rightX,
     required this.nodeSize,
     required this.nodeSpacing,
-    required this.count,
+    required this.lessonCompletion,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final completedPaint = Paint()
-      ..color = AppColors.primary.withOpacity(0.35)
-      ..strokeWidth = 3
+      ..color = _kAccent.withOpacity(0.4)
+      ..strokeWidth = 4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final lockedPaint = Paint()
-      ..color = const Color(0xFFDEE3EA)
-      ..strokeWidth = 2.5
+      ..color = const Color(0xFFE0DBD7)
+      ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    for (int i = 0; i < count - 1; i++) {
+    for (int i = 0; i < lessonCompletion.length - 1; i++) {
       final isLeft = i % 2 == 0;
       final startX = isLeft ? leftX : rightX;
       final endX = isLeft ? rightX : leftX;
-
       final startY = i * nodeSpacing + 20 + nodeSize / 2;
       final endY = (i + 1) * nodeSpacing + 20 + nodeSize / 2;
 
       final path = Path();
       path.moveTo(startX, startY);
-
-      // Cubic bezier curve for smooth S-shape
       final cp1x = startX + (endX - startX) * 0.2;
       final cp1y = startY + (endY - startY) * 0.5;
       final cp2x = endX - (endX - startX) * 0.2;
       final cp2y = endY - (endY - startY) * 0.4;
-
       path.cubicTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
 
-      // Paint completed path segment differently
-      final paint = (i < 1) ? completedPaint : lockedPaint;
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, lessonCompletion[i] ? completedPaint : lockedPaint);
     }
   }
 
@@ -439,7 +442,9 @@ class _PathPainter extends CustomPainter {
   bool shouldRepaint(_PathPainter old) => false;
 }
 
-// ─── Lesson Node Widget ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// LESSON NODE (enhanced styling)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class _LessonNode extends StatelessWidget {
   final Map<String, dynamic> lesson;
@@ -462,34 +467,36 @@ class _LessonNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bgColor;
-    Color borderColor;
-    Color iconColor;
-    IconData icon;
-    List<BoxShadow> shadows = [];
+    // State-based styling
+    final Color bgColor;
+    final Color borderColor;
+    final Color iconColor;
+    final IconData icon;
+    final List<BoxShadow> shadows;
 
     if (isCompleted) {
-      bgColor = AppColors.primary;
-      borderColor = AppColors.primary;
+      bgColor = _kAccent;
+      borderColor = _kAccent;
       iconColor = Colors.white;
       icon = Icons.check_rounded;
+      shadows = const [
+        BoxShadow(color: Color(0x30C41230), blurRadius: 10, offset: Offset(0, 4)),
+      ];
     } else if (isActive) {
-      bgColor = Colors.white;
-      borderColor = AppColors.primary;
-      iconColor = AppColors.primary;
+      bgColor = _kSurface;
+      borderColor = _kAccent;
+      iconColor = _kAccent;
       icon = Icons.menu_book_rounded;
-      shadows = [
-        BoxShadow(
-            color: AppColors.primary.withOpacity(0.25),
-            blurRadius: 20,
-            spreadRadius: 3),
-        BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10),
+      shadows = const [
+        BoxShadow(color: Color(0x40C41230), blurRadius: 20, spreadRadius: 2),
+        BoxShadow(color: Color(0x10000000), blurRadius: 10),
       ];
     } else {
-      bgColor = const Color(0xFFEFF4FB);
-      borderColor = const Color(0xFFDEE3EA);
-      iconColor = const Color(0xFFDEE3EA);
+      bgColor = const Color(0xFFF0EDE9);
+      borderColor = _kBorderLight;
+      iconColor = const Color(0xFFCCC7C2);
       icon = Icons.lock_outline_rounded;
+      shadows = const [];
     }
 
     final label = lesson['title'] as String;
@@ -502,44 +509,42 @@ class _LessonNode extends StatelessWidget {
         crossAxisAlignment:
             isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
-          // Node circle
+          // Node
           Container(
             width: nodeSize,
             height: nodeSize,
             decoration: BoxDecoration(
               color: bgColor,
               shape: BoxShape.circle,
-              border: Border.all(color: borderColor, width: isActive ? 2.5 : 2),
+              border: Border.all(
+                  color: borderColor, width: isActive ? 2.5 : 2),
               boxShadow: shadows,
             ),
-            child: Icon(icon, color: iconColor, size: isActive ? 28 : 22),
+            child: Icon(icon, color: iconColor, size: isActive ? 30 : 24),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 7),
           // Label
           SizedBox(
-            width: 90,
+            width: 94,
             child: Column(
               crossAxisAlignment:
                   isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    color: isLocked
-                        ? const Color(0xFFDEE3EA)
-                        : const Color(0xFF171C21),
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 12,
+                    fontWeight:
+                        isActive ? FontWeight.w700 : FontWeight.w600,
+                    color: isLocked ? _kBorderLight : _kInk,
                   ),
                 ),
                 if (!isLocked)
                   Text(
                     subtitle,
                     style: GoogleFonts.inter(
-                      fontSize: 9,
-                      color: isActive
-                          ? AppColors.primary
-                          : const Color(0xFF5C3F3F),
+                      fontSize: 10,
+                      color: isActive ? _kAccent : _kMuted,
                     ),
                     maxLines: 2,
                     textAlign: isLeft ? TextAlign.left : TextAlign.right,
@@ -553,7 +558,9 @@ class _LessonNode extends StatelessWidget {
   }
 }
 
-// ─── Lesson Bottom Sheet ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// LESSON BOTTOM SHEET (enhanced)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class _LessonBottomSheet extends StatelessWidget {
   final Map<String, dynamic> lesson;
@@ -574,147 +581,229 @@ class _LessonBottomSheet extends StatelessWidget {
     final title = lesson['title'] as String;
     final subtitle = lesson['subtitle'] as String;
     final showType = lesson['category_show_type']?.toString() ?? 'full_row';
+    final isTopicWise = showType == 'topic_wise';
 
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: _kSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Drag handle
           Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                  color: const Color(0xFFDEE3EA),
-                  borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 20),
-
-          // Lesson badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            width: 40,
+            height: 4,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-            ),
-            child: Text('LESSON $lessonNum',
-                style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                    letterSpacing: 1)),
+                color: _kBorderLight,
+                borderRadius: BorderRadius.circular(100)),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 22),
 
-          Text(title,
-              style: GoogleFonts.inter(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF171C21))),
-          const SizedBox(height: 4),
-          Text(subtitle,
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: const Color(0xFF5C3F3F))),
-
-          // Show type badge
-          const SizedBox(height: 8),
+          // Lesson number badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: showType == 'topic_wise'
-                  ? const Color(0xFFEEF2FF)
-                  : const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(20),
+              color: _kFieldTint,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(color: _kFieldBorder),
             ),
             child: Text(
-                showType == 'topic_wise'
-                    ? '📚 Topic-Wise Mode'
-                    : '📋 Full List Mode',
-                style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: showType == 'topic_wise'
-                        ? const Color(0xFF6366F1)
-                        : const Color(0xFF16A34A))),
-          ),
-          const SizedBox(height: 20),
-
-          // Study button
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton.icon(
-              onPressed: onStudy,
-              icon: const Icon(Icons.menu_book_rounded, size: 20),
-              label: Text('Study',
-                  style: GoogleFonts.inter(
-                      fontSize: 16, fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
+              'LESSON $lessonNum',
+              style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _kAccent,
+                  letterSpacing: 1),
             ),
           ),
           const SizedBox(height: 12),
 
-          // Take Test button (only if canTest)
-          if (canTest)
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: OutlinedButton.icon(
-                onPressed: onTest,
-                icon: const Icon(Icons.quiz_rounded, size: 20),
-                label: Text('Take Test',
-                    style: GoogleFonts.inter(
-                        fontSize: 16, fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
+          Text(
+            title,
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: _kInk,
+              letterSpacing: -0.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(fontSize: 13, color: _kMuted),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+
+          // Mode badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: isTopicWise
+                  ? const Color(0xFFEEF2FF)
+                  : const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Text(
+              isTopicWise ? '📚  Topic-Wise Mode' : '📋  Full List Mode',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isTopicWise
+                    ? const Color(0xFF6366F1)
+                    : const Color(0xFF16A34A),
               ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Study button
+          _SheetButton(
+            label: 'Study',
+            icon: Icons.menu_book_rounded,
+            onPressed: onStudy,
+            filled: true,
+          ),
+          const SizedBox(height: 12),
+
+          // Test button
+          if (canTest)
+            _SheetButton(
+              label: 'Take Test',
+              icon: Icons.quiz_rounded,
+              onPressed: onTest ?? () {},
+              filled: false,
             )
           else
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text('✅ Study-only lesson — no test required',
-                  style: GoogleFonts.inter(
-                      fontSize: 12, color: const Color(0xFF6B7280)),
-                  textAlign: TextAlign.center),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '✅  Study-only lesson — no test required',
+                style: GoogleFonts.inter(
+                    fontSize: 12, color: _kMuted),
+                textAlign: TextAlign.center,
+              ),
             ),
         ],
       ),
     );
   }
+}
 
-  Widget _statBox(IconData icon, String value, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F9FF),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDEE3EA)),
+class _SheetButton extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool filled;
+
+  const _SheetButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    required this.filled,
+  });
+
+  @override
+  State<_SheetButton> createState() => _SheetButtonState();
+}
+
+class _SheetButtonState extends State<_SheetButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onPressed();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: double.infinity,
+          height: 54,
+          decoration: BoxDecoration(
+            color: widget.filled ? _kAccent : _kSurface,
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(
+              color: widget.filled ? _kAccent : _kFieldBorder,
+              width: widget.filled ? 0 : 1.5,
+            ),
+            boxShadow: widget.filled
+                ? const [
+                    BoxShadow(
+                        color: _kAccentShadow,
+                        blurRadius: 0,
+                        offset: Offset(0, 4)),
+                    BoxShadow(
+                        color: Color(0x18C41230),
+                        blurRadius: 12,
+                        offset: Offset(0, 8)),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.icon,
+                size: 18,
+                color: widget.filled ? Colors.white : _kAccent,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: widget.filled ? Colors.white : _kAccent,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Column(children: [
-        Icon(icon, color: AppColors.primary, size: 20),
-        const SizedBox(height: 4),
-        Text(value,
-            style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF171C21))),
-        Text(label,
-            style: GoogleFonts.inter(
-                fontSize: 10, color: const Color(0xFF5C3F3F))),
-      ]),
+    );
+  }
+}
+
+// ── Stat pill (header) ────────────────────────────────────────────────────────
+class _StatPill extends StatelessWidget {
+  final String label;
+  final String value;
+  const _StatPill({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: _kMuted,
+            letterSpacing: 1.4,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: _kAccent,
+          ),
+        ),
+      ],
     );
   }
 }

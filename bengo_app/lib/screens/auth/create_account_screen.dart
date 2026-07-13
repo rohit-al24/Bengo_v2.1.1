@@ -1,10 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../utils/app_colors.dart';
-import '../../utils/app_text_styles.dart';
 import '../../services/api_service.dart';
+import '../../widgets/bengo_avatar.dart';
 import 'verify_screen.dart';
+
+// ── Design tokens (matches login_screen palette) ──────────────────────────────
+const _kBg = Color(0xFFFAF8F5);
+const _kSurface = Color(0xFFFFFFFF);
+const _kAccent = Color(0xFFC41230);
+const _kAccentShadow = Color(0x40C41230);
+const _kInk = Color(0xFF1B1B1D);
+const _kFieldTint = Color(0xFFFDF3F5);
+const _kFieldBorder = Color(0xFFEDD5D8);
+const _kFieldFocus = Color(0xFFC41230);
+const _kMuted = Color(0xFF8A8A8F);
+const _kDivider = Color(0xFFE5E0DC);
+const _kBorderLight = Color(0xFFEAE5E1);
+
+// ── Step metadata ─────────────────────────────────────────────────────────────
+const _kStepTitles = [
+  'Personal Details',
+  'Learning Goals',
+  'Your Avatar',
+  'Verify Email',
+  'Your Identity',
+];
+const _kStepSubtitles = [
+  'Tell us a little about yourself',
+  'Personalise your study path',
+  'Choose your BenGo companion',
+  'Confirm your email address',
+  'Choose a unique username',
+];
+const _kStepIcons = [
+  Icons.person_outline_rounded,
+  Icons.school_outlined,
+  Icons.face_retouching_natural_outlined,
+  Icons.mark_email_read_outlined,
+  Icons.badge_outlined,
+];
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -13,87 +48,130 @@ class CreateAccountScreen extends StatefulWidget {
   State<CreateAccountScreen> createState() => _CreateAccountScreenState();
 }
 
-class _CreateAccountScreenState extends State<CreateAccountScreen> {
-  final PageController _pageController = PageController();
+class _CreateAccountScreenState extends State<CreateAccountScreen>
+    with TickerProviderStateMixin {
+  final _pageCtrl = PageController();
   int _currentPage = 0;
-  final int _totalPages = 4;
+  static const _totalPages = 5;
 
-  // Stage 1 controllers
+  // Stage 1
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  final _confirmPasswordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  bool _obscurePw = true;
+  bool _obscureConfirm = true;
 
   // Stage 2
   String? _selectedLevel;
   String? _selectedGoal;
 
-  // Stage 3 - verification
+  // Stage 3 — Avatar
+  String _selectedAvatarId = 'a1';
+
+  // Stage 4 — OTP / Email verify
   final _otpCtrl = TextEditingController();
-  final _otpFocusNode = FocusNode();
+  final _otpFocus = FocusNode();
   bool _otpSent = false;
   bool _isSendingOtp = false;
   bool _isVerifyingOtp = false;
-  String _errorMessage = '';
+  String _errorMsg = '';
 
-  // Stage 4
+  // Stage 5
   final _usernameCtrl = TextEditingController();
   bool _isRegistering = false;
 
+  // Page transition animation controller
+  late final AnimationController _pageAnimCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageAnimCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
+    _usernameCtrl.addListener(() => setState(() {}));
+  }
+
   @override
   void dispose() {
-    _pageController.dispose();
+    _pageCtrl.dispose();
+    _pageAnimCtrl.dispose();
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _confirmPasswordCtrl.dispose();
+    _confirmCtrl.dispose();
+    _otpCtrl.dispose();
+    _otpFocus.dispose();
     _usernameCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _nextPage() async {
-    if (_currentPage == 0) {
-      if (!_validateStage1()) return;
-    }
+  void _animateIn() {
+    _pageAnimCtrl.reset();
+    _pageAnimCtrl.forward();
+  }
 
+  Future<void> _nextPage() async {
+    if (_currentPage == 0 && !_validateStage1()) return;
     if (_currentPage == 1) {
       if (!_validateStage2()) return;
+      // Don't send OTP yet — avatar step is next
+    }
+    if (_currentPage == 2) {
+      // Avatar chosen — now send OTP and move to email verify
       await _sendVerificationCode();
       if (!mounted) return;
     }
-
-    if (_currentPage == 2) {
+    if (_currentPage == 3) {
       await _verifyOtp();
       return;
     }
-
     if (_currentPage < _totalPages - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 350),
+      _pageCtrl.nextPage(
+        duration: const Duration(milliseconds: 380),
         curve: Curves.easeInOut,
       );
+    }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageCtrl.previousPage(
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgLight,
+      backgroundColor: _kBg,
       body: Column(
         children: [
-          // Progress header
-          _buildProgressHeader(),
-          // Pages
+          _StepHeader(
+            currentStep: _currentPage,
+            totalSteps: _totalPages,
+            onBack: _previousPage,
+          ),
           Expanded(
             child: PageView(
-              controller: _pageController,
+              controller: _pageCtrl,
               physics: const NeverScrollableScrollPhysics(),
-              onPageChanged: (i) => setState(() => _currentPage = i),
+              onPageChanged: (i) {
+                setState(() => _currentPage = i);
+                _animateIn();
+              },
               children: [
                 _buildStage1(),
                 _buildStage2(),
+                _buildStageAvatar(),
                 _buildStage3(),
                 _buildStage4(),
               ],
@@ -104,515 +182,435 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
   }
 
-  Widget _buildProgressHeader() {
-    final stages = ['1 OF 4', '2 OF 4', '3 OF 4', '4 OF 4'];
-    final rightLabels = [
-      'Personal Details',
-      'Learning Goals',
-      'Verify Email',
-      'Identity'
-    ];
-
-    return Container(
-      color: AppColors.bgLight,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 20,
-        right: 20,
-        bottom: 8,
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'STAGE ${stages[_currentPage]}',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Text(
-                rightLabels[_currentPage],
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (_currentPage + 1) / _totalPages,
-              backgroundColor: AppColors.borderLight,
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(AppColors.primary),
-              minHeight: 5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Stage 1: Personal Details ────────────────────────────────────────────
+  // ── Stage 1: Personal Details ──────────────────────────────────────────────
   Widget _buildStage1() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+    return _StageShell(
+      animCtrl: _pageAnimCtrl,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _StageHeading(
+            icon: _kStepIcons[0],
+            title: _kStepTitles[0],
+            subtitle: _kStepSubtitles[0],
+          ),
           const SizedBox(height: 24),
-          Center(
-            child: Text('BenGo', style: AppTextStyles.brandName.copyWith(fontSize: 32)),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              "Let's start with the basics.",
-              style: AppTextStyles.bodyMedium,
-            ),
-          ),
-          const SizedBox(height: 32),
           Row(
             children: [
               Expanded(
-                child: _buildLabeledField(
-                  label: 'First Name',
+                child: _FilledField(
+                  label: 'First name',
                   controller: _firstNameCtrl,
+                  hint: 'Kenji',
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
-                child: _buildLabeledField(
-                  label: 'Last Name',
+                child: _FilledField(
+                  label: 'Last name',
                   controller: _lastNameCtrl,
+                  hint: 'Tanaka',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildLabeledField(
-            label: 'Email ID',
+          const SizedBox(height: 14),
+          _FilledField(
+            label: 'Email address',
             controller: _emailCtrl,
-            prefixIcon: Icons.mail_outline_rounded,
+            hint: 'student@bengo.edu',
+            prefixIcon: Icons.alternate_email_rounded,
+            keyboardType: TextInputType.emailAddress,
           ),
-          const SizedBox(height: 16),
-          _buildLabeledField(
+          const SizedBox(height: 14),
+          _FilledField(
             label: 'Password',
             controller: _passwordCtrl,
+            hint: '••••••••',
             prefixIcon: Icons.lock_outline_rounded,
             isPassword: true,
+            obscureText: _obscurePw,
+            onToggleObscure: () => setState(() => _obscurePw = !_obscurePw),
           ),
-          const SizedBox(height: 16),
-          _buildLabeledField(
-            label: 'Confirm Password',
-            controller: _confirmPasswordCtrl,
+          const SizedBox(height: 14),
+          _FilledField(
+            label: 'Confirm password',
+            controller: _confirmCtrl,
+            hint: '••••••••',
             prefixIcon: Icons.shield_outlined,
             isPassword: true,
+            obscureText: _obscureConfirm,
+            onToggleObscure: () =>
+                setState(() => _obscureConfirm = !_obscureConfirm),
           ),
-          const SizedBox(height: 48),
-          _NextButton(onTap: _nextPage),
-          const SizedBox(height: 24),
+          if (_errorMsg.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _errorMsg),
+          ],
+          const SizedBox(height: 28),
+          _PillCTA(label: 'Continue', onPressed: _nextPage),
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  // ─── Stage 2: Learning Level ──────────────────────────────────────────────
+  // ── Stage 2: Learning Goals ────────────────────────────────────────────────
   Widget _buildStage2() {
-    final levels = ['N5 - Beginner', 'N4 - Elementary', 'N3 - Intermediate'];
-    final goals = ['Daily Conversation', 'JLPT Certification', 'Anime/Manga', 'Business'];
+    final levels = [
+      ('N5 — Beginner', 'First steps into Japanese', '⭐'),
+      ('N4 — Elementary', 'Everyday basic phrases', '⭐⭐'),
+      ('N3 — Intermediate', 'Navigate most situations', '⭐⭐⭐'),
+    ];
+    final goals = [
+      ('Daily Conversation', Icons.chat_bubble_outline_rounded),
+      ('JLPT Certification', Icons.workspace_premium_outlined),
+      ('Anime / Manga', Icons.auto_stories_outlined),
+      ('Business Japanese', Icons.business_center_outlined),
+    ];
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+    return _StageShell(
+      animCtrl: _pageAnimCtrl,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _StageHeading(
+            icon: _kStepIcons[1],
+            title: _kStepTitles[1],
+            subtitle: _kStepSubtitles[1],
+          ),
           const SizedBox(height: 24),
-          Text('Choose your\nstarting level', style: AppTextStyles.displayMedium),
-          const SizedBox(height: 8),
-          Text('We\'ll personalize your path.', style: AppTextStyles.bodyMedium),
-          const SizedBox(height: 32),
-          Text('JLPT LEVEL', style: AppTextStyles.captionUpper),
-          const SizedBox(height: 12),
+          _SectionLabel(label: 'JLPT Level'),
+          const SizedBox(height: 10),
           ...levels.map((l) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _SelectionTile(
-                  title: l,
-                  isSelected: _selectedLevel == l,
-                  onTap: () => setState(() => _selectedLevel = l),
+                child: _LevelTile(
+                  title: l.$1,
+                  subtitle: l.$2,
+                  stars: l.$3,
+                  isSelected: _selectedLevel == l.$1,
+                  onTap: () => setState(() => _selectedLevel = l.$1),
                 ),
               )),
-          const SizedBox(height: 24),
-          Text('LEARNING GOAL', style: AppTextStyles.captionUpper),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
+          _SectionLabel(label: 'Learning Goal'),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 10,
             runSpacing: 10,
             children: goals
-                .map((g) => _ChipOption(
-                      label: g,
-                      isSelected: _selectedGoal == g,
-                      onTap: () => setState(() => _selectedGoal = g),
+                .map((g) => _GoalChip(
+                      label: g.$1,
+                      icon: g.$2,
+                      isSelected: _selectedGoal == g.$1,
+                      onTap: () => setState(() => _selectedGoal = g.$1),
                     ))
                 .toList(),
           ),
-          const SizedBox(height: 48),
-          _NextButton(onTap: _nextPage),
-          const SizedBox(height: 24),
+          if (_errorMsg.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _errorMsg),
+          ],
+          const SizedBox(height: 28),
+          _PillCTA(
+            label: _isSendingOtp ? 'Sending code…' : 'Continue',
+            isLoading: _isSendingOtp,
+            onPressed: _isSendingOtp ? null : _nextPage,
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  // ─── Stage 3: Verify Identity ─────────────────────────────────────────────
-  Widget _buildStage3() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+  // ── Stage Avatar: Pick Your Companion ──────────────────────────────────────
+  Widget _buildStageAvatar() {
+    final def = avatarById(_selectedAvatarId);
+    return _StageShell(
+      animCtrl: _pageAnimCtrl,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
-          Text('Verify Identity', style: AppTextStyles.headlineLarge),
+          _StageHeading(
+            icon: _kStepIcons[2],
+            title: _kStepTitles[2],
+            subtitle: _kStepSubtitles[2],
+          ),
+          const SizedBox(height: 20),
+
+          // 3D-tilt animated preview of selected avatar
+          Center(
+            child: _Avatar3DPreview(
+              key: ValueKey(_selectedAvatarId),
+              avatarId: _selectedAvatarId,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(
-            'We\'ve sent a 6-digit code to',
-            style: AppTextStyles.bodyMedium,
-            textAlign: TextAlign.center,
+          Center(
+            child: Text(
+              def.label,
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1B1B1D),
+                letterSpacing: -0.3,
+              ),
+            ),
           ),
           const SizedBox(height: 4),
-          Text(
-            _emailCtrl.text.trim().isEmpty ? 'your email address' : _emailCtrl.text.trim(),
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (_otpSent)
-            Text(
-              'Code sent — check your inbox.',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary),
-            )
-          else
-            Text(
-              'Tap next to receive your verification code.',
-              style: AppTextStyles.bodySmall,
-            ),
-          const SizedBox(height: 24),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(
-                  6,
-                  (i) => _OtpBox(digit: _otpCtrl.text.padRight(6)[i]),
+          // Accent pill using shadow colour
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: def.shadow.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: def.shadow.withOpacity(0.28)),
+              ),
+              child: Text(
+                'Your Companion',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: def.shadow,
+                  letterSpacing: 0.8,
                 ),
               ),
-              Positioned.fill(
-                child: TextField(
-                  controller: _otpCtrl,
-                  focusNode: _otpFocusNode,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: const TextStyle(color: Colors.transparent),
-                  cursorColor: AppColors.primary,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    counterText: '',
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Avatar picker grid
+          BenGoAvatarPicker(
+            selectedId: _selectedAvatarId,
+            onSelect: (id) => setState(() => _selectedAvatarId = id),
+          ),
+          const SizedBox(height: 28),
+
+          _PillCTA(
+            label: 'Continue',
+            onPressed: _nextPage,
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  // ── Stage 3: Verify Email ─────────────────────────────────────────────────
+  Widget _buildStage3() {
+    return _StageShell(
+      animCtrl: _pageAnimCtrl,
+      child: Column(
+        children: [
+          _StageHeading(
+            icon: _kStepIcons[3],
+            title: _kStepTitles[3],
+            subtitle: _kStepSubtitles[3],
+            centred: true,
+          ),
+          const SizedBox(height: 8),
+          // Email badge
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: _kFieldTint,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(color: _kFieldBorder),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.alternate_email_rounded,
+                    size: 14, color: _kAccent),
+                const SizedBox(width: 6),
+                Text(
+                  _emailCtrl.text.trim().isEmpty
+                      ? 'your@email.com'
+                      : _emailCtrl.text.trim(),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _kAccent,
                   ),
-                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _otpSent
+                ? 'Code sent — check your inbox.'
+                : 'Tap Continue to receive your code.',
+            style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 28),
+
+          // OTP boxes
+          _OtpInputRow(
+            controller: _otpCtrl,
+            focusNode: _otpFocus,
+            onChanged: () => setState(() {}),
+          ),
+          const SizedBox(height: 20),
+
+          // Resend
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("Didn't receive the code? ",
+                  style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+              GestureDetector(
+                onTap: _isSendingOtp ? null : _sendVerificationCode,
+                child: Text(
+                  _isSendingOtp ? 'Sending…' : 'Resend',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _kAccent,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text('Didn\'t receive the code?', style: AppTextStyles.bodySmall),
-          const SizedBox(height: 4),
-          GestureDetector(
-            onTap: _sendVerificationCode,
-            child: Text(
-              _isSendingOtp ? 'Sending code...' : 'Resend Code',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
+          const SizedBox(height: 28),
+
+          // Envelope illustration
+          _EnvelopeIllustration(hasMail: _otpSent),
+          const SizedBox(height: 28),
+
+          if (_errorMsg.isNotEmpty) ...[
+            _ErrorBanner(message: _errorMsg),
+            const SizedBox(height: 14),
+          ],
+          _PillCTA(
+            label: _isVerifyingOtp ? 'Verifying…' : 'Verify & Continue',
+            isLoading: _isVerifyingOtp,
+            onPressed: _isVerifyingOtp ? null : _nextPage,
           ),
           const SizedBox(height: 32),
-          Container(
-            height: 160,
-            decoration: BoxDecoration(
-              color: AppColors.borderLight,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Icon(Icons.email_outlined, size: 48, color: AppColors.textMuted),
-            ),
-          ),
-          const SizedBox(height: 32),
-          if (_errorMessage.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _errorMessage,
-                style: AppTextStyles.bodySmall.copyWith(color: Colors.redAccent),
-              ),
-            ),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _nextPage,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              child: _isVerifyingOtp
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Verify & Continue',
-                          style: GoogleFonts.inter(
-                              fontSize: 16, fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward_rounded, size: 20),
-                      ],
-                    ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'BENGO STUDIO © 2024',
-            style: AppTextStyles.captionUpper.copyWith(fontSize: 9),
-          ),
-          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  // ─── Stage 4: Username / Identity ─────────────────────────────────────────
+  // ── Stage 4: Username / Identity ──────────────────────────────────────────
   Widget _buildStage4() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+    return _StageShell(
+      animCtrl: _pageAnimCtrl,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.bgWhite,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Claim your identity', style: AppTextStyles.headlineLarge),
-                const SizedBox(height: 8),
-                Text(
-                  'Choose a unique username that others will use to find you on the BenGo leaderboard.',
-                  style: AppTextStyles.bodyMedium,
-                ),
-                const SizedBox(height: 24),
-                Text('USERNAME', style: AppTextStyles.captionUpper),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.bgLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: TextField(
-                    controller: _usernameCtrl,
-                    style: AppTextStyles.bodyLarge,
-                    decoration: InputDecoration(
-                      prefixText: '@ ',
-                      prefixStyle: GoogleFonts.inter(
-                          color: AppColors.textMuted, fontSize: 15),
-                      hintText: 'yourname',
-                      hintStyle: AppTextStyles.bodyMedium,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Preview card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
-                        child: const Icon(Icons.pets,
-                            color: AppColors.primary, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('PREVIEW', style: AppTextStyles.captionUpper),
-                          Text(
-                            '@${_usernameCtrl.text.trim().isEmpty ? 'username' : _usernameCtrl.text.trim()}',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          _StageHeading(
+            icon: _kStepIcons[4],
+            title: _kStepTitles[4],
+            subtitle: _kStepSubtitles[4],
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _completeRegistration,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              child: _isRegistering
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Finish Setup',
-                          style: GoogleFonts.inter(
-                              fontSize: 16, fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward_rounded, size: 20),
-                      ],
-                    ),
-            ),
+          _SectionLabel(label: 'Username'),
+          const SizedBox(height: 10),
+
+          // Username field
+          _UsernameField(controller: _usernameCtrl),
+          const SizedBox(height: 16),
+
+          // Preview card
+          _UsernamePreview(
+            username: _usernameCtrl.text.trim(),
+            firstName: _firstNameCtrl.text.trim(),
+            lastName: _lastNameCtrl.text.trim(),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
+          Text(
+            'Others will find you by this name on the leaderboard.',
+            style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+          ),
+          if (_errorMsg.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _errorMsg),
+          ],
+          const SizedBox(height: 28),
+          _PillCTA(
+            label: _isRegistering ? 'Creating account…' : 'Finish Setup',
+            isLoading: _isRegistering,
+            onPressed: _isRegistering ? null : _completeRegistration,
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  void _showError(String message) {
-    setState(() {
-      _errorMessage = message;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
+  // ── Logic ──────────────────────────────────────────────────────────────────
   bool _validateStage1() {
-    if (_firstNameCtrl.text.trim().isEmpty || _lastNameCtrl.text.trim().isEmpty) {
-      _showError('Enter your first and last name.');
+    if (_firstNameCtrl.text.trim().isEmpty ||
+        _lastNameCtrl.text.trim().isEmpty) {
+      _setError('Enter your first and last name.');
       return false;
     }
-    if (_emailCtrl.text.trim().isEmpty || !_emailCtrl.text.contains('@')) {
-      _showError('Enter a valid email address.');
+    if (_emailCtrl.text.trim().isEmpty ||
+        !_emailCtrl.text.contains('@')) {
+      _setError('Enter a valid email address.');
       return false;
     }
     if (_passwordCtrl.text.length < 6) {
-      _showError('Password must be at least 6 characters.');
+      _setError('Password must be at least 6 characters.');
       return false;
     }
-    if (_passwordCtrl.text != _confirmPasswordCtrl.text) {
-      _showError('Passwords do not match.');
+    if (_passwordCtrl.text != _confirmCtrl.text) {
+      _setError('Passwords do not match.');
       return false;
     }
+    _setError('');
     return true;
   }
 
   bool _validateStage2() {
     if (_selectedLevel == null || _selectedGoal == null) {
-      _showError('Select a JLPT level and learning goal.');
+      _setError('Please select a JLPT level and a learning goal.');
       return false;
     }
+    _setError('');
     return true;
   }
+
+  void _setError(String msg) => setState(() => _errorMsg = msg);
 
   Future<void> _sendVerificationCode() async {
     setState(() {
       _isSendingOtp = true;
-      _errorMessage = '';
+      _errorMsg = '';
     });
     try {
-      await ApiService.instance.sendVerificationCode(
-        email: _emailCtrl.text.trim(),
-      );
+      await ApiService.instance
+          .sendVerificationCode(email: _emailCtrl.text.trim());
       if (!mounted) return;
-      setState(() {
-        _otpSent = true;
-      });
-      _otpFocusNode.requestFocus();
-    } on Exception catch (e) {
-      _showError(e.toString());
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSendingOtp = false;
-        });
+      setState(() => _otpSent = true);
+      _otpFocus.requestFocus();
+      // Advance page if not already on stage 3
+      if (_currentPage == 1) {
+        _pageCtrl.nextPage(
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeInOut,
+        );
       }
+    } on Exception catch (e) {
+      _setError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isSendingOtp = false);
     }
   }
 
   Future<void> _verifyOtp() async {
     if (_otpCtrl.text.trim().length != 6) {
-      _showError('Enter the 6-digit code sent to your email.');
+      _setError('Enter the 6-digit code sent to your email.');
       return;
     }
     setState(() {
       _isVerifyingOtp = true;
-      _errorMessage = '';
+      _errorMsg = '';
     });
     try {
       await ApiService.instance.verifyEmailCode(
@@ -620,49 +618,45 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         code: _otpCtrl.text.trim(),
       );
       if (!mounted) return;
-      setState(() {
-        _otpSent = true;
-      });
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 350),
+      setState(() => _otpSent = true);
+      _pageCtrl.nextPage(
+        duration: const Duration(milliseconds: 380),
         curve: Curves.easeInOut,
       );
     } on Exception catch (e) {
-      _showError(e.toString());
+      _setError(e.toString());
     } finally {
-      if (mounted) {
-        setState(() {
-          _isVerifyingOtp = false;
-        });
-      }
+      if (mounted) setState(() => _isVerifyingOtp = false);
     }
   }
 
   Future<void> _completeRegistration() async {
     final username = _usernameCtrl.text.trim();
     if (username.isEmpty || username.length < 3) {
-      _showError('Choose a username with at least 3 characters.');
+      _setError('Choose a username with at least 3 characters.');
       return;
     }
     setState(() {
       _isRegistering = true;
-      _errorMessage = '';
+      _errorMsg = '';
     });
     try {
-      final available = await ApiService.instance.checkUsernameAvailability(username);
+      final available =
+          await ApiService.instance.checkUsernameAvailability(username);
       if (!available) {
-        _showError('That username is already taken.');
+        _setError('That username is already taken.');
         return;
       }
       await ApiService.instance.register(
         username: username,
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
-        password2: _confirmPasswordCtrl.text,
+        password2: _confirmCtrl.text,
         firstName: _firstNameCtrl.text.trim(),
         lastName: _lastNameCtrl.text.trim(),
         preferredLevel: _selectedLevel ?? '',
         learningGoal: _selectedGoal ?? '',
+        avatarId: _selectedAvatarId,
       );
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
@@ -670,41 +664,479 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         (route) => false,
       );
     } on Exception catch (e) {
-      _showError(e.toString());
+      _setError(e.toString());
     } finally {
-      if (mounted) {
-        setState(() {
-          _isRegistering = false;
-        });
-      }
+      if (mounted) setState(() => _isRegistering = false);
     }
   }
+}
 
-  Widget _buildLabeledField({
-    required String label,
-    required TextEditingController controller,
-    IconData? prefixIcon,
-    bool isPassword = false,
-  }) {
+// ═══════════════════════════════════════════════════════════════════════════════
+// AVATAR 3D PREVIEW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _Avatar3DPreview extends StatefulWidget {
+  final String avatarId;
+  const _Avatar3DPreview({super.key, required this.avatarId});
+
+  @override
+  State<_Avatar3DPreview> createState() => _Avatar3DPreviewState();
+}
+
+class _Avatar3DPreviewState extends State<_Avatar3DPreview>
+    with TickerProviderStateMixin {
+  late AnimationController _tiltX;
+  late AnimationController _tiltY;
+  late AnimationController _float;
+
+  @override
+  void initState() {
+    super.initState();
+    _tiltX = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+    _tiltY = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _float = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _tiltX.dispose();
+    _tiltY.dispose();
+    _float.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final def = avatarById(widget.avatarId);
+    return AnimatedBuilder(
+      animation: Listenable.merge([_tiltX, _tiltY, _float]),
+      builder: (_, child) {
+        final rx = (_tiltX.value - 0.5) * 0.18; // radians
+        final ry = (_tiltY.value - 0.5) * 0.18;
+        final dy = (_float.value - 0.5) * 8.0;   // px vertical drift
+
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.001) // perspective
+              ..rotateX(rx)
+              ..rotateY(ry),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(34), // squircle
+          boxShadow: [
+            BoxShadow(
+              color: def.shadow.withOpacity(0.45),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: def.shadow.withOpacity(0.20),
+              blurRadius: 50,
+              spreadRadius: 8,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: Image.asset(
+            def.asset,
+            fit: BoxFit.cover,
+            width: 120,
+            height: 120,
+            errorBuilder: (_, __, ___) => Container(
+              color: def.shadow.withOpacity(0.15),
+              child: Icon(Icons.person, size: 56, color: def.shadow),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHARED COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// The neat header: back button, step dots, step counter
+class _StepHeader extends StatelessWidget {
+  final int currentStep;
+  final int totalSteps;
+  final VoidCallback onBack;
+
+  const _StepHeader({
+    required this.currentStep,
+    required this.totalSteps,
+    required this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    return Container(
+      color: _kBg,
+      padding: EdgeInsets.fromLTRB(16, top + 10, 16, 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Back / close button
+              _BackCircle(onTap: onBack),
+              const SizedBox(width: 12),
+
+              // Step dots — animated
+              Expanded(
+                child: Row(
+                  children: List.generate(totalSteps * 2 - 1, (i) {
+                    if (i.isOdd) {
+                      // Connector line
+                      return Expanded(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 350),
+                          height: 2,
+                          decoration: BoxDecoration(
+                            color: (i ~/ 2) < currentStep
+                                ? _kAccent
+                                : _kBorderLight,
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      );
+                    }
+                    // Dot
+                    final stepIdx = i ~/ 2;
+                    final isDone = stepIdx < currentStep;
+                    final isActive = stepIdx == currentStep;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 350),
+                      width: isActive ? 28 : 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: isDone || isActive ? _kAccent : _kBorderLight,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: isActive
+                          ? null
+                          : isDone
+                              ? Center(
+                                  child: Container(
+                                    width: 4,
+                                    height: 4,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Step counter badge
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _kFieldTint,
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(color: _kFieldBorder),
+                ),
+                child: Text(
+                  '${currentStep + 1} / $totalSteps',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _kAccent,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BackCircle extends StatefulWidget {
+  final VoidCallback onTap;
+  const _BackCircle({required this.onTap});
+
+  @override
+  State<_BackCircle> createState() => _BackCircleState();
+}
+
+class _BackCircleState extends State<_BackCircle> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: _pressed ? _kFieldTint : _kSurface,
+            shape: BoxShape.circle,
+            border: Border.all(color: _kBorderLight, width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 16,
+            color: _kInk,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Scrollable shell with fade-up entry animation
+class _StageShell extends StatelessWidget {
+  final AnimationController animCtrl;
+  final Widget child;
+
+  const _StageShell({required this.animCtrl, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final fade = CurvedAnimation(parent: animCtrl, curve: Curves.easeOut);
+    final slide = Tween<Offset>(
+      begin: const Offset(0, 0.04),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: animCtrl, curve: Curves.easeOut));
+
+    return FadeTransition(
+      opacity: fade,
+      child: SlideTransition(
+        position: slide,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Icon + title + subtitle heading block
+class _StageHeading extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool centred;
+
+  const _StageHeading({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.centred = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 4),
+      child: Column(
+        crossAxisAlignment:
+            centred ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _kFieldTint,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _kFieldBorder),
+            ),
+            child: Icon(icon, color: _kAccent, size: 24),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: _kInk,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(fontSize: 13, color: _kMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Uppercase section label
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label.toUpperCase(),
+      style: GoogleFonts.inter(
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.6,
+        color: _kMuted,
+      ),
+    );
+  }
+}
+
+/// M3-style filled text field
+class _FilledField extends StatefulWidget {
+  final String label;
+  final TextEditingController controller;
+  final String hint;
+  final IconData? prefixIcon;
+  final bool isPassword;
+  final bool obscureText;
+  final VoidCallback? onToggleObscure;
+  final TextInputType? keyboardType;
+
+  const _FilledField({
+    required this.label,
+    required this.controller,
+    required this.hint,
+    this.prefixIcon,
+    this.isPassword = false,
+    this.obscureText = false,
+    this.onToggleObscure,
+    this.keyboardType,
+  });
+
+  @override
+  State<_FilledField> createState() => _FilledFieldState();
+}
+
+class _FilledFieldState extends State<_FilledField> {
+  final _focus = FocusNode();
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() => _focused = _focus.hasFocus));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.labelMedium),
+        Text(
+          widget.label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: _kInk.withOpacity(0.7),
+          ),
+        ),
         const SizedBox(height: 6),
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: AppColors.bgWhite,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.borderLight),
+            color: _focused ? const Color(0xFFFFF0F2) : _kFieldTint,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+              bottomLeft: Radius.circular(4),
+              bottomRight: Radius.circular(4),
+            ),
+            border: Border(
+              bottom: BorderSide(
+                color: _focused ? _kFieldFocus : _kFieldBorder,
+                width: _focused ? 2 : 1,
+              ),
+            ),
           ),
           child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            style: AppTextStyles.bodyLarge,
+            controller: widget.controller,
+            focusNode: _focus,
+            obscureText: widget.isPassword && widget.obscureText,
+            keyboardType: widget.keyboardType,
+            style: GoogleFonts.inter(
+                fontSize: 15, color: _kInk, fontWeight: FontWeight.w500),
+            cursorColor: _kAccent,
             decoration: InputDecoration(
-              prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, color: AppColors.primary, size: 18)
+              prefixIcon: widget.prefixIcon != null
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 12, right: 8),
+                      child: Icon(widget.prefixIcon,
+                          color: _focused ? _kAccent : _kMuted, size: 20),
+                    )
                   : null,
+              prefixIconConstraints:
+                  const BoxConstraints(minWidth: 44, minHeight: 48),
+              suffixIcon: widget.isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        widget.obscureText
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: _kMuted,
+                        size: 18,
+                      ),
+                      onPressed: widget.onToggleObscure,
+                    )
+                  : null,
+              hintText: widget.hint,
+              hintStyle: GoogleFonts.inter(
+                  color: _kMuted.withOpacity(0.6), fontSize: 14),
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -716,13 +1148,131 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   }
 }
 
-class _SelectionTile extends StatelessWidget {
+/// Pill CTA button
+class _PillCTA extends StatefulWidget {
+  final String label;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  const _PillCTA({
+    required this.label,
+    this.isLoading = false,
+    this.onPressed,
+  });
+
+  @override
+  State<_PillCTA> createState() => _PillCTAState();
+}
+
+class _PillCTAState extends State<_PillCTA> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.onPressed != null;
+    return GestureDetector(
+      onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: enabled
+          ? (_) {
+              setState(() => _pressed = false);
+              widget.onPressed!();
+            }
+          : null,
+      onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 110),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 54,
+          decoration: BoxDecoration(
+            color: enabled ? _kAccent : _kAccent.withOpacity(0.45),
+            borderRadius: BorderRadius.circular(100),
+            boxShadow: enabled
+                ? const [
+                    BoxShadow(
+                      color: _kAccentShadow,
+                      blurRadius: 0,
+                      offset: Offset(0, 4),
+                    ),
+                    BoxShadow(
+                      color: Color(0x20C41230),
+                      blurRadius: 12,
+                      offset: Offset(0, 8),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Center(
+            child: widget.isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2.2),
+                  )
+                : Text(
+                    widget.label,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Red error banner
+class _ErrorBanner extends StatelessWidget {
+  final String message;
+  const _ErrorBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF0F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFCDD2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, color: _kAccent, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: _kAccent,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// JLPT Level selection tile
+class _LevelTile extends StatelessWidget {
   final String title;
+  final String subtitle;
+  final String stars;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _SelectionTile({
+  const _LevelTile({
     required this.title,
+    required this.subtitle,
+    required this.stars,
     required this.isSelected,
     required this.onTap,
   });
@@ -735,33 +1285,64 @@ class _SelectionTile extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.08) : AppColors.bgWhite,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFFFFF0F2) : _kSurface,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.borderLight,
-            width: isSelected ? 1.5 : 1,
+            color: isSelected ? _kAccent : _kBorderLight,
+            width: isSelected ? 1.8 : 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isSelected ? 0.0 : 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
+            // Radio circle
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 20,
-              height: 20,
+              width: 22,
+              height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppColors.primary : Colors.transparent,
+                color: isSelected ? _kAccent : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                  color: isSelected ? _kAccent : _kMuted,
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 12, color: Colors.white)
+                  ? const Icon(Icons.check_rounded,
+                      size: 13, color: Colors.white)
                   : null,
             ),
-            const SizedBox(width: 12),
-            Text(title, style: AppTextStyles.bodyLarge),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _kInk,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: _kMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(stars, style: const TextStyle(fontSize: 16)),
           ],
         ),
       ),
@@ -769,13 +1350,16 @@ class _SelectionTile extends StatelessWidget {
   }
 }
 
-class _ChipOption extends StatelessWidget {
+/// Learning goal chip
+class _GoalChip extends StatelessWidget {
   final String label;
+  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _ChipOption({
+  const _GoalChip({
     required this.label,
+    required this.icon,
     required this.isSelected,
     required this.onTap,
   });
@@ -788,77 +1372,361 @@ class _ChipOption extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.bgWhite,
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? _kAccent : _kSurface,
+          borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.borderLight,
+            color: isSelected ? _kAccent : _kBorderLight,
+            width: isSelected ? 0 : 1,
           ),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                      color: _kAccentShadow,
+                      blurRadius: 0,
+                      offset: Offset(0, 3))
+                ]
+              : [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2))
+                ],
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 16,
+                color: isSelected ? Colors.white : _kMuted),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : _kInk,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _OtpBox extends StatelessWidget {
-  final String digit;
-  const _OtpBox({required this.digit});
+/// OTP input row — 6 boxes with a transparent text field overlay
+class _OtpInputRow extends StatefulWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final VoidCallback onChanged;
+
+  const _OtpInputRow({
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
+  });
+
+  @override
+  State<_OtpInputRow> createState() => _OtpInputRowState();
+}
+
+class _OtpInputRowState extends State<_OtpInputRow> {
+  @override
+  Widget build(BuildContext context) {
+    final code = widget.controller.text.padRight(6);
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(6, (i) {
+            final filled = i < widget.controller.text.length;
+            final active = i == widget.controller.text.length &&
+                widget.focusNode.hasFocus;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 44,
+              height: 54,
+              decoration: BoxDecoration(
+                color: filled
+                    ? const Color(0xFFFFF0F2)
+                    : active
+                        ? _kFieldTint
+                        : _kSurface,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
+                  bottomLeft: Radius.circular(4),
+                  bottomRight: Radius.circular(4),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: active
+                        ? _kAccent
+                        : filled
+                            ? _kFieldFocus.withOpacity(0.5)
+                            : _kBorderLight,
+                    width: active ? 2.5 : 1.5,
+                  ),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  code[i].trim().isEmpty ? '' : code[i],
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: _kInk,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+        Positioned.fill(
+          child: TextField(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: const TextStyle(color: Colors.transparent, fontSize: 1),
+            cursorColor: Colors.transparent,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              counterText: '',
+            ),
+            onChanged: (_) {
+              setState(() {});
+              widget.onChanged();
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Animated envelope illustration for stage 3
+class _EnvelopeIllustration extends StatelessWidget {
+  final bool hasMail;
+  const _EnvelopeIllustration({required this.hasMail});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 52,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      width: double.infinity,
+      height: 140,
       decoration: BoxDecoration(
-        color: AppColors.bgWhite,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderLight, width: 1.5),
-        boxShadow: [
+        color: hasMail ? const Color(0xFFFFF0F2) : const Color(0xFFF5F3F0),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: hasMail ? _kFieldBorder : _kBorderLight,
+          width: 1.5,
+        ),
+      ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        child: hasMail
+            ? Column(
+                key: const ValueKey('sent'),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.mark_email_read_outlined,
+                      color: _kAccent, size: 48),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Code delivered!',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: _kAccent,
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                key: const ValueKey('waiting'),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.email_outlined, color: _kMuted, size: 48),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Awaiting code…',
+                    style: GoogleFonts.inter(
+                        fontSize: 13, color: _kMuted),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// Username field with @ prefix
+class _UsernameField extends StatefulWidget {
+  final TextEditingController controller;
+  const _UsernameField({required this.controller});
+
+  @override
+  State<_UsernameField> createState() => _UsernameFieldState();
+}
+
+class _UsernameFieldState extends State<_UsernameField> {
+  final _focus = FocusNode();
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() => _focused = _focus.hasFocus));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        color: _focused ? const Color(0xFFFFF0F2) : _kFieldTint,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+          bottomLeft: Radius.circular(4),
+          bottomRight: Radius.circular(4),
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: _focused ? _kFieldFocus : _kFieldBorder,
+            width: _focused ? 2 : 1,
+          ),
+        ),
+      ),
+      child: TextField(
+        controller: widget.controller,
+        focusNode: _focus,
+        style: GoogleFonts.inter(
+            fontSize: 15, color: _kInk, fontWeight: FontWeight.w500),
+        cursorColor: _kAccent,
+        decoration: InputDecoration(
+          prefixText: '@  ',
+          prefixStyle: GoogleFonts.inter(
+            color: _focused ? _kAccent : _kMuted,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+          hintText: 'yourhandle',
+          hintStyle: GoogleFonts.inter(
+              color: _kMuted.withOpacity(0.6), fontSize: 14),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14, vertical: 14),
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile preview card for stage 4
+class _UsernamePreview extends StatelessWidget {
+  final String username;
+  final String firstName;
+  final String lastName;
+
+  const _UsernamePreview({
+    required this.username,
+    required this.firstName,
+    required this.lastName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName = username.isEmpty ? 'username' : username;
+    final initials = [
+      firstName.isNotEmpty ? firstName[0] : '',
+      lastName.isNotEmpty ? lastName[0] : '',
+    ].join().toUpperCase();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kBorderLight),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Color(0x08000000),
             blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Center(
-        child: Text(
-          digit.trim().isEmpty ? '' : digit,
-          style: const TextStyle(fontSize: 20, letterSpacing: 2),
-        ),
-      ),
-    );
-  }
-}
-
-class _NextButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _NextButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'Next',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _kAccent.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                initials.isEmpty ? '???' : initials,
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: _kAccent,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward_rounded,
-              color: AppColors.primary, size: 22),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$firstName ${lastName.isEmpty ? '' : lastName}'.trim().isEmpty
+                    ? 'Your Name'
+                    : '$firstName $lastName'.trim(),
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: _kInk,
+                ),
+              ),
+              Text(
+                '@$displayName',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: _kAccent,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Text(
+              'Preview',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2E7D32),
+              ),
+            ),
+          ),
         ],
       ),
     );

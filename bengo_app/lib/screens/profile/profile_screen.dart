@@ -1,15 +1,20 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../utils/app_colors.dart';
-import '../../utils/app_text_styles.dart';
-import '../../utils/app_decorations.dart';
 import '../../services/api_service.dart';
-import '../../widgets/bengo_header.dart';
+import '../../widgets/bengo_avatar.dart';
 import '../friends/friends_screen.dart';
-import '../leaderboard/leaderboard_screen.dart';
+
+// ── Tokens ────────────────────────────────────────────────────────────────────
+const _kAccent = Color(0xFFC41230);
+const _kAccentShadow = Color(0x35C41230);
+const _kInk = Color(0xFF1B1B1D);
+const _kMuted = Color(0xFF8A8A8F);
+const _kBorderLight = Color(0xFFEAE5E1);
+const _kSurface = Color(0xFFFFFFFF);
+const _kFieldTint = Color(0xFFFDF3F5);
+const _kFieldBorder = Color(0xFFEDD5D8);
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,20 +36,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     setState(() => _loading = true);
-
-    // Try to load cached user first for instant display
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString('user');
     if (cached != null && cached.isNotEmpty) {
       try {
-        final parsed = Map<String, dynamic>.from(
-          await _parseJson(cached),
-        );
+        final parsed = jsonDecode(cached) as Map<String, dynamic>;
         if (mounted) setState(() => _user = parsed);
       } catch (_) {}
     }
-
-    // Then fetch fresh data from API
     try {
       final me = await ApiService.instance.getMe();
       final progress = await ApiService.instance.getMyProgress();
@@ -53,98 +52,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _user = me;
           _progress = progress;
         });
-        // Update cache
         prefs.setString('user', jsonEncode(me));
       }
     } catch (_) {
-      // Keep cached data
+      // keep cached
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
-
-  Future<Map<String, dynamic>> _parseJson(String s) async {
-    return jsonDecode(s) as Map<String, dynamic>;
-  }
-
-  String get _displayName {
-    final u = _user;
-    final name = (u['first_name'] ?? '').toString().trim();
-    final last = (u['last_name'] ?? '').toString().trim();
-    if (name.isNotEmpty || last.isNotEmpty) return '$name $last'.trim();
-    return (u['username'] ?? 'User').toString();
-  }
-
-  String get _displayUsername => '@${_user['username'] ?? 'user'}';
-  String get _displayEmail    => _user['email']?.toString() ?? '';
-  int    get _xp              => (_user['xp']         ?? _progress['xp']         ?? 0) as int;
-  int    get _streak          => (_user['streak_days'] ?? _progress['streak_days'] ?? 0) as int;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Map<String, dynamic>?>(
       valueListenable: ApiService.instance.currentUserNotifier,
       builder: (context, userNotifierMap, _) {
-        final displayUser = userNotifierMap ?? _user;
-        final xp = (displayUser['xp'] ?? _progress['xp'] ?? 0) as int;
-        final streak = (displayUser['streak_days'] ?? _progress['streak_days'] ?? 0) as int;
-        final displayName = () {
-          final name = (displayUser['first_name'] ?? '').toString().trim();
-          final last = (displayUser['last_name'] ?? '').toString().trim();
-          if (name.isNotEmpty || last.isNotEmpty) return '$name $last'.trim();
-          return (displayUser['username'] ?? 'User').toString();
-        }();
-        final displayUsername = '@${displayUser['username'] ?? 'user'}';
-        final displayEmail = displayUser['email']?.toString() ?? '';
+        final u = userNotifierMap ?? _user;
+        final firstName = (u['first_name'] ?? '').toString().trim();
+        final lastName = (u['last_name'] ?? '').toString().trim();
+        final displayName = (firstName.isNotEmpty || lastName.isNotEmpty)
+            ? '$firstName $lastName'.trim()
+            : (u['username'] ?? 'User').toString();
+        final username = '@${u['username'] ?? 'user'}';
+        final email = u['email']?.toString() ?? '';
+        final xp = (u['xp'] ?? _progress['xp'] ?? 0) as int;
+        final streak = (u['streak_days'] ?? _progress['streak_days'] ?? 0) as int;
+        final avatarId = u['avatar_id']?.toString() ?? 'a1';
+        final def = avatarById(avatarId);
 
         return Scaffold(
-          backgroundColor: AppColors.bgLight,
-          body: SafeArea(
-            child: RefreshIndicator(
-              onRefresh: _loadProfile,
-              color: AppColors.primary,
-              child: CustomScrollView(
-                slivers: [
-                  const SliverToBoxAdapter(child: BenGoHeader()),
-                  SliverToBoxAdapter(child: _buildProfileHeader(displayName, displayUsername)),
-                  if (displayEmail.isNotEmpty)
+          backgroundColor: const Color(0xFFFAF8F5),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFFAF8F5), Color(0xFFF8F5FF), Color(0xFFFFF5F7)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: [0.0, 0.5, 1.0],
+              ),
+            ),
+            child: SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _loadProfile,
+                color: _kAccent,
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    // ── Hero banner ──────────────────────────────────────────
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                        child: _buildInfoRow(Icons.mail_outline_rounded, displayEmail),
+                      child: _ProfileHero(
+                        def: def,
+                        avatarId: avatarId,
+                        displayName: displayName,
+                        username: username,
+                        xp: xp,
+                        streak: streak,
+                        loading: _loading,
+                        onEdit: () => _showEditSheet(context, u),
                       ),
                     ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildStatsCard(xp, streak),
+
+                    // ── Progress card ────────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                        child: _buildProgressCard(),
+                      ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildProgressSection(),
+
+                    // ── Email row ────────────────────────────────────────────
+                    if (email.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                          child: _InfoCard(
+                            icon: Icons.alternate_email_rounded,
+                            label: 'EMAIL',
+                            value: email,
+                          ),
+                        ),
+                      ),
+
+                    // ── Membership card ──────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        child: _buildMembershipCard(),
+                      ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildMembershipCard(),
+
+                    // ── Certifications ───────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                        child: _buildCertsSection(),
+                      ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: _buildCertificationsSection(context),
+
+                    // ── Friends button ───────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 40),
+                        child: _FriendsButton(
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const FriendsScreen()),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                      child: _buildFriendsButton(context),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -153,102 +170,291 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
-
-
-  Widget _buildProfileHeader(String name, String username) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Column(
-          children: [
-            Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                Container(
-                  width: 90, height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFFE8CFA0),
-                    border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12)],
-                  ),
-                  child: _loading
-                      ? const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)
-                      : const Icon(Icons.person, size: 48, color: Color(0xFF8B4513)),
-                ),
-                Positioned(
-                  bottom: -6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.accentGreen, borderRadius: BorderRadius.circular(12)),
-                    child: Text('LEARNER', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(name, style: AppTextStyles.headlineMedium),
-            const SizedBox(height: 2),
-            Text(username, style: AppTextStyles.bodySmall),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.edit, size: 14, color: AppColors.primary),
-              label: Text('EDIT PROFILE', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary, letterSpacing: 1)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.primary),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              ),
-            ),
-          ],
-        ),
+  // ── Edit profile bottom sheet ─────────────────────────────────────────────
+  void _showEditSheet(BuildContext context, Map<String, dynamic> user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditProfileSheet(
+        user: user,
+        onSaved: () {
+          _loadProfile();
+        },
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  // ── Progress card ─────────────────────────────────────────────────────────
+  Widget _buildProgressCard() {
+    final unlocked = (_progress['unlocked_exams'] as List? ?? []);
+    final lessonProg = (_progress['lesson_progress'] as List? ?? []);
+    final completed = lessonProg.where((l) => l['is_completed'] == true).length;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: AppDecorations.skeuomorphicCard(radius: 12),
-      child: Row(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _kSurface.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFEDE8F8)),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x09000000), blurRadius: 20, offset: Offset(0, 6))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppColors.primary, size: 18),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: AppTextStyles.bodyMedium)),
+          Text(
+            'LEARNING PROGRESS',
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: _kMuted,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _ProgStat(
+                  icon: Icons.lock_open_rounded,
+                  value: '${unlocked.length}',
+                  label: 'Unlocked'),
+              const SizedBox(width: 10),
+              _ProgStat(
+                  icon: Icons.check_circle_outline_rounded,
+                  value: '$completed',
+                  label: 'Lessons Done'),
+              const SizedBox(width: 10),
+              _ProgStat(
+                  icon: Icons.trending_up_rounded,
+                  value: '${lessonProg.length}',
+                  label: 'In Progress'),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatsCard(int xp, int streak) {
+  Widget _buildMembershipCard() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: AppDecorations.skeuomorphicCard(radius: 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFC41230), Color(0xFF8B0D21)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+              color: _kAccentShadow, blurRadius: 20, offset: Offset(0, 8))
+        ],
+      ),
       child: Row(
         children: [
+          const Text('🏅', style: TextStyle(fontSize: 28)),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 24),
-                const SizedBox(height: 6),
-                Text(xp.toString(), style: AppTextStyles.statNumber),
-                Text('TOTAL XP', style: AppTextStyles.captionUpper),
+                Text(
+                  'MEMBERSHIP',
+                  style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white60,
+                      letterSpacing: 1.2),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Active Member',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
           ),
-          Container(width: 1, height: 60, color: AppColors.borderLight),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Text(
+              'MANAGE',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: _kAccent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCertsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Certifications',
+              style: GoogleFonts.spaceGrotesk(
+                  fontSize: 18, fontWeight: FontWeight.w700, color: _kInk),
+            ),
+            Text(
+              'View All',
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: _kAccent, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            _CertBadge(icon: 'あ', label: 'JLPT N5\nMastery'),
+            const SizedBox(width: 10),
+            _CertBadge(icon: '⌨', label: 'Logic\nGates'),
+            const SizedBox(width: 10),
+            _CertBadge(icon: '🏆', label: 'Top 1%\nGlobal'),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HERO BANNER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ProfileHero extends StatelessWidget {
+  final BenGoAvatarDef def;
+  final String avatarId;
+  final String displayName;
+  final String username;
+  final int xp;
+  final int streak;
+  final bool loading;
+  final VoidCallback onEdit;
+
+  const _ProfileHero({
+    required this.def,
+    required this.avatarId,
+    required this.displayName,
+    required this.username,
+    required this.xp,
+    required this.streak,
+    required this.loading,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFEDE8F8)),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x0A000000), blurRadius: 24, offset: Offset(0, 8))
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Avatar with glow
+              Stack(
                 children: [
-                  const SizedBox(height: 30),
-                  Text(streak.toString(), style: AppTextStyles.statNumber),
-                  Text('DAY STREAK', style: AppTextStyles.captionUpper),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: def.shadow.withOpacity(0.38),
+                          blurRadius: 22,
+                          spreadRadius: 3,
+                        )
+                      ],
+                    ),
+                    child: BenGoAvatar(avatarId: avatarId, size: 80, showRing: true),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: _kInk,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      username,
+                      style: GoogleFonts.inter(
+                          fontSize: 13, color: _kMuted),
+                    ),
+                    const SizedBox(height: 10),
+                    // Stat pills
+                    Row(
+                      children: [
+                        _MiniPill(emoji: '🔥', value: '$streak', label: 'days'),
+                        const SizedBox(width: 8),
+                        _MiniPill(emoji: '⚡', value: '$xp', label: 'XP'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          // Edit button
+          GestureDetector(
+            onTap: onEdit,
+            child: Container(
+              height: 46,
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFEDE8F8), width: 1.5),
+                borderRadius: BorderRadius.circular(100),
+                color: const Color(0xFFFBF8FF),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.edit_rounded, size: 16, color: _kAccent),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Edit Profile',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: _kAccent,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -257,134 +463,458 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+}
 
-  Widget _buildProgressSection() {
-    final unlocked = (_progress['unlocked_exams'] as List? ?? []);
-    final lessonProg = (_progress['lesson_progress'] as List? ?? []);
-    final completed = lessonProg.where((l) => l['is_completed'] == true).length;
+// ═══════════════════════════════════════════════════════════════════════════════
+// EDIT PROFILE SHEET
+// ═══════════════════════════════════════════════════════════════════════════════
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppDecorations.skeuomorphicCard(radius: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Learning Progress', style: AppTextStyles.headlineMedium),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _progressStat('${unlocked.length}', 'Exams Unlocked', Icons.lock_open_rounded),
-              const SizedBox(width: 12),
-              _progressStat('$completed', 'Lessons Done', Icons.check_circle_outline_rounded),
-              const SizedBox(width: 12),
-              _progressStat('${lessonProg.length}', 'In Progress', Icons.trending_up_rounded),
-            ],
-          ),
-        ],
-      ),
-    );
+class _EditProfileSheet extends StatefulWidget {
+  final Map<String, dynamic> user;
+  final VoidCallback onSaved;
+
+  const _EditProfileSheet({required this.user, required this.onSaved});
+
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final TextEditingController _firstCtrl;
+  late final TextEditingController _lastCtrl;
+  late String _avatarId;
+  bool _saving = false;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _firstCtrl = TextEditingController(
+        text: widget.user['first_name']?.toString() ?? '');
+    _lastCtrl = TextEditingController(
+        text: widget.user['last_name']?.toString() ?? '');
+    _avatarId = widget.user['avatar_id']?.toString() ?? 'a1';
   }
 
-  Widget _progressStat(String value, String label, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: AppDecorations.skeuomorphicCard(color: AppColors.bgLight, radius: 12),
+  @override
+  void dispose() {
+    _firstCtrl.dispose();
+    _lastCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() { _saving = true; _error = ''; });
+    try {
+      await ApiService.instance.updateProfile({
+        'first_name': _firstCtrl.text.trim(),
+        'last_name': _lastCtrl.text.trim(),
+        'avatar_id': _avatarId,
+      });
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSaved();
+      }
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottom),
+      child: SingleChildScrollView(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppColors.primary, size: 20),
-            const SizedBox(height: 6),
-            Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-            Text(label, style: AppTextStyles.captionUpper.copyWith(fontSize: 8), textAlign: TextAlign.center),
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: _kBorderLight,
+                    borderRadius: BorderRadius.circular(100)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Edit Profile',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 22, fontWeight: FontWeight.w700, color: _kInk),
+            ),
+            const SizedBox(height: 20),
+
+            // Avatar section
+            Text(
+              'AVATAR',
+              style: GoogleFonts.inter(
+                fontSize: 10, fontWeight: FontWeight.w800,
+                color: _kMuted, letterSpacing: 1.5),
+            ),
+            const SizedBox(height: 12),
+
+            // Currently selected avatar preview
+            Row(
+              children: [
+                BenGoAvatar(avatarId: _avatarId, size: 60, showRing: true),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        avatarById(_avatarId).label,
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 16, fontWeight: FontWeight.w700, color: _kInk),
+                      ),
+                      Text(
+                        avatarById(_avatarId).label,
+                        style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Avatar picker grid
+            BenGoAvatarPicker(
+              selectedId: _avatarId,
+              onSelect: (id) => setState(() => _avatarId = id),
+            ),
+            const SizedBox(height: 20),
+
+            // Name fields
+            Text(
+              'NAME',
+              style: GoogleFonts.inter(
+                fontSize: 10, fontWeight: FontWeight.w800,
+                color: _kMuted, letterSpacing: 1.5),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _EditField(label: 'First name', ctrl: _firstCtrl)),
+                const SizedBox(width: 10),
+                Expanded(child: _EditField(label: 'Last name', ctrl: _lastCtrl)),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            if (_error.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _kFieldTint,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _kFieldBorder),
+                ),
+                child: Text(_error,
+                    style: GoogleFonts.inter(fontSize: 12, color: _kAccent)),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Save button
+            GestureDetector(
+              onTap: _saving ? null : _save,
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFC41230), Color(0xFFE0183A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(100),
+                  boxShadow: const [
+                    BoxShadow(color: _kAccentShadow, blurRadius: 0, offset: Offset(0, 4)),
+                    BoxShadow(color: Color(0x18C41230), blurRadius: 12, offset: Offset(0, 8)),
+                  ],
+                ),
+                child: Center(
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : Text(
+                          'Save Changes',
+                          style: GoogleFonts.inter(
+                            fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+                        ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildMembershipCard() {
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _MiniPill extends StatelessWidget {
+  final String emoji;
+  final String value;
+  final String label;
+  const _MiniPill({required this.emoji, required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppDecorations.skeuomorphicCard(color: AppColors.primary, radius: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F2FA),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: const Color(0xFFEDE9F4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 13, fontWeight: FontWeight.w700, color: _kInk),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: GoogleFonts.inter(fontSize: 11, color: _kMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgStat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  const _ProgStat({required this.icon, required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAF8F5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _kBorderLight),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: _kAccent, size: 20),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 20, fontWeight: FontWeight.w700, color: _kInk),
+            ),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 9, color: _kMuted, letterSpacing: 0.5),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _InfoCard({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFEDE8F8)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x07000000), blurRadius: 12, offset: Offset(0, 4))
+        ],
+      ),
       child: Row(
         children: [
+          Container(
+            width: 38, height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDF3F5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFEDD5D8)),
+            ),
+            child: Icon(icon, color: _kAccent, size: 18),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('MEMBERSHIP STATUS', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.white70, letterSpacing: 1)),
-                const SizedBox(height: 4),
-                Text('Active Member', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 9, fontWeight: FontWeight.w700,
+                    color: _kMuted, letterSpacing: 1.2),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.inter(fontSize: 13, color: _kInk),
+                ),
               ],
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-            child: Text('MANAGE', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildCertificationsSection(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Certifications', style: AppTextStyles.headlineMedium),
-            Text('View All', style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _certBadge('あa', 'JLPT N5\nMastery'),
-            const SizedBox(width: 12),
-            _certBadge('⌨', 'Logic\nGates'),
-            const SizedBox(width: 12),
-            _certBadge('🏆', 'Top 1%\nGlobal'),
-          ],
-        ),
-      ],
-    );
-  }
+class _CertBadge extends StatelessWidget {
+  final String icon;
+  final String label;
+  const _CertBadge({required this.icon, required this.label});
 
-  Widget _certBadge(String icon, String label) {
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: AppDecorations.skeuomorphicCard(radius: 14),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFEDE8F8)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x07000000), blurRadius: 10, offset: Offset(0, 4))
+          ],
+        ),
         child: Column(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
+            Text(icon, style: const TextStyle(fontSize: 26)),
             const SizedBox(height: 8),
-            Text(label, textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary, height: 1.3)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 10, color: _kMuted, height: 1.3),
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildFriendsButton(BuildContext context) {
+class _FriendsButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _FriendsButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FriendsScreen())),
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: AppDecorations.skeuomorphicCard(radius: 14),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFEDE8F8)),
+          boxShadow: const [
+            BoxShadow(
+                color: Color(0x07000000), blurRadius: 12, offset: Offset(0, 4))
+          ],
+        ),
         child: Row(
           children: [
-            const Icon(Icons.people_outline_rounded, color: AppColors.primary),
-            const SizedBox(width: 12),
-            Text('Friends & Network', style: AppTextStyles.headlineSmall),
-            const Spacer(),
-            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDF3F5),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: const Color(0xFFEDD5D8)),
+              ),
+              child: const Icon(Icons.people_alt_rounded, color: _kAccent, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Friends & Network',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 16, fontWeight: FontWeight.w700, color: _kInk),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: _kMuted),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditField extends StatelessWidget {
+  final String label;
+  final TextEditingController ctrl;
+  const _EditField({required this.label, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11, fontWeight: FontWeight.w600, color: _kMuted),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          style: GoogleFonts.inter(fontSize: 14, color: _kInk),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFFFAF8F5),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: _kBorderLight),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: _kBorderLight),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: _kAccent, width: 1.5),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

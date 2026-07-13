@@ -1,10 +1,22 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show ValueNotifier;
+import 'package:flutter/foundation.dart' show ValueNotifier, kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Production backend URL for the Android app and web client.
-String get kBaseUrl => 'https://jback2.zynix.us/api';
+const String _defaultBackendBaseUrl = 'http://127.0.0.1:8000/api';
+
+String get kBaseUrl {
+  if (kIsWeb) {
+    final host = Uri.base.host;
+    if (host == 'jback2.zynix.us') {
+      return 'https://jback2.zynix.us/api';
+    }
+    if (host == '127.0.0.1' || host == 'localhost') {
+      return 'http://127.0.0.1:8000/api';
+    }
+  }
+  return _defaultBackendBaseUrl;
+}
 
 class ApiService {
   static ApiService? _instance;
@@ -25,11 +37,19 @@ class ApiService {
     return prefs.getString('access_token');
   }
 
-  Future<Map<String, String>> get _headers async {
+  Future<Map<String, String>> _headersFor(String path) async {
     final token = await _access;
+    final publicAuthPaths = {
+      '/auth/login/',
+      '/auth/register/',
+      '/auth/send-verification-code/',
+      '/auth/verify-email/',
+      '/auth/check-username/',
+      '/auth/token/refresh/',
+    };
     return {
       'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
+      if (token != null && !publicAuthPaths.contains(path)) 'Authorization': 'Bearer $token',
     };
   }
 
@@ -76,7 +96,7 @@ class ApiService {
     Map<String, dynamic>? body,
     bool retry = true,
   }) async {
-    final headers = await _headers;
+    final headers = await _headersFor(path);
     final uri     = Uri.parse('$kBaseUrl$path');
     http.Response res;
 
@@ -88,7 +108,8 @@ class ApiService {
       default:       throw Exception('Unknown method: $method');
     }
 
-    if (res.statusCode == 401 && retry) {
+    final noRetryPaths = ['/auth/login/', '/auth/register/', '/auth/token/refresh/'];
+    if (res.statusCode == 401 && retry && !noRetryPaths.contains(path)) {
       final ok = await refreshToken();
       if (ok) return _req(method, path, body: body, retry: false);
     }
@@ -120,6 +141,7 @@ class ApiService {
     required String lastName,
     required String preferredLevel,
     required String learningGoal,
+    String avatarId = 'a1',
   }) async {
     final res = await _req('POST', '/auth/register/', body: {
       'username': username,
@@ -130,6 +152,7 @@ class ApiService {
       'last_name': lastName,
       'preferred_level': preferredLevel,
       'learning_goal': learningGoal,
+      'avatar_id': avatarId,
     });
     final data = _decode(res);
     await saveTokens(data['tokens']['access'], data['tokens']['refresh']);
@@ -162,17 +185,17 @@ class ApiService {
 
   Future<bool> checkUsernameAvailability(String username) async {
     final uri = Uri.parse('$kBaseUrl/auth/check-username/?username=${Uri.encodeComponent(username)}');
-    final headers = await _headers;
+    final headers = await _headersFor('/auth/check-username/');
     final res = await http.get(uri, headers: headers);
     final data = _decode(res);
     return data['available'] == true;
   }
 
   Future<Map<String, dynamic>> login({
-    required String email, required String password,
+    required String identifier, required String password,
   }) async {
     final res = await _req('POST', '/auth/login/', body: {
-      'email': email, 'password': password,
+      'email': identifier, 'password': password,
     });
     final data = _decode(res);
     await saveTokens(data['tokens']['access'], data['tokens']['refresh']);
@@ -198,7 +221,11 @@ class ApiService {
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
     _cachedMe = null;
     final res = await _req('PATCH', '/auth/me/', body: data);
-    return _decode(res);
+    final updated = _decode(res);
+    _cachedMe = updated;
+    currentUserNotifier.value = updated;
+    await _saveUserToStorage(updated);
+    return updated;
   }
 
   // ── Exams ─────────────────────────────────────────────────────────────────────
