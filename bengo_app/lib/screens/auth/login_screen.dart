@@ -394,12 +394,12 @@ class _LogoWidgetState extends State<_LogoWidget>
         builder: (_, __) {
           return CustomPaint(
             painter: _FocusRingArcPainter(progress: _arcAnim.value),
-            child: Center(
-              child: Container(
+                child: Center(
+                  child: Container(
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: _kInk,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: const [
                     BoxShadow(
@@ -416,14 +416,11 @@ class _LogoWidgetState extends State<_LogoWidget>
                   ],
                 ),
                 child: Center(
-                  child: Text(
-                    'Bg',
-                    style: GoogleFonts.spaceGrotesk(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: -1,
-                    ),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier, kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String _defaultBackendBaseUrl = 'http://127.0.0.1:8000/api';
+const String _defaultBackendBaseUrl = 'https://jback2.zynix.us/api';
 
 String get kBaseUrl {
   if (kIsWeb) {
@@ -12,7 +12,7 @@ String get kBaseUrl {
       return 'https://jback2.zynix.us/api';
     }
     if (host == '127.0.0.1' || host == 'localhost') {
-      return 'http://127.0.0.1:8000/api';
+      return 'https://jback2.zynix.us/api';
     }
   }
   return _defaultBackendBaseUrl;

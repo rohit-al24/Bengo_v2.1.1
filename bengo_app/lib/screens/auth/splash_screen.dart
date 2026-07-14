@@ -349,28 +349,18 @@ class _LogoCard extends StatelessWidget {
         ],
       ),
       child: Center(
-        child: Column(
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ShaderMask(
-              blendMode: BlendMode.srcIn,
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFF1B1B1D), Color(0xFF3A1820)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ).createShader(bounds),
-              child: Text(
-                'Bg',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w700,
-                  color: _kInk,
-                  letterSpacing: -2.5,
-                  height: 1,
-                ),
+            SizedBox(
+              width: 64,
+              height: 64,
+              child: Image.asset(
+                'assets/images/logo.png',
+                fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 12),
             Container(
               width: 28,
               height: 3,
