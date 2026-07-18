@@ -721,158 +721,149 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
       animCtrl: _pageAnimCtrl,
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _StageHeading(
-                    icon: _kStepIcons[5],
-                    title: _kStepTitles[5],
-                    subtitle: _kStepSubtitles[5],
-                  ),
-                  const SizedBox(height: 24),
-                  _SectionLabel(label: 'Institution'),
-                  const SizedBox(height: 10),
-                  _FilledField(
-                    label: 'Search institution',
-                    controller: _institutionSearchCtrl,
-                    hint: 'Type to search...',
-                    prefixIcon: Icons.search_outlined,
-                    onChanged: _filterInstitutions,
-                  ),
-                  if (_showInstitutionDropdown && _filteredInstitutions.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: _kSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _kFieldBorder),
-                      ),
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _filteredInstitutions.length,
-                        itemBuilder: (ctx, idx) {
-                          final inst = _filteredInstitutions[idx];
-                          return InkWell(
-                            onTap: () => _selectInstitution(inst),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    inst['name'] ?? 'Unknown',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: _kInk,
-                                    ),
-                                  ),
-                                  if (inst['code'] != null)
-                                    Text(
-                                      inst['code'] ?? '',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: _kMuted,
-                                      ),
-                                    ),
-                                ],
-                              ),
+          _StageHeading(
+            icon: _kStepIcons[5],
+            title: _kStepTitles[5],
+            subtitle: _kStepSubtitles[5],
+          ),
+          const SizedBox(height: 24),
+          _SectionLabel(label: 'Institution'),
+          const SizedBox(height: 10),
+          _FilledField(
+            label: 'Search institution',
+            controller: _institutionSearchCtrl,
+            hint: 'Type to search...',
+            prefixIcon: Icons.search_outlined,
+            onChanged: _filterInstitutions,
+          ),
+          if (_showInstitutionDropdown && _filteredInstitutions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: _kSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _kFieldBorder),
+              ),
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _filteredInstitutions.length,
+                itemBuilder: (ctx, idx) {
+                  final inst = _filteredInstitutions[idx];
+                  return InkWell(
+                    onTap: () => _selectInstitution(inst),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            inst['name'] ?? 'Unknown',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: _kInk,
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ] else if (_isSearchingInstitutions) ...[
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_kAccent)),
                           ),
-                          const SizedBox(width: 8),
-                          Text('Searching institutions…', style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
-                        ],
-                      ),
-                    ),
-                  ],
-                  if (hasSelection) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _kFieldTint,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _kAccent, width: 1.5),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: _kAccent, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _selectedInstitution['name'] ?? 'Unknown',
+                          if (inst['code'] != null)
+                            Text(
+                              inst['code'] ?? '',
                               style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: _kAccent,
+                                fontSize: 11,
+                                color: _kMuted,
                               ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () => setState(() {
-                              _selectedInstitution = null;
-                              _institutionSearchCtrl.clear();
-                              _regNumberCtrl.clear();
-                              _filteredInstitutions = [];
-                              _showInstitutionDropdown = false;
-                              _isSearchingInstitutions = false;
-                            }),
-                            child: Icon(Icons.close, color: _kAccent, size: 18),
-                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 280),
-                      child: hasSelection
-                          ? Container(
-                              key: const ValueKey('reg-number'),
-                              child: AnimatedOpacity(
-                                opacity: 1.0,
-                                duration: const Duration(milliseconds: 300),
-                                child: _FilledField(
-                                  label: 'Institutional Registration Number',
-                                  controller: _regNumberCtrl,
-                                  hint: 'e.g., STU-2024-001',
-                                  enabled: true,
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink(key: ValueKey('empty')),
-                    ),
-                  ],
-                  if (_errorMsg.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _ErrorBanner(message: _errorMsg),
-                  ],
+                  );
+                },
+              ),
+            ),
+          ] else if (_isSearchingInstitutions) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_kAccent)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('Searching institutions…', style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+          ],
+          if (hasSelection) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _kFieldTint,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _kAccent, width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: _kAccent, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _selectedInstitution['name'] ?? 'Unknown',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _kAccent,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _selectedInstitution = null;
+                      _institutionSearchCtrl.clear();
+                      _regNumberCtrl.clear();
+                      _filteredInstitutions = [];
+                      _showInstitutionDropdown = false;
+                      _isSearchingInstitutions = false;
+                    }),
+                    child: Icon(Icons.close, color: _kAccent, size: 18),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              child: hasSelection
+                  ? Container(
+                      key: const ValueKey('reg-number'),
+                      child: AnimatedOpacity(
+                        opacity: 1.0,
+                        duration: const Duration(milliseconds: 300),
+                        child: _FilledField(
+                          label: 'Institutional Registration Number',
+                          controller: _regNumberCtrl,
+                          hint: 'e.g., STU-2024-001',
+                          enabled: true,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('empty')),
+            ),
+          ],
+          if (_errorMsg.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _errorMsg),
+          ],
+          const SizedBox(height: 24),
           Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextButton(
                 onPressed: _isRegistering ? null : _skipInstitutionStage,
@@ -896,6 +887,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
               ),
             ],
           ),
+          const SizedBox(height: 32),
         ],
       ),
     );
