@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     # Local apps
+    'apps.institutions',
     'apps.accounts',
     'apps.courses',
     'apps.progress',
