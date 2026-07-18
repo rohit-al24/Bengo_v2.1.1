@@ -408,14 +408,27 @@ class RoomSubmitLineView(APIView):
 
         member = models.RolePlayMember.objects.get(room=room, user=request.user)
 
-        result, _ = models.RolePlayLineResult.objects.get_or_create(
+        result, created = models.RolePlayLineResult.objects.get_or_create(
             room=room, member=member, dialogue=dialogue,
             defaults={'correct': correct, 'score': score},
         )
 
+        recording_file = request.FILES.get('recording')
+        if recording_file and (correct or passed):
+            if result.recording:
+                result.recording.delete(save=False)
+            result.recording.save(recording_file.name, recording_file, save=False)
+
         if correct:
+            result.correct = True
+            result.score = float(score)
             member.score = float(member.score) + score
             member.save()
+
+        if recording_file and (correct or passed):
+            result.save()
+        elif created:
+            result.save()
 
         if correct or passed:
             # Advance room turn
@@ -432,6 +445,7 @@ class RoomSubmitLineView(APIView):
             'total_score': member.score,
             'current_dialogue_index': room.current_dialogue_index,
             'room_status': room.status,
+            'recording_url': result.recording.url if result.recording else None,
         })
 
 

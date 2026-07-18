@@ -1,11 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/roleplay_shell.dart';
 import 'roleplay_models.dart';
+import 'roleplay_history_screen.dart';
+import 'roleplay_room_create_screen.dart';
 
 const _kAccent = Color(0xFFC41230);
-const _kInk    = Color(0xFF1B1B1D);
-const _kMuted  = Color(0xFF8A8A8F);
+const _kInk = Color(0xFF1B1B1D);
+const _kMuted = Color(0xFF8A8A8F);
 
 class RolePlayResultScreen extends StatefulWidget {
   final RolePlayResult result;
@@ -29,16 +32,16 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
 
     _entryCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 700));
-    _entryScale = Tween<double>(begin: 0.6, end: 1.0).animate(
-        CurvedAnimation(parent: _entryCtrl, curve: Curves.elasticOut));
-    _entryOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut));
+    _entryScale = Tween<double>(begin: 0.6, end: 1.0)
+        .animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.elasticOut));
+    _entryOpacity = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut));
 
     _ringCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1200));
 
-    _confettiCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 3));
+    _confettiCtrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 3));
 
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) {
@@ -83,42 +86,63 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FD),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            _ConfettiLayer(controller: _confettiCtrl),
-            SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-              child: AnimatedBuilder(
-                animation: _entryCtrl,
-                builder: (_, child) => Opacity(
-                  opacity: _entryOpacity.value,
-                  child: Transform.scale(scale: _entryScale.value, child: child),
-                ),
-                child: Column(
-                  children: [
-                    _buildTrophyHeader(),
-                    const SizedBox(height: 24),
-                    _buildAccuracyRing(),
-                    const SizedBox(height: 24),
-                    _buildStatsGrid(),
-                    const SizedBox(height: 20),
-                    _buildRewards(),
-                    const SizedBox(height: 20),
-                    _buildAchievements(),
-                    const SizedBox(height: 28),
-                    _buildActions(),
-                  ],
-                ),
+    return RolePlayShell(
+      title: 'Results',
+      subtitle: '${widget.result.storyEmoji} ${widget.result.storyTitle}',
+      showBack: true,
+      onBackTap: () => Navigator.pop(context),
+      selectedTab: null,
+      onNavTap: _handleRolePlayNavTap,
+      body: Stack(
+        children: [
+          _ConfettiLayer(controller: _confettiCtrl),
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+            child: AnimatedBuilder(
+              animation: _entryCtrl,
+              builder: (_, child) => Opacity(
+                opacity: _entryOpacity.value,
+                child: Transform.scale(scale: _entryScale.value, child: child),
+              ),
+              child: Column(
+                children: [
+                  _buildTrophyHeader(),
+                  const SizedBox(height: 24),
+                  _buildAccuracyRing(),
+                  const SizedBox(height: 24),
+                  _buildStatsGrid(),
+                  const SizedBox(height: 20),
+                  _buildRewards(),
+                  const SizedBox(height: 20),
+                  _buildAchievements(),
+                  const SizedBox(height: 28),
+                  _buildActions(),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _handleRolePlayNavTap(RolePlayNavTab tab) {
+    if (tab == RolePlayNavTab.home) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
+    if (tab == RolePlayNavTab.create) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RolePlayRoomScreen()),
+      );
+      return;
+    }
+    if (tab == RolePlayNavTab.history) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RolePlayHistoryScreen()),
+      );
+    }
   }
 
   Widget _buildTrophyHeader() {
@@ -143,7 +167,11 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
       child: Column(
         children: [
           Text(
-            _accuracy >= 0.8 ? '🏆' : _accuracy >= 0.6 ? '🥈' : '🥉',
+            _accuracy >= 0.8
+                ? '🏆'
+                : _accuracy >= 0.6
+                    ? '🥈'
+                    : '🥉',
             style: const TextStyle(fontSize: 52),
           ),
           const SizedBox(height: 8),
@@ -216,16 +244,20 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
               children: [
                 Text('Conversation Accuracy',
                     style: GoogleFonts.inter(
-                        fontSize: 13, fontWeight: FontWeight.w700, color: _kInk)),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: _kInk)),
                 const SizedBox(height: 12),
-                _AccuracyRow('✅ Correct',
-                    '$_correctCount sentences', const Color(0xFF4CAF50)),
+                _AccuracyRow('✅ Correct', '$_correctCount sentences',
+                    const Color(0xFF4CAF50)),
                 const SizedBox(height: 6),
-                _AccuracyRow('⏭ Skipped',
-                    '$_skippedCount sentences', Colors.orange),
+                _AccuracyRow(
+                    '⏭ Skipped', '$_skippedCount sentences', Colors.orange),
                 const SizedBox(height: 6),
-                _AccuracyRow('⏱ Duration',
-                    _formatElapsed(widget.result.elapsed), const Color(0xFF667eea)),
+                _AccuracyRow(
+                    '⏱ Duration',
+                    _formatElapsed(widget.result.elapsed),
+                    const Color(0xFF667eea)),
               ],
             ),
           ),
@@ -236,10 +268,10 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
 
   Widget _buildStatsGrid() {
     final stats = [
-      ('📊', 'Avg Score',  '${(_avgScore * 100).toInt()}%'),
-      ('🎯', 'Accuracy',   '${(_accuracy * 100).toInt()}%'),
-      ('✅', 'Correct',    '$_correctCount'),
-      ('⏭', 'Skipped',    '$_skippedCount'),
+      ('📊', 'Avg Score', '${(_avgScore * 100).toInt()}%'),
+      ('🎯', 'Accuracy', '${(_accuracy * 100).toInt()}%'),
+      ('✅', 'Correct', '$_correctCount'),
+      ('⏭', 'Skipped', '$_skippedCount'),
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -272,7 +304,9 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
                 children: [
                   Text(s.$3,
                       style: GoogleFonts.spaceGrotesk(
-                          fontSize: 18, fontWeight: FontWeight.w800, color: _kAccent)),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: _kAccent)),
                   Text(s.$2,
                       style: GoogleFonts.inter(fontSize: 10, color: _kMuted)),
                 ],
@@ -291,8 +325,7 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
         gradient: const LinearGradient(
             colors: [Color(0xFFFFF8E1), Color(0xFFFFF3CD)]),
         borderRadius: BorderRadius.circular(22),
-        border:
-            Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -329,8 +362,8 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
             children: achievements.map((a) {
               return Container(
                 margin: const EdgeInsets.only(right: 10),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF5F7),
                   borderRadius: BorderRadius.circular(14),
@@ -398,9 +431,7 @@ class _RolePlayResultScreenState extends State<RolePlayResultScreen>
             child: Center(
               child: Text('🔁 Replay Conversation',
                   style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: _kInk)),
+                      fontSize: 15, fontWeight: FontWeight.w700, color: _kInk)),
             ),
           ),
         ),
@@ -420,8 +451,7 @@ class _AccuracyRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+        Text(label, style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
         Text(value,
             style: GoogleFonts.inter(
                 fontSize: 12, fontWeight: FontWeight.w700, color: color)),
@@ -520,8 +550,11 @@ class _ConfettiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rng = math.Random(seed);
     final colors = [
-      const Color(0xFFEB4B6E), const Color(0xFFFFBE0B),
-      const Color(0xFF4ECDC4), const Color(0xFF667eea), const Color(0xFF43e97b),
+      const Color(0xFFEB4B6E),
+      const Color(0xFFFFBE0B),
+      const Color(0xFF4ECDC4),
+      const Color(0xFF667eea),
+      const Color(0xFF43e97b),
     ];
     for (int i = 0; i < 50; i++) {
       final x = rng.nextDouble() * size.width;

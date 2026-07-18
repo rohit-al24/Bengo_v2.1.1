@@ -97,9 +97,19 @@ class RolePlayRoomSerializer(serializers.ModelSerializer):
 
 
 class RolePlayLineResultSerializer(serializers.ModelSerializer):
+    recording_url = serializers.SerializerMethodField()
+
     class Meta:
         model  = models.RolePlayLineResult
-        fields = ['id', 'dialogue', 'correct', 'score', 'created_at']
+        fields = ['id', 'dialogue', 'correct', 'score', 'created_at', 'recording_url']
+
+    def get_recording_url(self, obj):
+        if not obj.recording:
+            return None
+        request = self.context.get('request')
+        if request is None:
+            return obj.recording.url
+        return request.build_absolute_uri(obj.recording.url)
 
 
 class RolePlayHistorySerializer(serializers.ModelSerializer):

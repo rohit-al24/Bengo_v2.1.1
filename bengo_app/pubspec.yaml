@@ -16,7 +16,10 @@ dependencies:
   http: ^1.2.1
   shared_preferences: ^2.2.3
   url_launcher: ^6.3.2
-  speech_to_text: ^6.6.2
+  speech_to_text: ^7.4.0
+  path_provider: ^2.1.0
+  record: ^5.0.0
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:

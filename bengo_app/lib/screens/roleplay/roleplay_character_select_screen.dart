@@ -2,12 +2,45 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/roleplay_shell.dart';
 import 'roleplay_models.dart';
 import 'roleplay_gameplay_screen.dart';
+import 'roleplay_history_screen.dart';
+import 'roleplay_room_create_screen.dart';
 
 const _kAccent = Color(0xFFC41230);
-const _kInk    = Color(0xFF1B1B1D);
-const _kMuted  = Color(0xFF8A8A8F);
+const _kInk = Color(0xFF1B1B1D);
+const _kMuted = Color(0xFF8A8A8F);
+
+const kDefaultCharacters = <RolePlayCharacter>[
+  RolePlayCharacter(
+      id: 1, name: 'Mina', emoji: '🧑‍🎓', displayOrder: 1, role: 'Student'),
+  RolePlayCharacter(
+      id: 2, name: 'Kai', emoji: '🕵️', displayOrder: 2, role: 'Detective'),
+  RolePlayCharacter(
+      id: 3, name: 'Rin', emoji: '🚀', displayOrder: 3, role: 'Explorer'),
+  RolePlayCharacter(
+      id: 4, name: 'Sora', emoji: '🎭', displayOrder: 4, role: 'Storyteller'),
+];
+
+const kRolePlayCharacters = <String, List<RolePlayCharacter>>{
+  'Detective Mystery': [
+    RolePlayCharacter(
+        id: 1, name: 'Mina', emoji: '🧑‍🎓', displayOrder: 1, role: 'Student'),
+    RolePlayCharacter(
+        id: 2, name: 'Kai', emoji: '🕵️', displayOrder: 2, role: 'Detective'),
+    RolePlayCharacter(
+        id: 3, name: 'Rin', emoji: '🚀', displayOrder: 3, role: 'Explorer'),
+  ],
+  'Time Travel': [
+    RolePlayCharacter(
+        id: 1, name: 'Lina', emoji: '⏳', displayOrder: 1, role: 'Traveler'),
+    RolePlayCharacter(
+        id: 2, name: 'Jules', emoji: '🧠', displayOrder: 2, role: 'Historian'),
+    RolePlayCharacter(
+        id: 3, name: 'Miko', emoji: '🌌', displayOrder: 3, role: 'Pilot'),
+  ],
+};
 
 // ── Screen ─────────────────────────────────────────────────────────────────────
 class RolePlayCharacterSelectScreen extends StatefulWidget {
@@ -52,7 +85,8 @@ class _RolePlayCharacterSelectScreenState
   void initState() {
     super.initState();
 
-    final storyChars = kRolePlayCharacters[widget.storyTitle] ?? kDefaultCharacters;
+    final storyChars =
+        kRolePlayCharacters[widget.storyTitle] ?? kDefaultCharacters;
     _characters = storyChars.take(widget.characterCount).toList();
 
     // Wheel spin controller
@@ -68,8 +102,8 @@ class _RolePlayCharacterSelectScreenState
     );
     _revealScale = Tween<double>(begin: 0.5, end: 1.0).animate(
         CurvedAnimation(parent: _revealCtrl, curve: Curves.elasticOut));
-    _revealOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _revealCtrl, curve: Curves.easeOut));
+    _revealOpacity = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _revealCtrl, curve: Curves.easeOut));
 
     // Countdown progress bar
     _countdownCtrl = AnimationController(
@@ -86,8 +120,7 @@ class _RolePlayCharacterSelectScreenState
           _storyRevealed = true;
         });
         _revealCtrl.forward();
-        Future.delayed(
-            const Duration(milliseconds: 800), _startSelectionPhase);
+        Future.delayed(const Duration(milliseconds: 800), _startSelectionPhase);
       }
     });
   }
@@ -96,7 +129,10 @@ class _RolePlayCharacterSelectScreenState
     if (!mounted) return;
     _countdownCtrl.forward();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       setState(() => _countdown--);
       // Simulate another player locking a character at t=20
       if (_countdown == 20 && _characters.length > 1) {
@@ -116,18 +152,36 @@ class _RolePlayCharacterSelectScreenState
 
   void _confirmAndStart() {
     _countdownTimer?.cancel();
-    final selected = _mySelection != null
-        ? _characters[_mySelection!]
-        : _characters[0];
+    final selected =
+        _mySelection != null ? _characters[_mySelection!] : _characters[0];
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => RolePlayGameplayScreen(
           storyTitle: widget.storyTitle,
           storyEmoji: widget.storyEmoji,
+          roomCode: 'BENGO',
           myCharacter: selected,
+          dialogues: _buildFallbackDialogues(selected),
         ),
       ),
     );
+  }
+
+  List<RolePlayDialogue> _buildFallbackDialogues(RolePlayCharacter character) {
+    return [
+      RolePlayDialogue(
+        id: 1,
+        characterId: character.id,
+        displayOrder: 1,
+        speakerName: character.name,
+        speakerEmoji: character.emoji,
+        japanese: 'こんにちは',
+        romaji: 'Konnichiwa',
+        english: 'Hello! Let us begin our story.',
+        emotion: 'friendly',
+        pauseMs: 1200,
+      ),
+    ];
   }
 
   void _autoAssignAndProceed() {
@@ -153,12 +207,35 @@ class _RolePlayCharacterSelectScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+    return RolePlayShell(
+      title: 'Pick Your Role',
+      subtitle: widget.storyTitle,
+      showBack: true,
+      onBackTap: () => Navigator.pop(context),
+      selectedTab: null,
+      onNavTap: _handleRolePlayNavTap,
       body: SafeArea(
         child: _isSpinning ? _buildSpinPhase() : _buildSelectionPhase(),
       ),
     );
+  }
+
+  void _handleRolePlayNavTap(RolePlayNavTab tab) {
+    if (tab == RolePlayNavTab.home) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
+    if (tab == RolePlayNavTab.create) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RolePlayRoomScreen()),
+      );
+      return;
+    }
+    if (tab == RolePlayNavTab.history) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RolePlayHistoryScreen()),
+      );
+    }
   }
 
   // ── Spin phase ───────────────────────────────────────────────────────────────
@@ -169,7 +246,7 @@ class _RolePlayCharacterSelectScreenState
         Text(
           'Drawing Your Story…',
           style: GoogleFonts.spaceGrotesk(
-            fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+              fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
         ),
         const SizedBox(height: 48),
         _CasinoWheel(controller: _wheelCtrl),
@@ -212,8 +289,7 @@ class _RolePlayCharacterSelectScreenState
             ),
             child: Row(
               children: [
-                Text(widget.storyEmoji,
-                    style: const TextStyle(fontSize: 44)),
+                Text(widget.storyEmoji, style: const TextStyle(fontSize: 44)),
                 const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,8 +433,12 @@ class _CasinoWheel extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: const SweepGradient(colors: [
-              Color(0xFFEB4B6E), Color(0xFFFF8E53), Color(0xFFFFBE0B),
-              Color(0xFF43e97b), Color(0xFF667eea), Color(0xFFa18cd1),
+              Color(0xFFEB4B6E),
+              Color(0xFFFF8E53),
+              Color(0xFFFFBE0B),
+              Color(0xFF43e97b),
+              Color(0xFF667eea),
+              Color(0xFFa18cd1),
               Color(0xFFEB4B6E),
             ]),
             boxShadow: [
@@ -411,8 +491,8 @@ class _CharacterCardState extends State<_CharacterCard>
     super.initState();
     _lockCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 400));
-    _lockScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _lockCtrl, curve: Curves.elasticOut));
+    _lockScale = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _lockCtrl, curve: Curves.elasticOut));
   }
 
   @override
@@ -489,7 +569,8 @@ class _CharacterCardState extends State<_CharacterCard>
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 10,
-                        color: widget.isLocked ? Colors.white12 : Colors.white54,
+                        color:
+                            widget.isLocked ? Colors.white12 : Colors.white54,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
@@ -509,8 +590,7 @@ class _CharacterCardState extends State<_CharacterCard>
                     builder: (_, __) => Transform.scale(
                       scale: _lockScale.value,
                       child: const Center(
-                          child: Text('🔒',
-                              style: TextStyle(fontSize: 28))),
+                          child: Text('🔒', style: TextStyle(fontSize: 28))),
                     ),
                   ),
                 ),
@@ -525,8 +605,7 @@ class _CharacterCardState extends State<_CharacterCard>
                   height: 22,
                   decoration: const BoxDecoration(
                       color: _kAccent, shape: BoxShape.circle),
-                  child: const Icon(Icons.check,
-                      color: Colors.white, size: 14),
+                  child: const Icon(Icons.check, color: Colors.white, size: 14),
                 ),
               ),
           ],

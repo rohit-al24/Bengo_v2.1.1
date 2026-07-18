@@ -105,6 +105,7 @@ class RolePlayLineResult(models.Model):
     dialogue  = models.ForeignKey(RolePlayDialogue, on_delete=models.CASCADE, related_name='results')
     correct   = models.BooleanField(default=False)
     score     = models.FloatField(default=0.0)
+    recording = models.FileField(upload_to='roleplay_recordings/', null=True, blank=True)
     created_at= models.DateTimeField(auto_now_add=True)
 
     class Meta:

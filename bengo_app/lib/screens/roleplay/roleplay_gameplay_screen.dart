@@ -1,12 +1,20 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import '../../services/api_service.dart';
+import '../../widgets/roleplay_shell.dart';
 import 'roleplay_models.dart';
 import 'roleplay_result_screen.dart';
+import 'roleplay_history_screen.dart';
+import 'roleplay_room_create_screen.dart';
 
 const _kAccent = Color(0xFFC41230);
 
@@ -18,7 +26,7 @@ double _similarity(String a, String b) {
 
   final rows = s1.length + 1;
   final cols = s2.length + 1;
-  final dp   = List.generate(rows, (_) => List<int>.filled(cols, 0));
+  final dp = List.generate(rows, (_) => List<int>.filled(cols, 0));
 
   for (int i = 0; i < rows; i++) dp[i][0] = i;
   for (int j = 0; j < cols; j++) dp[0][j] = j;
@@ -28,7 +36,8 @@ double _similarity(String a, String b) {
       if (s1[i - 1] == s2[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1];
       } else {
-        dp[i][j] = 1 + [dp[i-1][j], dp[i][j-1], dp[i-1][j-1]].reduce(math.min);
+        dp[i][j] =
+            1 + [dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]].reduce(math.min);
       }
     }
   }
@@ -57,16 +66,20 @@ class RolePlayGameplayScreen extends StatefulWidget {
 
 class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
     with TickerProviderStateMixin {
-
   final SpeechToText _speech = SpeechToText();
+  final AudioRecorder _recorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   bool _speechAvailable = false;
+  bool _permissionDialogShown = false;
   String _liveTranscript = '';
+  String? _currentRecordingPath;
+  String? _playingRecordingPath;
   double _soundLevel = 0.0;
 
   int _currentLine = 0;
   bool _isListening = false;
   int _attempts = 0;
-  static const _maxAttempts = 3;
+  static const _maxAttempts = 10;
   static const _passThreshold = 0.55;
   final List<RolePlayCompletedLine> _completedLines = [];
   DateTime? _startTime;
@@ -113,22 +126,37 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
     _bubbleCtrl.forward(from: 0);
 
     // Start sync polling
-    _syncTimer = Timer.periodic(const Duration(seconds: 2), (_) => _pollRoomState());
+    _syncTimer =
+        Timer.periodic(const Duration(seconds: 2), (_) => _pollRoomState());
     _pollRoomState();
   }
 
   Future<void> _initSpeech() async {
     final available = await _speech.initialize(
       onStatus: _onSpeechStatus,
-      onError:  (e) => debugPrint('STT error: $e'),
+      onError: _onSpeechError,
     );
     if (mounted) setState(() => _speechAvailable = available);
+  }
+
+  void _onSpeechError(SpeechRecognitionError error) {
+    debugPrint('STT error: ${error.errorMsg}');
+    if (mounted && !_speechAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Voice recognition failed. Please allow microphone access and try again.'),
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
     _syncTimer?.cancel();
     _speech.stop();
+    _recorder.stop();
+    _audioPlayer.dispose();
     _bubbleCtrl.dispose();
     _yourTurnCtrl.dispose();
     _resultCtrl.dispose();
@@ -177,11 +205,13 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
     final d = widget.dialogues[currentIdx];
 
     // Find if any player in the room is playing this dialogue's character
-    final isPlayerMapped = _roomState!.members.any((m) => m.characterId == d.characterId);
-    
+    final isPlayerMapped =
+        _roomState!.members.any((m) => m.characterId == d.characterId);
+
     // If not mapped (NPC/AI), the room host (creator) device auto-submits correct dialogue after 3 seconds
     if (!isPlayerMapped) {
-      final myUserId = ApiService.instance.currentUserNotifier.value?['id'] as int? ?? 0;
+      final myUserId =
+          ApiService.instance.currentUserNotifier.value?['id'] as int? ?? 0;
       final isCreator = _roomState!.creatorId == myUserId;
 
       if (isCreator) {
@@ -210,8 +240,7 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
           ? widget.dialogues[_currentLine]
           : null;
 
-  bool get _isMyTurn =>
-      _currentDialogue?.characterId == widget.myCharacter.id;
+  bool get _isMyTurn => _currentDialogue?.characterId == widget.myCharacter.id;
 
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 200), () {
@@ -227,11 +256,66 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
 
   Future<void> _startListening() async {
     if (!mounted) return;
+
+    if (!_permissionDialogShown && !_speechAvailable) {
+      _permissionDialogShown = true;
+      final proceed = await showDialog<bool>(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Microphone access needed'),
+              content: const Text(
+                'Voice recognition requires microphone access. '
+                'When you continue, the app will request permission from your device.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Continue'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (!proceed) return;
+    }
+
+    await _ensureSpeechInitialized();
+    if (!mounted) return;
     if (!_speechAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voice recognition not initialized.')),
+        const SnackBar(
+          content: Text(
+              'Microphone permission is required for voice recognition.'),
+        ),
       );
       return;
+    }
+
+    if (_currentDialogue != null) {
+      final permission = await _recorder.hasPermission();
+      if (!permission) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Microphone access was denied. Please allow it and try again.'),
+          ),
+        );
+        return;
+      }
+      final directory = await getTemporaryDirectory();
+      final path = '${directory.path}/roleplay_${widget.roomCode}_${_currentDialogue!.id}_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      _currentRecordingPath = path;
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
     }
 
     setState(() {
@@ -247,9 +331,47 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
         if (mounted) setState(() => _soundLevel = level.clamp(0.0, 10.0));
       },
       listenFor: const Duration(seconds: 15),
-      pauseFor:  const Duration(seconds: 5),
+      pauseFor: const Duration(seconds: 5),
       partialResults: true,
     );
+  }
+
+  Future<void> _ensureSpeechInitialized() async {
+    if (_speechAvailable) return;
+    final available = await _speech.initialize(
+      onStatus: _onSpeechStatus,
+      onError: _onSpeechError,
+    );
+    if (!mounted) return;
+    setState(() => _speechAvailable = available);
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      if (await _recorder.isRecording()) {
+        await _recorder.stop();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _togglePlayback(RolePlayCompletedLine line) async {
+    if (line.recordingPath == null) return;
+    if (_playingRecordingPath == line.recordingPath) {
+      await _audioPlayer.stop();
+      setState(() => _playingRecordingPath = null);
+      return;
+    }
+
+    await _audioPlayer.stop();
+    setState(() => _playingRecordingPath = line.recordingPath);
+    _audioPlayer.onPlayerComplete.listen((event) {
+      if (mounted) setState(() => _playingRecordingPath = null);
+    });
+
+    final source = line.recordingPath!.startsWith('http')
+        ? UrlSource(line.recordingPath!)
+        : DeviceFileSource(line.recordingPath!);
+    await _audioPlayer.play(source);
   }
 
   void _onSpeechStatus(String status) {
@@ -268,36 +390,56 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
 
   Future<void> _processResult(String recognized) async {
     if (!mounted || _currentDialogue == null || _evaluating) return;
+    await _stopRecording();
     _speech.stop();
 
     setState(() => _evaluating = true);
 
     final expected = _currentDialogue!.japanese;
-    final score    = _similarity(recognized, expected);
-    final correct  = score >= _passThreshold;
-    final passed   = correct || _attempts >= _maxAttempts - 1;
+    final score = _similarity(recognized, expected);
+    final correct = score >= _passThreshold;
+    final passed = correct || _attempts >= _maxAttempts - 1;
+    final hasValidRecording =
+        _currentRecordingPath != null && File(_currentRecordingPath!).existsSync();
+    final recordingPath =
+        hasValidRecording && (correct || passed) ? _currentRecordingPath : null;
+
+    if (!hasValidRecording || recordingPath == null) {
+      if (_currentRecordingPath != null) {
+        try {
+          await File(_currentRecordingPath!).delete();
+        } catch (_) {}
+      }
+    }
+    _currentRecordingPath = null;
 
     setState(() {
       _isListening = false;
-      _soundLevel  = 0;
+      _soundLevel = 0;
       _attempts++;
-      _lastResult  = _LineResult(correct: correct, score: score, recognized: recognized);
+      _lastResult = _LineResult(correct: correct, score: score, recognized: recognized);
     });
     _resultCtrl.forward(from: 0);
 
     try {
-      await ApiService.instance.submitRolePlayLine(
+      final response = await ApiService.instance.submitRolePlayLine(
         widget.roomCode,
         dialogueId: _currentDialogue!.id,
         correct: correct,
         score: score,
         passed: passed,
+        recordingPath: recordingPath,
       );
       _evaluating = false;
-      
+
       if (passed) {
         _completedLines.add(RolePlayCompletedLine(
-            _currentDialogue!, correct, score, recognized));
+          _currentDialogue!,
+          correct,
+          score,
+          recognized,
+          recordingPath: response['recording_url'] ?? recordingPath,
+        ));
         setState(() {
           _currentLine++;
           _attempts = 0;
@@ -305,7 +447,7 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
         _bubbleCtrl.forward(from: 0);
         _scrollToBottom();
       }
-      
+
       _pollRoomState();
     } catch (_) {
       setState(() => _evaluating = false);
@@ -320,9 +462,9 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
           result: RolePlayResult(
             storyTitle: widget.storyTitle,
             storyEmoji: widget.storyEmoji,
-            roomCode:   widget.roomCode,
-            lines:      List.unmodifiable(_completedLines),
-            elapsed:    elapsed,
+            roomCode: widget.roomCode,
+            lines: List.unmodifiable(_completedLines),
+            elapsed: elapsed,
           ),
         ),
       ),
@@ -333,28 +475,49 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
   Widget build(BuildContext context) {
     final d = _currentDialogue;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(
-              child: Stack(
-                children: [
-                  _buildSceneBg(),
-                  _buildChatList(),
-                  if (d != null)
-                    _isMyTurn
-                        ? _buildYourTurnPanel(d)
-                        : _buildWaitingTurnPanel(d),
-                ],
-              ),
+    return RolePlayShell(
+      title: widget.storyTitle,
+      subtitle: 'RolePlay Room ${widget.storyEmoji}',
+      showBack: true,
+      onBackTap: () => Navigator.pop(context),
+      selectedTab: null,
+      onNavTap: _handleRolePlayNavTap,
+      body: Column(
+        children: [
+          _buildTopBar(),
+          Expanded(
+            child: Stack(
+              children: [
+                _buildSceneBg(),
+                _buildChatList(),
+                if (d != null)
+                  _isMyTurn
+                      ? _buildYourTurnPanel(d)
+                      : _buildWaitingTurnPanel(d),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _handleRolePlayNavTap(RolePlayNavTab tab) {
+    if (tab == RolePlayNavTab.home) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
+    if (tab == RolePlayNavTab.create) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RolePlayRoomScreen()),
+      );
+      return;
+    }
+    if (tab == RolePlayNavTab.history) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RolePlayHistoryScreen()),
+      );
+    }
   }
 
   Widget _buildTopBar() {
@@ -370,12 +533,14 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
               Expanded(
                 child: Text(widget.storyTitle,
                     style: GoogleFonts.spaceGrotesk(
-                        fontSize: 14, fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white)),
               ),
               Text('${_currentLine}/${widget.dialogues.length}',
                   style: GoogleFonts.inter(
-                      fontSize: 12, color: Colors.white38,
+                      fontSize: 12,
+                      color: Colors.white38,
                       fontWeight: FontWeight.w600)),
             ],
           ),
@@ -399,7 +564,8 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF0F0F1A), Color(0xFF1A0A12)],
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
       child: Center(
@@ -428,15 +594,19 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
             Container(
-              width: 32, height: 32,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF2A2A3E)),
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                  shape: BoxShape.circle, color: Color(0xFF2A2A3E)),
               child: Center(
-                child: Text(line.dialogue.speakerEmoji, style: const TextStyle(fontSize: 16)),
+                child: Text(line.dialogue.speakerEmoji,
+                    style: const TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(width: 8),
@@ -463,11 +633,48 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
                 children: [
                   Text(line.dialogue.japanese,
                       style: GoogleFonts.notoSans(
-                          fontSize: 15, fontWeight: FontWeight.w700,
-                          color: Colors.white, height: 1.4)),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          height: 1.4)),
                   const SizedBox(height: 3),
                   Text(line.dialogue.english,
-                      style: GoogleFonts.inter(fontSize: 11, color: Colors.white54)),
+                      style: GoogleFonts.inter(
+                          fontSize: 11, color: Colors.white54)),
+                  if (line.recordingPath != null) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _togglePlayback(line),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2A2A3E),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _playingRecordingPath == line.recordingPath
+                                  ? Icons.stop
+                                  : Icons.volume_up,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _playingRecordingPath == line.recordingPath
+                                  ? 'Stop playback'
+                                  : 'Play voice',
+                              style: GoogleFonts.inter(
+                                  fontSize: 11, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -475,14 +682,16 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
           if (isMe) ...[
             const SizedBox(width: 8),
             Container(
-              width: 32, height: 32,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: widget.myCharacter.color.withOpacity(0.3),
                 border: Border.all(color: widget.myCharacter.color),
               ),
               child: Center(
-                child: Text(widget.myCharacter.emoji, style: const TextStyle(fontSize: 16)),
+                child: Text(widget.myCharacter.emoji,
+                    style: const TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -493,19 +702,25 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
 
   Widget _buildYourTurnPanel(RolePlayDialogue line) {
     return Positioned(
-      bottom: 0, left: 0, right: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_lastResult != null)
             AnimatedBuilder(
               animation: _resultScale,
-              builder: (_, child) => Transform.scale(scale: _resultScale.value, child: child),
+              builder: (_, child) =>
+                  Transform.scale(scale: _resultScale.value, child: child),
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: _lastResult!.correct ? const Color(0xFF064E3B) : const Color(0xFF7C2D12),
+                  color: _lastResult!.correct
+                      ? const Color(0xFF064E3B)
+                      : const Color(0xFF7C2D12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -517,22 +732,29 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
                       _lastResult!.correct
                           ? '${(_lastResult!.score * 100).toInt()}% match!'
                           : 'Try again (${_attempts}/$_maxAttempts)',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 13),
+                      style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          fontSize: 13),
                     ),
                   ],
                 ),
               ),
             ),
-
           Container(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: const Color(0xFF1A0A0E),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: _kAccent.withOpacity(_isListening ? 0.7 : 0.35), width: _isListening ? 2 : 1.5),
+              border: Border.all(
+                  color: _kAccent.withOpacity(_isListening ? 0.7 : 0.35),
+                  width: _isListening ? 2 : 1.5),
               boxShadow: [
-                BoxShadow(color: _kAccent.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 4)),
+                BoxShadow(
+                    color: _kAccent.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4)),
               ],
             ),
             child: Column(
@@ -547,29 +769,35 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
                     child: child,
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFEB4B6E), Color(0xFFBF1B2C)]),
+                      gradient: const LinearGradient(
+                          colors: [Color(0xFFEB4B6E), Color(0xFFBF1B2C)]),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text('YOUR TURN',
                         style: GoogleFonts.inter(
-                            fontSize: 10, fontWeight: FontWeight.w800,
-                            color: Colors.white, letterSpacing: 1.5)),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 1.5)),
                   ),
                 ),
                 const SizedBox(height: 10),
-
                 Text(line.japanese,
                     style: GoogleFonts.notoSans(
-                        fontSize: 22, fontWeight: FontWeight.w700,
-                        color: Colors.white, height: 1.4)),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        height: 1.4)),
                 if (line.romaji.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(line.romaji, style: GoogleFonts.inter(fontSize: 12, color: Colors.white38)),
+                  Text(line.romaji,
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: Colors.white38)),
                 ],
                 const SizedBox(height: 14),
-
                 if (_isListening) ...[
                   _WaveformBars(level: _soundLevel),
                   const SizedBox(height: 8),
@@ -581,7 +809,9 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
                         color: Colors.white.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(_liveTranscript, style: GoogleFonts.notoSans(fontSize: 15, color: Colors.white70)),
+                      child: Text(_liveTranscript,
+                          style: GoogleFonts.notoSans(
+                              fontSize: 15, color: Colors.white70)),
                     ),
                 ] else
                   GestureDetector(
@@ -597,10 +827,14 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.mic_rounded, color: _kAccent, size: 20),
+                          const Icon(Icons.mic_rounded,
+                              color: _kAccent, size: 20),
                           const SizedBox(width: 8),
                           Text('Tap to speak',
-                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: _kAccent)),
+                              style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: _kAccent)),
                         ],
                       ),
                     ),
@@ -615,7 +849,9 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
 
   Widget _buildWaitingTurnPanel(RolePlayDialogue line) {
     return Positioned(
-      bottom: 0, left: 0, right: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         padding: const EdgeInsets.all(18),
@@ -637,15 +873,19 @@ class _RolePlayGameplayScreenState extends State<RolePlayGameplayScreen>
               child: Text(
                 "WAITING FOR ${line.speakerName.toUpperCase()}",
                 style: GoogleFonts.inter(
-                    fontSize: 9, fontWeight: FontWeight.w800,
-                    color: Colors.white60, letterSpacing: 1.2),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white60,
+                    letterSpacing: 1.2),
               ),
             ),
             const SizedBox(height: 12),
             Text(line.japanese,
                 style: GoogleFonts.notoSans(
-                    fontSize: 20, fontWeight: FontWeight.w700,
-                    color: Colors.white54, height: 1.4)),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white54,
+                    height: 1.4)),
             const SizedBox(height: 4),
             Text(line.english,
                 style: GoogleFonts.inter(fontSize: 12, color: Colors.white30)),
@@ -668,10 +908,16 @@ class _WaveformBars extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(22, (i) {
           final phase = i * 0.45;
-          final base  = 6.0;
-          final amp   = (level / 10) * 28;
-          final h     = base + amp * math.pow(
-              math.sin(DateTime.now().millisecondsSinceEpoch / 200.0 + phase).abs(), 0.4);
+          final base = 6.0;
+          final amp = (level / 10) * 28;
+          final h = base +
+              amp *
+                  math.pow(
+                      math
+                          .sin(DateTime.now().millisecondsSinceEpoch / 200.0 +
+                              phase)
+                          .abs(),
+                      0.4);
           return Container(
             width: 3,
             height: h.toDouble(),
@@ -679,7 +925,8 @@ class _WaveformBars extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFFEB4B6E), Color(0xFFBF1B2C)],
-                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
               borderRadius: BorderRadius.circular(2),
             ),

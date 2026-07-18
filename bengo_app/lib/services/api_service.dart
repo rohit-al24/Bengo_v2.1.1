@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show ValueNotifier, kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -635,13 +636,48 @@ class ApiService {
     return _decode(res);
   }
 
+  Future<http.Response> _reqMultipart(
+    String path, {
+    required Map<String, String> fields,
+    required File file,
+    required String fileFieldName,
+  }) async {
+    final headers = await _headersFor(path);
+    final uri = Uri.parse('$kBaseUrl$path');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll(headers..remove('Content-Type'))
+      ..fields.addAll(fields)
+      ..files.add(await http.MultipartFile.fromPath(fileFieldName, file.path));
+
+    final streamed = await request.send();
+    return await http.Response.fromStream(streamed);
+  }
+
   Future<Map<String, dynamic>> submitRolePlayLine(String code, {
     required int dialogueId,
     required bool correct,
     required double score,
     bool passed = false,
+    String? recordingPath,
   }) async {
-    final res = await _req('POST', '/roleplay/rooms/${code.toUpperCase()}/submit-line/', body: {
+    final path = '/roleplay/rooms/${code.toUpperCase()}/submit-line/';
+    if (recordingPath != null) {
+      final file = File(recordingPath);
+      final res = await _reqMultipart(
+        path,
+        fields: {
+          'dialogue_id': dialogueId.toString(),
+          'correct': correct.toString(),
+          'score': score.toString(),
+          'passed': passed.toString(),
+        },
+        fileFieldName: 'recording',
+        file: file,
+      );
+      return _decode(res);
+    }
+
+    final res = await _req('POST', path, body: {
       'dialogue_id': dialogueId,
       'correct': correct,
       'score': score,

@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
+import '../../widgets/roleplay_shell.dart';
 import 'roleplay_models.dart';
 import 'roleplay_gameplay_screen.dart';
+import 'roleplay_history_screen.dart';
 
 const _kAccent = Color(0xFFC41230);
-const _kInk    = Color(0xFF1B1B1D);
+const _kInk = Color(0xFF1B1B1D);
 
 // ══════════════════════════════════════════════════════════════════════════════
 /// Entry point — covers Create + Join
@@ -26,7 +28,7 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
   String _visibility = 'public';
   int _maxPlayers = 4;
   bool _creating = false;
-  bool _joining  = false;
+  bool _joining = false;
   String? _error;
 
   @override
@@ -43,7 +45,10 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
   }
 
   Future<void> _createRoom() async {
-    setState(() { _creating = true; _error = null; });
+    setState(() {
+      _creating = true;
+      _error = null;
+    });
     try {
       final room = RolePlayRoom.fromJson(
         await ApiService.instance.createRolePlayRoom(
@@ -53,7 +58,8 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
       );
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => RolePlayLobbyScreen(room: room, isCreator: true)),
+        MaterialPageRoute(
+            builder: (_) => RolePlayLobbyScreen(room: room, isCreator: true)),
       );
     } catch (e) {
       setState(() => _error = 'Could not create room. Try again.');
@@ -68,14 +74,18 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
       setState(() => _error = 'Enter the 6-character room code.');
       return;
     }
-    setState(() { _joining = true; _error = null; });
+    setState(() {
+      _joining = true;
+      _error = null;
+    });
     try {
       final room = RolePlayRoom.fromJson(
         await ApiService.instance.joinRolePlayRoom(code),
       );
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => RolePlayLobbyScreen(room: room, isCreator: false)),
+        MaterialPageRoute(
+            builder: (_) => RolePlayLobbyScreen(room: room, isCreator: false)),
       );
     } catch (e) {
       setState(() => _error = 'Room not found or already started.');
@@ -87,25 +97,44 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0F0F1A),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF1B1B1D),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _kInk, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('🎭 RolePlay',
             style: GoogleFonts.spaceGrotesk(
-                fontSize: 18, fontWeight: FontWeight.w800, color: _kInk)),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white)),
         bottom: TabBar(
           controller: _tabs,
           labelColor: _kAccent,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: Colors.white54,
           indicatorColor: _kAccent,
-          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
+          labelStyle:
+              GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
           tabs: const [Tab(text: '＋ Create Room'), Tab(text: '🔑 Join Room')],
         ),
+      ),
+      bottomNavigationBar: RolePlayFooterNav(
+        selectedTab: RolePlayNavTab.create,
+        onNavTap: (tab) {
+          if (tab == RolePlayNavTab.create) return;
+          if (tab == RolePlayNavTab.home) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            return;
+          }
+          if (tab == RolePlayNavTab.history) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const RolePlayHistoryScreen()),
+            );
+          }
+        },
       ),
       body: TabBarView(
         controller: _tabs,
@@ -130,7 +159,11 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
                     padding: const EdgeInsets.only(right: 8),
                     child: _VisibilityChip(
                       label: v[0].toUpperCase() + v.substring(1),
-                      icon: v == 'public' ? '🌍' : v == 'friends' ? '👫' : '🔒',
+                      icon: v == 'public'
+                          ? '🌍'
+                          : v == 'friends'
+                              ? '👫'
+                              : '🔒',
                       selected: _visibility == v,
                       onTap: () => setState(() => _visibility = v),
                     ),
@@ -142,7 +175,9 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
           _SectionLabel('MAX PLAYERS  ($_maxPlayers)'),
           Slider(
             value: _maxPlayers.toDouble(),
-            min: 2, max: 8, divisions: 6,
+            min: 2,
+            max: 8,
+            divisions: 6,
             activeColor: _kAccent,
             inactiveColor: _kAccent.withOpacity(0.15),
             label: '$_maxPlayers',
@@ -151,8 +186,10 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('2', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
-              Text('8', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+              Text('2',
+                  style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+              Text('8',
+                  style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
             ],
           ),
           const SizedBox(height: 16),
@@ -170,7 +207,10 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
                 Expanded(
                   child: Text(
                     'The story is picked randomly after all players join — the spin wheel decides!',
-                    style: GoogleFonts.inter(fontSize: 12, color: _kAccent, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: _kAccent,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -203,14 +243,18 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
             controller: _codeCtrl,
             textCapitalization: TextCapitalization.characters,
             style: GoogleFonts.spaceGrotesk(
-                fontSize: 28, fontWeight: FontWeight.w800,
-                letterSpacing: 8, color: _kInk),
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 8,
+                color: _kInk),
             maxLength: 6,
             decoration: InputDecoration(
               hintText: 'ABC123',
               hintStyle: GoogleFonts.spaceGrotesk(
-                  fontSize: 28, fontWeight: FontWeight.w800,
-                  letterSpacing: 8, color: Colors.grey.shade300),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 8,
+                  color: Colors.grey.shade300),
               counterText: '',
               filled: true,
               fillColor: const Color(0xFFF8F8F8),
@@ -222,7 +266,8 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
                 borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(color: _kAccent, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             ),
           ),
           const SizedBox(height: 28),
@@ -247,7 +292,8 @@ class _RolePlayRoomScreenState extends State<RolePlayRoomScreen>
 class RolePlayLobbyScreen extends StatefulWidget {
   final RolePlayRoom room;
   final bool isCreator;
-  const RolePlayLobbyScreen({super.key, required this.room, required this.isCreator});
+  const RolePlayLobbyScreen(
+      {super.key, required this.room, required this.isCreator});
   @override
   State<RolePlayLobbyScreen> createState() => _RolePlayLobbyScreenState();
 }
@@ -288,14 +334,17 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
   }
 
   Future<void> _spin() async {
-    setState(() { _spinning = true; _error = null; });
+    setState(() {
+      _spinning = true;
+      _error = null;
+    });
     try {
       final data = await ApiService.instance.spinRolePlayRoom(_room.roomCode);
       if (!mounted) return;
       _pollTimer?.cancel();
       _goToSpinReveal(
         data['story_title'] as String? ?? 'Story',
-        data['story_emoji']  as String? ?? '🎭',
+        data['story_emoji'] as String? ?? '🎭',
       );
     } catch (e) {
       setState(() {
@@ -320,7 +369,7 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
   @override
   Widget build(BuildContext context) {
     final members = _room.members;
-    final canSpin  = widget.isCreator && members.length >= 2 && !_spinning;
+    final canSpin = widget.isCreator && members.length >= 2 && !_spinning;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -328,11 +377,13 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
         backgroundColor: const Color(0xFF0F0F1A),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white54),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.white54),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Lobby', style: GoogleFonts.spaceGrotesk(
-            color: Colors.white, fontWeight: FontWeight.w800)),
+        title: Text('Lobby',
+            style: GoogleFonts.spaceGrotesk(
+                color: Colors.white, fontWeight: FontWeight.w800)),
       ),
       body: SafeArea(
         child: Column(
@@ -350,9 +401,12 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
               ),
               child: Column(
                 children: [
-                  Text('ROOM CODE', style: GoogleFonts.inter(
-                      fontSize: 11, letterSpacing: 2,
-                      color: Colors.white38, fontWeight: FontWeight.w700)),
+                  Text('ROOM CODE',
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          letterSpacing: 2,
+                          color: Colors.white38,
+                          fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: () {
@@ -366,16 +420,20 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
                       children: [
                         Text(_room.roomCode,
                             style: GoogleFonts.spaceGrotesk(
-                                fontSize: 40, fontWeight: FontWeight.w900,
-                                letterSpacing: 10, color: Colors.white)),
+                                fontSize: 40,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 10,
+                                color: Colors.white)),
                         const SizedBox(width: 8),
-                        const Icon(Icons.copy_rounded, color: Colors.white38, size: 18),
+                        const Icon(Icons.copy_rounded,
+                            color: Colors.white38, size: 18),
                       ],
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text('Share this code with friends to join',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.white38)),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: Colors.white38)),
                 ],
               ),
             ),
@@ -387,13 +445,15 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
                 children: [
                   Text('Players  (${members.length}/${_room.maxPlayers})',
                       style: GoogleFonts.inter(
-                          fontSize: 13, fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                           color: Colors.white60)),
                   const SizedBox(height: 12),
                   for (final m in members)
                     Container(
                       margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A1A2E),
                         borderRadius: BorderRadius.circular(16),
@@ -402,17 +462,20 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
                       child: Row(
                         children: [
                           Container(
-                            width: 40, height: 40,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _kAccent.withOpacity(0.15),
                               border: Border.all(
-                                  color: m.isCreator ? _kAccent : Colors.white12),
+                                  color:
+                                      m.isCreator ? _kAccent : Colors.white12),
                             ),
                             child: Center(
-                              child: Text(m.username.isNotEmpty
-                                  ? m.username[0].toUpperCase()
-                                  : '?',
+                              child: Text(
+                                  m.username.isNotEmpty
+                                      ? m.username[0].toUpperCase()
+                                      : '?',
                                   style: GoogleFonts.spaceGrotesk(
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white)),
@@ -427,14 +490,16 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
                           ),
                           if (m.isCreator)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: _kAccent.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text('HOST',
                                   style: GoogleFonts.inter(
-                                      fontSize: 10, fontWeight: FontWeight.w800,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
                                       color: _kAccent)),
                             ),
                         ],
@@ -445,7 +510,8 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         '⏳ Waiting for at least 1 more player…',
-                        style: GoogleFonts.inter(fontSize: 12, color: Colors.white38),
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: Colors.white38),
                       ),
                     ),
                 ],
@@ -463,7 +529,8 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
                   ],
                   if (widget.isCreator)
                     _PrimaryButton(
-                      label: _spinning ? 'Spinning…' : '🎰 Spin to Reveal Story!',
+                      label:
+                          _spinning ? 'Spinning…' : '🎰 Spin to Reveal Story!',
                       loading: _spinning,
                       onTap: canSpin ? _spin : null,
                     )
@@ -478,14 +545,16 @@ class _RolePlayLobbyScreenState extends State<RolePlayLobbyScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const SizedBox(
-                            width: 16, height: 16,
+                            width: 16,
+                            height: 16,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2, color: _kAccent),
+                                strokeWidth: 2, color: _kAccent),
                           ),
                           const SizedBox(width: 12),
                           Text('Waiting for host to spin…',
                               style: GoogleFonts.inter(
-                                  fontSize: 13, color: Colors.white60,
+                                  fontSize: 13,
+                                  color: Colors.white60,
                                   fontWeight: FontWeight.w600)),
                         ],
                       ),
@@ -507,16 +576,18 @@ class RolePlaySpinRevealScreen extends StatefulWidget {
   final RolePlayRoom room;
   final String storyTitle, storyEmoji;
   const RolePlaySpinRevealScreen({
-    super.key, required this.room,
-    required this.storyTitle, required this.storyEmoji,
+    super.key,
+    required this.room,
+    required this.storyTitle,
+    required this.storyEmoji,
   });
   @override
-  State<RolePlaySpinRevealScreen> createState() => _RolePlaySpinRevealScreenState();
+  State<RolePlaySpinRevealScreen> createState() =>
+      _RolePlaySpinRevealScreenState();
 }
 
 class _RolePlaySpinRevealScreenState extends State<RolePlaySpinRevealScreen>
     with TickerProviderStateMixin {
-
   late AnimationController _wheelCtrl;
   late AnimationController _revealCtrl;
   late AnimationController _particleCtrl;
@@ -531,8 +602,8 @@ class _RolePlaySpinRevealScreenState extends State<RolePlaySpinRevealScreen>
     super.initState();
 
     // Wheel spin — fast then ease to stop
-    _wheelCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 4));
+    _wheelCtrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 4));
     _wheelSpin = Tween<double>(begin: 0, end: math.pi * 20).animate(
       CurvedAnimation(parent: _wheelCtrl, curve: Curves.easeOutExpo),
     );
@@ -540,14 +611,14 @@ class _RolePlaySpinRevealScreenState extends State<RolePlaySpinRevealScreen>
     // Story reveal pop
     _revealCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 700));
-    _revealScale   = Tween<double>(begin: 0.4, end: 1.0).animate(
+    _revealScale = Tween<double>(begin: 0.4, end: 1.0).animate(
         CurvedAnimation(parent: _revealCtrl, curve: Curves.elasticOut));
-    _revealOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _revealCtrl, curve: Curves.easeOut));
+    _revealOpacity = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _revealCtrl, curve: Curves.easeOut));
 
     // Particle burst
-    _particleCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 2));
+    _particleCtrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2));
 
     _wheelCtrl.forward();
     _wheelCtrl.addStatusListener((s) {
@@ -604,7 +675,8 @@ class _RolePlaySpinRevealScreenState extends State<RolePlaySpinRevealScreen>
                 if (!_revealed) ...[
                   Text('Spinning…',
                       style: GoogleFonts.spaceGrotesk(
-                          fontSize: 20, fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
                           color: Colors.white70)),
                   const SizedBox(height: 48),
                   _ImprovedWheel(animation: _wheelSpin),
@@ -627,7 +699,8 @@ class _RolePlaySpinRevealScreenState extends State<RolePlaySpinRevealScreen>
                         const SizedBox(height: 16),
                         Text(widget.storyTitle,
                             style: GoogleFonts.spaceGrotesk(
-                              fontSize: 32, fontWeight: FontWeight.w900,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
                               color: Colors.white,
                             ),
                             textAlign: TextAlign.center),
@@ -666,8 +739,10 @@ class RolePlayCharacterSelectInline extends StatefulWidget {
   final RolePlayRoom room;
   final String storyTitle, storyEmoji;
   const RolePlayCharacterSelectInline({
-    super.key, required this.room,
-    required this.storyTitle, required this.storyEmoji,
+    super.key,
+    required this.room,
+    required this.storyTitle,
+    required this.storyEmoji,
   });
   @override
   State<RolePlayCharacterSelectInline> createState() =>
@@ -710,17 +785,26 @@ class _RolePlayCharacterSelectInlineState
           .map((c) => RolePlayCharacter.fromJson(c as Map<String, dynamic>))
           .toList();
       if (!mounted) return;
-      setState(() { _characters = chars; _loading = false; });
+      setState(() {
+        _characters = chars;
+        _loading = false;
+      });
       _startCountdown();
     } catch (e) {
       if (!mounted) return;
-      setState(() { _error = 'Could not load characters.'; _loading = false; });
+      setState(() {
+        _error = 'Could not load characters.';
+        _loading = false;
+      });
     }
   }
 
   void _startCountdown() {
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       setState(() {
         if (_countdown > 0) _countdown--;
       });
@@ -746,12 +830,16 @@ class _RolePlayCharacterSelectInlineState
   bool _isCharacterTakenByOthers(int index) {
     if (_currentRoomState == null) return false;
     final charId = _characters[index].id;
-    return _currentRoomState!.members.any((m) => m.characterId == charId && !m.isCreator);
+    return _currentRoomState!.members
+        .any((m) => m.characterId == charId && !m.isCreator);
   }
 
   Future<void> _lockIn() async {
     if (_mySelection == null) return;
-    setState(() { _locking = true; _error = null; });
+    setState(() {
+      _locking = true;
+      _error = null;
+    });
     try {
       final myChar = _characters[_mySelection!];
       await ApiService.instance.selectRolePlayCharacter(
@@ -774,7 +862,10 @@ class _RolePlayCharacterSelectInlineState
 
   void _startSyncPolling() {
     _syncTimer = Timer.periodic(const Duration(seconds: 2), (t) async {
-      if (!mounted) { t.cancel(); return; }
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       try {
         final roomState = RolePlayRoom.fromJson(
           await ApiService.instance.getRolePlayRoom(widget.room.roomCode),
@@ -783,7 +874,8 @@ class _RolePlayCharacterSelectInlineState
         setState(() => _currentRoomState = roomState);
 
         // Check if all players have selected their character
-        final allSelected = roomState.members.every((m) => m.characterId != null);
+        final allSelected =
+            roomState.members.every((m) => m.characterId != null);
         if (allSelected || _countdown <= 0) {
           t.cancel();
           _timer?.cancel();
@@ -795,7 +887,8 @@ class _RolePlayCharacterSelectInlineState
 
   Future<void> _proceedToReveal(RolePlayRoom finalRoom) async {
     // Get full dialogues list
-    final story = await ApiService.instance.getRolePlayStory(widget.room.storyId!);
+    final story =
+        await ApiService.instance.getRolePlayStory(widget.room.storyId!);
     final dialogues = (story['dialogues'] as List<dynamic>? ?? [])
         .map((d) => RolePlayDialogue.fromJson(d as Map<String, dynamic>))
         .toList();
@@ -838,7 +931,8 @@ class _RolePlayCharacterSelectInlineState
             Center(
               child: Container(
                 margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: _countdown <= 15 ? _kAccent : const Color(0xFF2A2A3E),
                   borderRadius: BorderRadius.circular(10),
@@ -890,13 +984,19 @@ class _RolePlayCharacterSelectInlineState
               itemBuilder: (_, i) {
                 final c = _characters[i];
                 final selected = _mySelection == i;
-                
+
                 // Check if taken by other users
                 String? takenBy;
                 if (_currentRoomState != null) {
                   final occupant = _currentRoomState!.members.firstWhere(
                     (m) => m.characterId == c.id,
-                    orElse: () => const RolePlayMember(id: 0, userId: 0, username: '', avatarId: '', isCreator: false, score: 0.0),
+                    orElse: () => const RolePlayMember(
+                        id: 0,
+                        userId: 0,
+                        username: '',
+                        avatarId: '',
+                        isCreator: false,
+                        score: 0.0),
                   );
                   if (occupant.userId != 0) {
                     takenBy = occupant.username;
@@ -906,7 +1006,9 @@ class _RolePlayCharacterSelectInlineState
                 final isTaken = takenBy != null && !_lockedIn;
 
                 return GestureDetector(
-                  onTap: (_lockedIn || isTaken) ? null : () => setState(() => _mySelection = i),
+                  onTap: (_lockedIn || isTaken)
+                      ? null
+                      : () => setState(() => _mySelection = i),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
@@ -921,9 +1023,12 @@ class _RolePlayCharacterSelectInlineState
                         width: selected ? 2 : 1,
                       ),
                       boxShadow: selected
-                          ? [BoxShadow(
-                              color: _kAccent.withOpacity(0.3),
-                              blurRadius: 16, offset: const Offset(0, 4))]
+                          ? [
+                              BoxShadow(
+                                  color: _kAccent.withOpacity(0.3),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4))
+                            ]
                           : [],
                     ),
                     child: Stack(
@@ -932,23 +1037,29 @@ class _RolePlayCharacterSelectInlineState
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              width: 52, height: 52,
+                              width: 52,
+                              height: 52,
                               decoration: BoxDecoration(
-                                color: c.color.withOpacity(isTaken ? 0.05 : 0.2),
+                                color:
+                                    c.color.withOpacity(isTaken ? 0.05 : 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
-                                child: Text(c.emoji, style: const TextStyle(fontSize: 26)),
+                                child: Text(c.emoji,
+                                    style: const TextStyle(fontSize: 26)),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(c.name,
                                 style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w700,
-                                    color: isTaken ? Colors.white30 : Colors.white)),
+                                    color: isTaken
+                                        ? Colors.white30
+                                        : Colors.white)),
                             if (takenBy != null)
                               Padding(
-                                padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
+                                padding: const EdgeInsets.only(
+                                    top: 4, left: 8, right: 8),
                                 child: Text(
                                   'Taken by $takenBy',
                                   style: GoogleFonts.inter(
@@ -964,7 +1075,8 @@ class _RolePlayCharacterSelectInlineState
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: _kAccent,
                                     borderRadius: BorderRadius.circular(6),
@@ -1005,14 +1117,17 @@ class _RolePlayCharacterSelectInlineState
                     child: Column(
                       children: [
                         const SizedBox(
-                          width: 24, height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: _kAccent),
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: _kAccent),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Character Locked! Waiting for all players to pick…',
                           style: GoogleFonts.inter(
-                              fontSize: 13, color: Colors.white70,
+                              fontSize: 13,
+                              color: Colors.white70,
                               fontWeight: FontWeight.w700),
                           textAlign: TextAlign.center,
                         ),
@@ -1027,9 +1142,7 @@ class _RolePlayCharacterSelectInlineState
                             ? '✅ Confirm — Play as ${_characters[_mySelection!].name}'
                             : '👆 Select a character',
                     loading: _locking,
-                    onTap: (_mySelection != null && !_locking)
-                        ? _lockIn
-                        : null,
+                    onTap: (_mySelection != null && !_locking) ? _lockIn : null,
                   ),
               ],
             ),
@@ -1062,7 +1175,8 @@ class RolePlayCastRevealScreen extends StatefulWidget {
   });
 
   @override
-  State<RolePlayCastRevealScreen> createState() => _RolePlayCastRevealScreenState();
+  State<RolePlayCastRevealScreen> createState() =>
+      _RolePlayCastRevealScreenState();
 }
 
 class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
@@ -1072,19 +1186,19 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
   @override
   void initState() {
     super.initState();
-    _revealCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 4));
+    _revealCtrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 4));
     _revealCtrl.forward();
     _revealCtrl.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => RolePlayGameplayScreen(
-              storyTitle:  widget.storyTitle,
-              storyEmoji:  widget.storyEmoji,
-              roomCode:    widget.roomCode,
+              storyTitle: widget.storyTitle,
+              storyEmoji: widget.storyEmoji,
+              roomCode: widget.roomCode,
               myCharacter: widget.myCharacter,
-              dialogues:   widget.dialogues,
+              dialogues: widget.dialogues,
             ),
           ),
         );
@@ -1100,7 +1214,8 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
 
   @override
   Widget build(BuildContext context) {
-    final membersWithCharacters = widget.room.members.where((m) => m.characterId != null).toList();
+    final membersWithCharacters =
+        widget.room.members.where((m) => m.characterId != null).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -1111,18 +1226,21 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
             children: [
               Text('🎬 Cast Revealed!',
                   style: GoogleFonts.spaceGrotesk(
-                      fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white)),
               const SizedBox(height: 8),
               Text('Preparing your conversation story...',
-                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white38)),
+                  style:
+                      GoogleFonts.inter(fontSize: 13, color: Colors.white38)),
               const SizedBox(height: 36),
-
               for (int i = 0; i < membersWithCharacters.length; i++) ...[
                 AnimatedBuilder(
                   animation: _revealCtrl,
                   builder: (_, child) {
                     final delay = i * 0.15;
-                    final progress = (_revealCtrl.value - delay).clamp(0.0, 1.0);
+                    final progress =
+                        (_revealCtrl.value - delay).clamp(0.0, 1.0);
                     final scale = Curves.elasticOut.transform(progress);
                     return Opacity(
                       opacity: progress.clamp(0.0, 1.0),
@@ -1130,7 +1248,8 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
                     );
                   },
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E2035),
@@ -1146,7 +1265,8 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
                             children: [
                               Text(membersWithCharacters[i].username,
                                   style: GoogleFonts.inter(
-                                      fontSize: 14, fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
                                       color: Colors.white)),
                               const SizedBox(height: 2),
                               Text('Player',
@@ -1162,22 +1282,28 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
 
                         // Character Role
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2D0A12),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _kAccent.withOpacity(0.3)),
+                            border:
+                                Border.all(color: _kAccent.withOpacity(0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(membersWithCharacters[i].characterEmoji ?? '👤',
+                              Text(
+                                  membersWithCharacters[i].characterEmoji ??
+                                      '👤',
                                   style: const TextStyle(fontSize: 18)),
                               const SizedBox(width: 8),
                               Text(
-                                membersWithCharacters[i].characterName ?? 'Role',
+                                membersWithCharacters[i].characterName ??
+                                    'Role',
                                 style: GoogleFonts.spaceGrotesk(
-                                    fontSize: 13, fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
                                     color: _kAccent),
                               ),
                             ],
@@ -1188,11 +1314,12 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
                   ),
                 ),
               ],
-
               const SizedBox(height: 48),
               const SizedBox(
-                width: 32, height: 32,
-                child: CircularProgressIndicator(color: _kAccent, strokeWidth: 3),
+                width: 32,
+                height: 32,
+                child:
+                    CircularProgressIndicator(color: _kAccent, strokeWidth: 3),
               ),
             ],
           ),
@@ -1201,7 +1328,6 @@ class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
     );
   }
 }
-
 
 // ── Improved Wheel Widget ───────────────────────────────────────────────────────
 class _ImprovedWheel extends StatelessWidget {
@@ -1218,7 +1344,8 @@ class _ImprovedWheel extends StatelessWidget {
           size: const Size(220, 220),
           painter: _WheelPainter(),
           child: const SizedBox(
-            width: 220, height: 220,
+            width: 220,
+            height: 220,
             child: Center(
               child: _WheelCenter(),
             ),
@@ -1234,7 +1361,8 @@ class _WheelCenter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 70, height: 70,
+      width: 70,
+      height: 70,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
         color: Color(0xFF0F0F1A),
@@ -1251,19 +1379,26 @@ class _WheelCenter extends StatelessWidget {
 
 class _WheelPainter extends CustomPainter {
   static const _colors = [
-    Color(0xFFEB4B6E), Color(0xFFFF8E53), Color(0xFFFFBE0B),
-    Color(0xFF43e97b), Color(0xFF667eea), Color(0xFFa18cd1),
-    Color(0xFFfa709a), Color(0xFF4ECDC4),
+    Color(0xFFEB4B6E),
+    Color(0xFFFF8E53),
+    Color(0xFFFFBE0B),
+    Color(0xFF43e97b),
+    Color(0xFF667eea),
+    Color(0xFFa18cd1),
+    Color(0xFFfa709a),
+    Color(0xFF4ECDC4),
   ];
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    final sweep  = 2 * math.pi / _colors.length;
+    final sweep = 2 * math.pi / _colors.length;
 
     for (int i = 0; i < _colors.length; i++) {
-      final paint = Paint()..color = _colors[i]..style = PaintingStyle.fill;
+      final paint = Paint()
+        ..color = _colors[i]
+        ..style = PaintingStyle.fill;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         i * sweep - math.pi / 2,
@@ -1316,20 +1451,23 @@ class _ParticlePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rng = math.Random(99);
     final colors = [
-      const Color(0xFFEB4B6E), const Color(0xFFFFBE0B),
-      const Color(0xFF43e97b), const Color(0xFF667eea), const Color(0xFFfa709a),
+      const Color(0xFFEB4B6E),
+      const Color(0xFFFFBE0B),
+      const Color(0xFF43e97b),
+      const Color(0xFF667eea),
+      const Color(0xFFfa709a),
     ];
     for (int i = 0; i < 60; i++) {
       final startX = size.width / 2;
       final startY = size.height / 2;
-      final angle  = rng.nextDouble() * math.pi * 2;
-      final dist   = rng.nextDouble() * size.width * 0.5 * progress;
-      final x      = startX + dist * math.cos(angle);
-      final y      = startY + dist * math.sin(angle) - 80 * progress;
+      final angle = rng.nextDouble() * math.pi * 2;
+      final dist = rng.nextDouble() * size.width * 0.5 * progress;
+      final x = startX + dist * math.cos(angle);
+      final y = startY + dist * math.sin(angle) - 80 * progress;
       final opacity = (1 - progress).clamp(0.0, 1.0);
-      final paint  = Paint()
+      final paint = Paint()
         ..color = colors[i % colors.length].withOpacity(opacity)
-        ..style  = PaintingStyle.fill;
+        ..style = PaintingStyle.fill;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromCenter(center: Offset(x, y), width: 7, height: 10),
@@ -1352,8 +1490,10 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(text,
         style: GoogleFonts.inter(
-            fontSize: 10, fontWeight: FontWeight.w700,
-            color: Colors.grey, letterSpacing: 1.2));
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey,
+            letterSpacing: 1.2));
   }
 }
 
@@ -1362,8 +1502,10 @@ class _VisibilityChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   const _VisibilityChip({
-    required this.label, required this.icon,
-    required this.selected, required this.onTap,
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
   });
   @override
   Widget build(BuildContext context) {
@@ -1386,7 +1528,8 @@ class _VisibilityChip extends StatelessWidget {
             const SizedBox(height: 4),
             Text(label,
                 style: GoogleFonts.inter(
-                    fontSize: 11, fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                     color: selected ? _kAccent : _kInk)),
           ],
         ),
@@ -1416,20 +1559,25 @@ class _PrimaryButton extends StatelessWidget {
           color: onTap == null ? Colors.grey.shade200 : null,
           borderRadius: BorderRadius.circular(18),
           boxShadow: onTap != null
-              ? [BoxShadow(
-                  color: _kAccent.withOpacity(0.3),
-                  blurRadius: 16, offset: const Offset(0, 6))]
+              ? [
+                  BoxShadow(
+                      color: _kAccent.withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6))
+                ]
               : [],
         ),
         child: Center(
           child: loading
               ? const SizedBox(
-                  width: 20, height: 20,
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(
                       strokeWidth: 2.5, color: Colors.white))
               : Text(label,
                   style: GoogleFonts.inter(
-                      fontSize: 15, fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                       color: onTap != null ? Colors.white : Colors.grey)),
         ),
       ),
@@ -1456,7 +1604,8 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(message,
                 style: GoogleFonts.inter(
-                    fontSize: 12, fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF991B1B))),
           ),
         ],
