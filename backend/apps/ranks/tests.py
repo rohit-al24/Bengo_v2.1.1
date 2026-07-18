@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from .models import DailyRevisionConfig, Rank, UserRankProgress
@@ -34,6 +37,38 @@ class DailyRevisionConfigTests(APITestCase):
         self.assertEqual(response.data['timer_minutes'], 15)
         self.assertEqual(response.data['daily_limit'], 2)
         self.assertTrue(DailyRevisionConfig.objects.filter(pk=1).exists())
+
+
+class DailyRevisionStreakTests(APITestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='revuser',
+            email='revuser@example.com',
+            password='secret123',
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_empty_submission_does_not_award_streak(self):
+        self.user.streak_days = 3
+        self.user.last_study_date = timezone.now().date() - timedelta(days=1)
+        self.user.save(update_fields=['streak_days', 'last_study_date'])
+
+        response = self.client.post(reverse('test-log-daily-revision-submit'), {
+            'total': 0,
+            'correct': 0,
+            'wrong': 0,
+            'timed_out': 0,
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['streak_gained'], 0)
+        self.assertEqual(response.data['streak_days'], 3)
+
+    def test_session_exposes_24_hour_reset_deadline(self):
+        response = self.client.get(reverse('test-log-daily-revision-session'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['streak_window_hours'], 24)
+        self.assertIn('streak_reset_at', response.data)
 
 
 class RankProgressTests(APITestCase):

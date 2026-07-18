@@ -27,11 +27,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic> _user = {};
   bool _loading = true;
   bool _welcomeShown = false;
+  Map<String, dynamic> _dailyRevisionMeta = {};
+  Timer? _revisionCountdownTimer;
 
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _loadDailyRevisionMeta();
+  }
+
+  @override
+  void dispose() {
+    _revisionCountdownTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUser() async {
@@ -60,6 +69,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _loadDailyRevisionMeta() async {
+    try {
+      final session = await ApiService.instance.getDailyRevisionSession();
+      if (!mounted) return;
+      final meta = Map<String, dynamic>.from(session);
+      setState(() {
+        _dailyRevisionMeta = meta;
+      });
+      _startRevisionCountdown();
+    } catch (_) {}
+  }
+
+  void _startRevisionCountdown() {
+    _revisionCountdownTimer?.cancel();
+    _revisionCountdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final remaining = (_dailyRevisionMeta['streak_time_remaining_seconds'] as int? ?? 0) - 1;
+      if (remaining <= 0) {
+        _revisionCountdownTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _dailyRevisionMeta['streak_time_remaining_seconds'] = 0;
+          });
+        }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _dailyRevisionMeta['streak_time_remaining_seconds'] = remaining;
+        });
+      }
+    });
+  }
+
+  String _formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final secs = seconds % 60;
+    if (hours > 0) {
+      return '$hours h $minutes m';
+    }
+    if (minutes > 0) {
+      return '$minutes m $secs s';
+    }
+    return '$secs s';
   }
 
   String get _greeting {
@@ -180,6 +236,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Daily Revision ──────────────────────────────────────────────────────────
   Widget _buildDailyRevisionCard() {
+    final remainingSeconds = (_dailyRevisionMeta['streak_time_remaining_seconds'] as int? ?? 0);
+    final timerLabel = remainingSeconds > 0
+        ? 'Keep your streak alive • ${_formatDuration(remainingSeconds)} left'
+        : 'Complete today’s revision to restart your streak window';
+
     return _Card3D(
       accentColor: _kAccent,
       child: Row(
@@ -218,6 +279,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   'Recall 15 items · Lesson 4',
                   style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  timerLabel,
+                  style: GoogleFonts.inter(fontSize: 11, color: _kAccent, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
