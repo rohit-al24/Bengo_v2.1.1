@@ -75,7 +75,7 @@ class AdminStoryTemplateView(APIView):
         ws.title = 'RolePlay Stories'
 
         headers = [
-            'Story_Title', 'Category', 'JLPT_Level', 'Difficulty', 'Cover_Emoji',
+            'Story_Title', 'Category', 'Difficulty', 'Cover_Emoji',
             'Char_Name', 'Char_Emoji', 'Char_Order',
             'Dialogue_Order', 'Japanese', 'Romaji', 'English', 'Emotion', 'Pause_MS',
         ]
@@ -83,14 +83,14 @@ class AdminStoryTemplateView(APIView):
 
         # Sample row 1
         ws.append([
-            'Restaurant Conversation', 'Daily Life', 'N5', 'easy', '🍜',
+            'Restaurant Conversation', 'Daily Life', 'easy', '🍜',
             'Customer', '👤', 1,
             1, 'すみません、席はありますか？', 'Sumimasen, seki wa arimasu ka?',
             'Excuse me, do you have a seat?', 'polite', 1000,
         ])
         # Sample row 2
         ws.append([
-            'Restaurant Conversation', 'Daily Life', 'N5', 'easy', '🍜',
+            'Restaurant Conversation', 'Daily Life', 'easy', '🍜',
             'Waiter', '🧑‍🍳', 2,
             2, 'はい、こちらへどうぞ。', 'Hai, kochira e dōzo.',
             'Yes, right this way.', 'polite', 1000,
@@ -116,8 +116,18 @@ class AdminStoryImportView(APIView):
             return Response({'detail': 'Forbidden'}, status=403)
 
         file = request.FILES.get('file')
+        exam_id = request.data.get('exam_id')
         if not file:
             return Response({'detail': 'No file provided.'}, status=400)
+        if not exam_id:
+            return Response({'detail': 'No exam selected.'}, status=400)
+
+        # Retrieve selected Exam
+        from apps.courses.models import Exam
+        try:
+            exam = Exam.objects.get(pk=exam_id)
+        except Exam.DoesNotExist:
+            return Response({'detail': 'Selected exam does not exist.'}, status=400)
 
         try:
             wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
@@ -158,7 +168,7 @@ class AdminStoryImportView(APIView):
                 title=title,
                 defaults={
                     'category':    cell(first, 'Category', 'General'),
-                    'jlpt_level':  cell(first, 'JLPT_Level', 'N5').upper(),
+                    'exam':        exam,
                     'difficulty':  cell(first, 'Difficulty', 'easy').lower(),
                     'cover_emoji': cell(first, 'Cover_Emoji', '📖'),
                     'is_published': True,

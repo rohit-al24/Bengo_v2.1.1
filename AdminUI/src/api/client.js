@@ -115,9 +115,10 @@ export const rpAdminGetStory      = id      => api.get(`/roleplay/admin/stories/
 export const rpAdminUpdateStory   = (id, d) => api.patch(`/roleplay/admin/stories/${id}/`, d);
 export const rpAdminDeleteStory   = id      => api.delete(`/roleplay/admin/stories/${id}/`);
 export const rpAdminDownloadTemplate = ()   => api.get('/roleplay/admin/stories/template/', { responseType: 'blob' });
-export const rpAdminImportExcel = file => {
+export const rpAdminImportExcel = (file, examId) => {
   const fd = new FormData();
   fd.append('file', file);
+  fd.append('exam_id', examId);
   return api.post('/roleplay/admin/stories/import/', fd);
 };
 

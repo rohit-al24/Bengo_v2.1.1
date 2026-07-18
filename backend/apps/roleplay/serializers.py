@@ -26,11 +26,12 @@ class RolePlayStorySerializer(serializers.ModelSerializer):
     dialogues      = RolePlayDialogueSerializer(many=True, read_only=True)
     character_count= serializers.SerializerMethodField()
     dialogue_count = serializers.SerializerMethodField()
+    exam_level     = serializers.CharField(source='exam.level', read_only=True, default=None)
 
     class Meta:
         model  = models.RolePlayStory
         fields = [
-            'id', 'title', 'category', 'jlpt_level', 'difficulty', 'cover_emoji',
+            'id', 'title', 'category', 'exam', 'exam_level', 'difficulty', 'cover_emoji',
             'is_published', 'created_at', 'updated_at',
             'character_count', 'dialogue_count', 'characters', 'dialogues',
         ]
@@ -46,11 +47,12 @@ class RolePlayStoryListSerializer(serializers.ModelSerializer):
     """Lightweight — no nested dialogues (for list views)."""
     character_count= serializers.SerializerMethodField()
     dialogue_count = serializers.SerializerMethodField()
+    exam_level     = serializers.CharField(source='exam.level', read_only=True, default=None)
 
     class Meta:
         model  = models.RolePlayStory
         fields = [
-            'id', 'title', 'category', 'jlpt_level', 'difficulty',
+            'id', 'title', 'category', 'exam', 'exam_level', 'difficulty',
             'cover_emoji', 'is_published', 'created_at',
             'character_count', 'dialogue_count',
         ]

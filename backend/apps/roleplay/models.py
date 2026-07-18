@@ -14,7 +14,7 @@ class RolePlayStory(models.Model):
 
     title       = models.CharField(max_length=200)
     category    = models.CharField(max_length=100, blank=True, default='')
-    jlpt_level  = models.CharField(max_length=2, choices=JLPT, default='N5')
+    exam        = models.ForeignKey('courses.Exam', on_delete=models.SET_NULL, null=True, blank=True, related_name='roleplay_stories')
     difficulty  = models.CharField(max_length=10, choices=DIFFICULTY, default='easy')
     cover_emoji = models.CharField(max_length=8, default='📖')
     is_published= models.BooleanField(default=True)

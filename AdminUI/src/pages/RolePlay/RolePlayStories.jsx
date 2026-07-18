@@ -1,20 +1,32 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   rpAdminGetStories, rpAdminUpdateStory, rpAdminDeleteStory,
-  rpAdminDownloadTemplate, rpAdminImportExcel,
+  rpAdminDownloadTemplate, rpAdminImportExcel, getAdminExams,
 } from '../../api/client';
 import './RolePlay.css';
 
-const JLPT_LEVELS  = ['All', 'N5', 'N4', 'N3', 'N2', 'N1'];
 const STATUSES     = ['All', 'published', 'draft'];
 
 // ── Import Modal ───────────────────────────────────────────────────────────────
 function ImportModal({ onClose, onImported }) {
   const fileRef  = useRef(null);
+  const [exams,  setExams]  = useState([]);
+  const [selectedExam, setSelectedExam] = useState('');
   const [phase,  setPhase]  = useState('idle');   // idle | uploading | done | error
   const [result, setResult] = useState(null);
   const [error,  setError]  = useState('');
   const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    getAdminExams()
+      .then(res => {
+        setExams(res.data || []);
+        if (res.data && res.data.length > 0) {
+          setSelectedExam(res.data[0].id);
+        }
+      })
+      .catch(() => setError('Could not load exams list.'));
+  }, []);
 
   const handleDownload = async () => {
     try {
@@ -32,10 +44,14 @@ function ImportModal({ onClose, onImported }) {
 
   const doImport = useCallback(async (file) => {
     if (!file) return;
+    if (!selectedExam) {
+      setError('Please select an exam first.');
+      return;
+    }
     setPhase('uploading');
     setError('');
     try {
-      const res = await rpAdminImportExcel(file);
+      const res = await rpAdminImportExcel(file, selectedExam);
       setResult(res.data);
       setPhase('done');
       onImported();
@@ -43,7 +59,7 @@ function ImportModal({ onClose, onImported }) {
       setError(e?.response?.data?.detail || 'Import failed. Check your file format.');
       setPhase('error');
     }
-  }, [onImported]);
+  }, [selectedExam, onImported]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -60,9 +76,35 @@ function ImportModal({ onClose, onImported }) {
           <button className="rp-modal-close" onClick={onClose}>✕</button>
         </div>
 
-        {/* Step 1 — Download */}
+        {/* Step 1 — Select Exam */}
         <div className="rp-modal-step">
           <div className="rp-modal-step-num">1</div>
+          <div className="rp-modal-step-body" style={{ width: '100%' }}>
+            <div className="rp-modal-step-title">Select Exam Target</div>
+            <p className="rp-modal-step-desc">
+              Choose the course/level exam that this conversation belongs to.
+            </p>
+            <select
+              className="rp-select"
+              style={{ width: '100%', padding: '10px' }}
+              value={selectedExam}
+              onChange={e => setSelectedExam(e.target.value)}
+            >
+              {exams.map(ex => (
+                <option key={ex.id} value={ex.id}>
+                  {ex.level ? `[${ex.level}] ` : ''}{ex.title}
+                </option>
+              ))}
+              {exams.length === 0 && <option value="">No exams available</option>}
+            </select>
+          </div>
+        </div>
+
+        <div className="rp-modal-divider" />
+
+        {/* Step 2 — Download */}
+        <div className="rp-modal-step">
+          <div className="rp-modal-step-num">2</div>
           <div className="rp-modal-step-body">
             <div className="rp-modal-step-title">Download Template</div>
             <p className="rp-modal-step-desc">
@@ -76,10 +118,10 @@ function ImportModal({ onClose, onImported }) {
 
         <div className="rp-modal-divider" />
 
-        {/* Step 2 — Import */}
+        {/* Step 3 — Import */}
         <div className="rp-modal-step">
-          <div className="rp-modal-step-num">2</div>
-          <div className="rp-modal-step-body">
+          <div className="rp-modal-step-num">3</div>
+          <div className="rp-modal-step-body" style={{ width: '100%' }}>
             <div className="rp-modal-step-title">Fill & Import Excel</div>
             <p className="rp-modal-step-desc">
               Fill in the template (one row per dialogue line) then upload it here. Stories and characters are created automatically.
@@ -141,10 +183,10 @@ function ImportModal({ onClose, onImported }) {
         {/* Column reference */}
         <details style={{ marginTop: 16 }}>
           <summary style={{ cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
-            📐 Required columns
+            📐 Required columns (No JLPT_Level column needed)
           </summary>
           <div className="rp-columns-grid" style={{ marginTop: 8 }}>
-            {['Story_Title','Category','JLPT_Level','Difficulty','Cover_Emoji',
+            {['Story_Title','Category','Difficulty','Cover_Emoji',
               'Char_Name','Char_Emoji','Char_Order',
               'Dialogue_Order','Japanese','Romaji','English','Emotion','Pause_MS',
             ].map(c => (
@@ -163,7 +205,6 @@ export default function RolePlayStories() {
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState('');
   const [search,       setSearch]       = useState('');
-  const [jlptFilter,   setJlptFilter]   = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showModal,    setShowModal]    = useState(false);
 
@@ -183,7 +224,6 @@ export default function RolePlayStories() {
   useEffect(() => { fetchStories(); }, []);
 
   const handleToggleStatus = async (s) => {
-    const newStatus = s.is_published;  // will invert
     try {
       await rpAdminUpdateStory(s.id, { is_published: !s.is_published });
       setStories(prev => prev.map(x => x.id === s.id ? { ...x, is_published: !x.is_published } : x));
@@ -203,7 +243,6 @@ export default function RolePlayStories() {
   };
 
   const filtered = stories.filter(s =>
-    (jlptFilter === 'All'  || s.jlpt_level === jlptFilter) &&
     (statusFilter === 'All' || (statusFilter === 'published' ? s.is_published : !s.is_published)) &&
     (search === '' || s.title.toLowerCase().includes(search.toLowerCase()) ||
                       s.category.toLowerCase().includes(search.toLowerCase()))
@@ -240,9 +279,6 @@ export default function RolePlayStories() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <select className="rp-select" value={jlptFilter} onChange={e => setJlptFilter(e.target.value)}>
-          {JLPT_LEVELS.map(l => <option key={l}>{l}</option>)}
-        </select>
         <select className="rp-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           {STATUSES.map(s => (
             <option key={s} value={s}>
@@ -269,7 +305,7 @@ export default function RolePlayStories() {
                   <th>Cover</th>
                   <th>Title</th>
                   <th>Category</th>
-                  <th>JLPT</th>
+                  <th>Exam Level</th>
                   <th>Characters</th>
                   <th>Dialogue</th>
                   <th>Difficulty</th>
@@ -290,7 +326,11 @@ export default function RolePlayStories() {
                         ? <span className="badge badge-blue">{s.category}</span>
                         : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
                     </td>
-                    <td><span className="rp-jlpt-badge">{s.jlpt_level}</span></td>
+                    <td>
+                      <span className="rp-jlpt-badge">
+                        {s.exam_level || 'General'}
+                      </span>
+                    </td>
                     <td>{s.character_count ?? '—'}</td>
                     <td>{s.dialogue_count ?? '—'}</td>
                     <td>
