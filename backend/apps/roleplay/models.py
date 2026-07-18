@@ -74,6 +74,7 @@ class RolePlayRoom(models.Model):
     visibility  = models.CharField(max_length=10, choices=VISIBILITY, default='public')
     max_players = models.PositiveSmallIntegerField(default=4)
     status      = models.CharField(max_length=10, choices=STATUS, default='waiting')
+    current_dialogue_index = models.PositiveSmallIntegerField(default=0)
     created_at  = models.DateTimeField(auto_now_add=True)
 
     class Meta:

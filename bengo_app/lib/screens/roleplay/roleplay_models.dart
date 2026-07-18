@@ -132,6 +132,7 @@ class RolePlayRoom {
   final int? storyId;
   final String? storyTitle, storyEmoji;
   final List<RolePlayMember> members;
+  final int current_dialogue_index;
 
   const RolePlayRoom({
     required this.id,
@@ -144,6 +145,7 @@ class RolePlayRoom {
     this.storyTitle,
     this.storyEmoji,
     required this.members,
+    required this.current_dialogue_index,
   });
 
   factory RolePlayRoom.fromJson(Map<String, dynamic> j) => RolePlayRoom(
@@ -159,5 +161,6 @@ class RolePlayRoom {
     members:     (j['members'] as List<dynamic>?)
         ?.map((m) => RolePlayMember.fromJson(m as Map<String, dynamic>))
         .toList() ?? [],
+    current_dialogue_index: j['current_dialogue_index'] as int? ?? 0,
   );
 }

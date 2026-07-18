@@ -662,9 +662,6 @@ class _RolePlaySpinRevealScreenState extends State<RolePlaySpinRevealScreen>
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-/// Character select — manual pick, submits to API
-// ══════════════════════════════════════════════════════════════════════════════
 class RolePlayCharacterSelectInline extends StatefulWidget {
   final RolePlayRoom room;
   final String storyTitle, storyEmoji;
@@ -683,19 +680,24 @@ class _RolePlayCharacterSelectInlineState
   int? _mySelection;
   bool _loading = true;
   bool _locking = false;
+  bool _lockedIn = false;
   String? _error;
-  int _countdown = 30;
+  int _countdown = 60; // 1-minute pick countdown
   Timer? _timer;
+  Timer? _syncTimer;
+  RolePlayRoom? _currentRoomState;
 
   @override
   void initState() {
     super.initState();
+    _currentRoomState = widget.room;
     _loadCharacters();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _syncTimer?.cancel();
     super.dispose();
   }
 
@@ -719,43 +721,49 @@ class _RolePlayCharacterSelectInlineState
   void _startCountdown() {
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) { t.cancel(); return; }
-      setState(() => _countdown--);
+      setState(() {
+        if (_countdown > 0) _countdown--;
+      });
       if (_countdown <= 0) {
         t.cancel();
-        if (_mySelection == null && _characters.isNotEmpty) {
-          _mySelection = 0;
+        if (!_lockedIn) {
+          if (_mySelection == null && _characters.isNotEmpty) {
+            // Find first unselected character
+            for (int i = 0; i < _characters.length; i++) {
+              if (!_isCharacterTakenByOthers(i)) {
+                _mySelection = i;
+                break;
+              }
+            }
+            if (_mySelection == null) _mySelection = 0;
+          }
+          _lockIn();
         }
-        _lockIn();
       }
     });
+  }
+
+  bool _isCharacterTakenByOthers(int index) {
+    if (_currentRoomState == null) return false;
+    final charId = _characters[index].id;
+    return _currentRoomState!.members.any((m) => m.characterId == charId && !m.isCreator);
   }
 
   Future<void> _lockIn() async {
     if (_mySelection == null) return;
     setState(() { _locking = true; _error = null; });
     try {
+      final myChar = _characters[_mySelection!];
       await ApiService.instance.selectRolePlayCharacter(
         widget.room.roomCode,
-        _characters[_mySelection!].id,
+        myChar.id,
       );
       if (!mounted) return;
-      // Load full story dialogues
-      final story = await ApiService.instance.getRolePlayStory(widget.room.storyId!);
-      final dialogues = (story['dialogues'] as List<dynamic>? ?? [])
-          .map((d) => RolePlayDialogue.fromJson(d as Map<String, dynamic>))
-          .toList();
-      final myChar = _characters[_mySelection!];
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => RolePlayGameplayScreen(
-            storyTitle:  widget.storyTitle,
-            storyEmoji:  widget.storyEmoji,
-            roomCode:    widget.room.roomCode,
-            myCharacter: myChar,
-            dialogues:   dialogues,
-          ),
-        ),
-      );
+      setState(() {
+        _locking = false;
+        _lockedIn = true;
+      });
+      _startSyncPolling();
     } catch (e) {
       setState(() {
         _locking = false;
@@ -764,166 +772,436 @@ class _RolePlayCharacterSelectInlineState
     }
   }
 
+  void _startSyncPolling() {
+    _syncTimer = Timer.periodic(const Duration(seconds: 2), (t) async {
+      if (!mounted) { t.cancel(); return; }
+      try {
+        final roomState = RolePlayRoom.fromJson(
+          await ApiService.instance.getRolePlayRoom(widget.room.roomCode),
+        );
+        if (!mounted) return;
+        setState(() => _currentRoomState = roomState);
+
+        // Check if all players have selected their character
+        final allSelected = roomState.members.every((m) => m.characterId != null);
+        if (allSelected || _countdown <= 0) {
+          t.cancel();
+          _timer?.cancel();
+          _proceedToReveal(roomState);
+        }
+      } catch (_) {}
+    });
+  }
+
+  Future<void> _proceedToReveal(RolePlayRoom finalRoom) async {
+    // Get full dialogues list
+    final story = await ApiService.instance.getRolePlayStory(widget.room.storyId!);
+    final dialogues = (story['dialogues'] as List<dynamic>? ?? [])
+        .map((d) => RolePlayDialogue.fromJson(d as Map<String, dynamic>))
+        .toList();
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => RolePlayCastRevealScreen(
+          roomCode: widget.room.roomCode,
+          storyTitle: widget.storyTitle,
+          storyEmoji: widget.storyEmoji,
+          myCharacter: _characters[_mySelection ?? 0],
+          dialogues: dialogues,
+          room: finalRoom,
+          characters: _characters,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0F0F1A),
+        body: Center(child: CircularProgressIndicator(color: _kAccent)),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F0F1A),
         elevation: 0,
-        title: Text('Choose Your Character',
+        title: Text(_lockedIn ? 'Waiting for Others…' : 'Choose Your Character',
             style: GoogleFonts.spaceGrotesk(
                 color: Colors.white, fontWeight: FontWeight.w800)),
         actions: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _countdown <= 10 ? _kAccent : const Color(0xFF2A2A3E),
-                borderRadius: BorderRadius.circular(10),
+          if (!_lockedIn)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _countdown <= 15 ? _kAccent : const Color(0xFF2A2A3E),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('$_countdown s',
+                    style: GoogleFonts.spaceGrotesk(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        fontSize: 14)),
               ),
-              child: Text('$_countdown s',
-                  style: GoogleFonts.spaceGrotesk(
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      fontSize: 14)),
+            ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Story banner
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1A0A0E), Color(0xFF3D0A14)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Text(widget.storyEmoji, style: const TextStyle(fontSize: 28)),
+                const SizedBox(width: 12),
+                Text(widget.storyTitle,
+                    style: GoogleFonts.spaceGrotesk(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        fontSize: 16)),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.1,
+              ),
+              itemCount: _characters.length,
+              itemBuilder: (_, i) {
+                final c = _characters[i];
+                final selected = _mySelection == i;
+                
+                // Check if taken by other users
+                String? takenBy;
+                if (_currentRoomState != null) {
+                  final occupant = _currentRoomState!.members.firstWhere(
+                    (m) => m.characterId == c.id,
+                    orElse: () => const RolePlayMember(id: 0, userId: 0, username: '', avatarId: '', isCreator: false, score: 0.0),
+                  );
+                  if (occupant.userId != 0) {
+                    takenBy = occupant.username;
+                  }
+                }
+
+                final isTaken = takenBy != null && !_lockedIn;
+
+                return GestureDetector(
+                  onTap: (_lockedIn || isTaken) ? null : () => setState(() => _mySelection = i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? const Color(0xFF1A0A0E)
+                          : isTaken
+                              ? const Color(0xFF121220).withOpacity(0.5)
+                              : const Color(0xFF16213E),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: selected ? _kAccent : Colors.white10,
+                        width: selected ? 2 : 1,
+                      ),
+                      boxShadow: selected
+                          ? [BoxShadow(
+                              color: _kAccent.withOpacity(0.3),
+                              blurRadius: 16, offset: const Offset(0, 4))]
+                          : [],
+                    ),
+                    child: Stack(
+                      children: [
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 52, height: 52,
+                              decoration: BoxDecoration(
+                                color: c.color.withOpacity(isTaken ? 0.05 : 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(c.emoji, style: const TextStyle(fontSize: 26)),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(c.name,
+                                style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w700,
+                                    color: isTaken ? Colors.white30 : Colors.white)),
+                            if (takenBy != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
+                                child: Text(
+                                  'Taken by $takenBy',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.orange.shade300),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              )
+                            else if (selected)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _kAccent,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text('Selected',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white)),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                if (_error != null) ...[
+                  _ErrorBanner(_error!),
+                  const SizedBox(height: 12),
+                ],
+                if (_lockedIn)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E2035),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(
+                          width: 24, height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: _kAccent),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Character Locked! Waiting for all players to pick…',
+                          style: GoogleFonts.inter(
+                              fontSize: 13, color: Colors.white70,
+                              fontWeight: FontWeight.w700),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  _PrimaryButton(
+                    label: _locking
+                        ? 'Locking in…'
+                        : _mySelection != null
+                            ? '✅ Confirm — Play as ${_characters[_mySelection!].name}'
+                            : '👆 Select a character',
+                    loading: _locking,
+                    onTap: (_mySelection != null && !_locking)
+                        ? _lockIn
+                        : null,
+                  ),
+              ],
             ),
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _kAccent))
-          : Column(
-              children: [
-                // Story banner
-                Container(
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1A0A0E), Color(0xFF3D0A14)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(widget.storyEmoji,
-                          style: const TextStyle(fontSize: 28)),
-                      const SizedBox(width: 12),
-                      Text(widget.storyTitle,
-                          style: GoogleFonts.spaceGrotesk(
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              fontSize: 16)),
-                    ],
-                  ),
-                ),
-
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.1,
-                    ),
-                    itemCount: _characters.length,
-                    itemBuilder: (_, i) {
-                      final c = _characters[i];
-                      final selected = _mySelection == i;
-                      return GestureDetector(
-                        onTap: () => setState(() => _mySelection = i),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? const Color(0xFF1A0A0E)
-                                : const Color(0xFF16213E),
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(
-                              color: selected ? _kAccent : Colors.white10,
-                              width: selected ? 2 : 1,
-                            ),
-                            boxShadow: selected
-                                ? [BoxShadow(
-                                    color: _kAccent.withOpacity(0.3),
-                                    blurRadius: 16, offset: const Offset(0, 4))]
-                                : [],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 52, height: 52,
-                                decoration: BoxDecoration(
-                                  color: c.color.withOpacity(0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(c.emoji,
-                                      style: const TextStyle(fontSize: 26)),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(c.name,
-                                  style: GoogleFonts.inter(
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white)),
-                              if (selected)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: _kAccent,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text('Selected',
-                                        style: GoogleFonts.inter(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white)),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      if (_error != null) ...[
-                        _ErrorBanner(_error!),
-                        const SizedBox(height: 12),
-                      ],
-                      _PrimaryButton(
-                        label: _locking
-                            ? 'Locking in…'
-                            : _mySelection != null
-                                ? '✅ Play as ${_characters[_mySelection!].name}'
-                                : '👆 Pick a character',
-                        loading: _locking,
-                        onTap: (_mySelection != null && !_locking)
-                            ? _lockIn
-                            : null,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
     );
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+/// Cast Reveal Transition Screen
+// ══════════════════════════════════════════════════════════════════════════════
+class RolePlayCastRevealScreen extends StatefulWidget {
+  final String roomCode, storyTitle, storyEmoji;
+  final RolePlayCharacter myCharacter;
+  final List<RolePlayDialogue> dialogues;
+  final RolePlayRoom room;
+  final List<RolePlayCharacter> characters;
+
+  const RolePlayCastRevealScreen({
+    super.key,
+    required this.roomCode,
+    required this.storyTitle,
+    required this.storyEmoji,
+    required this.myCharacter,
+    required this.dialogues,
+    required this.room,
+    required this.characters,
+  });
+
+  @override
+  State<RolePlayCastRevealScreen> createState() => _RolePlayCastRevealScreenState();
+}
+
+class _RolePlayCastRevealScreenState extends State<RolePlayCastRevealScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _revealCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _revealCtrl = AnimationController(
+        vsync: this, duration: const Duration(seconds: 4));
+    _revealCtrl.forward();
+    _revealCtrl.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => RolePlayGameplayScreen(
+              storyTitle:  widget.storyTitle,
+              storyEmoji:  widget.storyEmoji,
+              roomCode:    widget.roomCode,
+              myCharacter: widget.myCharacter,
+              dialogues:   widget.dialogues,
+            ),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _revealCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final membersWithCharacters = widget.room.members.where((m) => m.characterId != null).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F1A),
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('🎬 Cast Revealed!',
+                  style: GoogleFonts.spaceGrotesk(
+                      fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+              const SizedBox(height: 8),
+              Text('Preparing your conversation story...',
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white38)),
+              const SizedBox(height: 36),
+
+              for (int i = 0; i < membersWithCharacters.length; i++) ...[
+                AnimatedBuilder(
+                  animation: _revealCtrl,
+                  builder: (_, child) {
+                    final delay = i * 0.15;
+                    final progress = (_revealCtrl.value - delay).clamp(0.0, 1.0);
+                    final scale = Curves.elasticOut.transform(progress);
+                    return Opacity(
+                      opacity: progress.clamp(0.0, 1.0),
+                      child: Transform.scale(scale: scale, child: child),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E2035),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Row(
+                      children: [
+                        // Player username first
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(membersWithCharacters[i].username,
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14, fontWeight: FontWeight.w800,
+                                      color: Colors.white)),
+                              const SizedBox(height: 2),
+                              Text('Player',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 11, color: Colors.white30)),
+                            ],
+                          ),
+                        ),
+
+                        // Cast pointer
+                        const Text('👉', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 14),
+
+                        // Character Role
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2D0A12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _kAccent.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(membersWithCharacters[i].characterEmoji ?? '👤',
+                                  style: const TextStyle(fontSize: 18)),
+                              const SizedBox(width: 8),
+                              Text(
+                                membersWithCharacters[i].characterName ?? 'Role',
+                                style: GoogleFonts.spaceGrotesk(
+                                    fontSize: 13, fontWeight: FontWeight.w800,
+                                    color: _kAccent),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 48),
+              const SizedBox(
+                width: 32, height: 32,
+                child: CircularProgressIndicator(color: _kAccent, strokeWidth: 3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 // ── Improved Wheel Widget ───────────────────────────────────────────────────────
 class _ImprovedWheel extends StatelessWidget {

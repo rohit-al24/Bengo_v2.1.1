@@ -639,11 +639,13 @@ class ApiService {
     required int dialogueId,
     required bool correct,
     required double score,
+    bool passed = false,
   }) async {
     final res = await _req('POST', '/roleplay/rooms/${code.toUpperCase()}/submit-line/', body: {
       'dialogue_id': dialogueId,
       'correct': correct,
       'score': score,
+      'passed': passed,
     });
     return _decode(res);
   }

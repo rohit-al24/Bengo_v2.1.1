@@ -389,7 +389,16 @@ class RoomSubmitLineView(APIView):
             return Response({'detail': 'Room not found.'}, status=404)
 
         dialogue_id = request.data.get('dialogue_id')
-        correct     = bool(request.data.get('correct', False))
+        raw_correct = request.data.get('correct', False)
+        raw_passed  = request.data.get('passed', False)
+        if isinstance(raw_correct, str):
+            correct = raw_correct.lower() == 'true'
+        else:
+            correct = bool(raw_correct)
+        if isinstance(raw_passed, str):
+            passed = raw_passed.lower() == 'true'
+        else:
+            passed = bool(raw_passed)
         score       = float(request.data.get('score', 0.0))
 
         try:
@@ -408,10 +417,21 @@ class RoomSubmitLineView(APIView):
             member.score = float(member.score) + score
             member.save()
 
+        if correct or passed:
+            # Advance room turn
+            room.current_dialogue_index += 1
+            # Check if finished
+            dialogue_count = room.story.dialogues.count()
+            if room.current_dialogue_index >= dialogue_count:
+                room.status = 'finished'
+            room.save()
+
         return Response({
             'correct':     result.correct,
             'score':       result.score,
             'total_score': member.score,
+            'current_dialogue_index': room.current_dialogue_index,
+            'room_status': room.status,
         })
 
 

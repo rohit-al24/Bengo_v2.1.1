@@ -88,7 +88,7 @@ class RolePlayRoomSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'room_code', 'visibility', 'max_players', 'status',
             'creator_id', 'story', 'story_title', 'story_emoji',
-            'members', 'member_count', 'created_at',
+            'members', 'member_count', 'current_dialogue_index', 'created_at',
         ]
         read_only_fields = ['room_code', 'status', 'creator_id']
 
