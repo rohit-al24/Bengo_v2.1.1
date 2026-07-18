@@ -47,6 +47,7 @@ class ApiService {
       '/auth/check-username/',
       '/auth/check-email/',
       '/auth/token/refresh/',
+      '/institutions/',
     };
     return {
       'Content-Type': 'application/json',
@@ -178,12 +179,27 @@ class ApiService {
 
   // Fetch institutions with optional search query
   Future<List<dynamic>> fetchInstitutions({String? search}) async {
-    final url = search != null && search.isNotEmpty
-        ? '/institutions/?search=$search'
-        : '/institutions/';
-    final res = await _req('GET', url);
-    final data = _decode(res);
-    return data is List ? data : data['results'] ?? [];
+    try {
+      final url = search != null && search.isNotEmpty
+          ? '/institutions/?search=$search'
+          : '/institutions/';
+      final res = await _req('GET', url);
+      final data = _decode(res);
+      print('DEBUG: API response for institutions: $data');
+      if (data is List) {
+        print('DEBUG: Direct list response, length: ${data.length}');
+        return data;
+      } else if (data is Map) {
+        final results = data['results'] ?? [];
+        print('DEBUG: Wrapped response, results length: ${results.length}');
+        return results;
+      }
+      print('DEBUG: Unexpected response format: $data');
+      return [];
+    } catch (e) {
+      print('DEBUG: Exception in fetchInstitutions: $e');
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> sendVerificationCode({

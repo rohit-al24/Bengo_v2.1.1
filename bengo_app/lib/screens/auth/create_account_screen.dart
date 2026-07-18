@@ -102,6 +102,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
   List<dynamic> _institutions = [];
   dynamic _selectedInstitution;
   final _institutionSearchCtrl = TextEditingController();
+  final _institutionSearchFocus = FocusNode();
   List<dynamic> _filteredInstitutions = [];
   bool _showInstitutionDropdown = false;
   bool _isSearchingInstitutions = false;
@@ -161,6 +162,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     _emailFocus.dispose();
     _usernameCtrl.dispose();
     _institutionSearchCtrl.dispose();
+    _institutionSearchFocus.dispose();
     _regNumberCtrl.dispose();
     _usernameCheckTimer?.cancel();
     _institutionSearchDebounce?.cancel();
@@ -221,31 +223,79 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _kBg,
-      body: Column(
+      body: Stack(
         children: [
-          _StepHeader(
-            currentStep: _currentPage,
-            totalSteps: _totalPages,
-            onBack: _previousPage,
+          Column(
+            children: [
+              _StepHeader(
+                currentStep: _currentPage,
+                totalSteps: _totalPages,
+                onBack: _previousPage,
+              ),
+              Expanded(
+                child: PageView(
+                  controller: _pageCtrl,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) {
+                    setState(() => _currentPage = i);
+                    _animateIn();
+                    // When entering the institution selection page, ensure institutions are loaded
+                    if (i == 5 && _institutions.isEmpty && !_isLoadingInstitutions) {
+                      _loadInstitutions();
+                    }
+                  },
+                  children: [
+                    _buildStage1(),
+                    _buildStage2(),
+                    _buildStageAvatar(),
+                    _buildStage3(),
+                    _buildStage4(),
+                    _buildStageInstitution(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: PageView(
-              controller: _pageCtrl,
-              physics: const NeverScrollableScrollPhysics(),
-              onPageChanged: (i) {
-                setState(() => _currentPage = i);
-                _animateIn();
-              },
-              children: [
-                _buildStage1(),
-                _buildStage2(),
-                _buildStageAvatar(),
-                _buildStage3(),
-                _buildStage4(),
-                _buildStageInstitution(),
-              ],
+
+          // Full-screen loading overlay for async actions
+          if (_isSendingOtp || _isVerifyingOtp || _isRegistering || _isLoadingInstitutions)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.36),
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: const BoxDecoration(
+                        color: _kSurface,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 12,
+                          ),
+                        ],
+                      ),
+                      child: const SizedBox(
+                        width: 72,
+                        height: 72,
+                        child: CircularProgressIndicator(strokeWidth: 6),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Please wait…',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        color: _kSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -717,178 +767,245 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
   Widget _buildStageInstitution() {
     final hasSelection = _selectedInstitution != null;
 
-    return _StageShell(
-      animCtrl: _pageAnimCtrl,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _StageHeading(
-            icon: _kStepIcons[5],
-            title: _kStepTitles[5],
-            subtitle: _kStepSubtitles[5],
-          ),
-          const SizedBox(height: 24),
-          _SectionLabel(label: 'Institution'),
-          const SizedBox(height: 10),
-          _FilledField(
-            label: 'Search institution',
-            controller: _institutionSearchCtrl,
-            hint: 'Type to search...',
-            prefixIcon: Icons.search_outlined,
-            onChanged: _filterInstitutions,
-          ),
-          if (_showInstitutionDropdown && _filteredInstitutions.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: _kSurface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _kFieldBorder),
-              ),
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _filteredInstitutions.length,
-                itemBuilder: (ctx, idx) {
-                  final inst = _filteredInstitutions[idx];
-                  return InkWell(
-                    onTap: () => _selectInstitution(inst),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            inst['name'] ?? 'Unknown',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _kInk,
-                            ),
-                          ),
-                          if (inst['code'] != null)
-                            Text(
-                              inst['code'] ?? '',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: _kMuted,
+    final fade = CurvedAnimation(parent: _pageAnimCtrl, curve: Curves.easeOut);
+    final slide = Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _pageAnimCtrl, curve: Curves.easeOut));
+
+    return FadeTransition(
+      opacity: fade,
+      child: SlideTransition(
+        position: slide,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _StageHeading(
+                      icon: _kStepIcons[5],
+                      title: _kStepTitles[5],
+                      subtitle: _kStepSubtitles[5],
+                    ),
+                    const SizedBox(height: 24),
+                    _SectionLabel(label: 'Institution'),
+                    const SizedBox(height: 10),
+                    _FilledField(
+                      label: 'Search institution',
+                      controller: _institutionSearchCtrl,
+                      hint: 'Type to search...',
+                      prefixIcon: Icons.search_outlined,
+                      onChanged: _filterInstitutions,
+                      focusNode: _institutionSearchFocus,
+                    ),
+                    if (_showInstitutionDropdown && _filteredInstitutions.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _kSurface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _kFieldBorder),
+                        ),
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _filteredInstitutions.length,
+                          itemBuilder: (ctx, idx) {
+                            final inst = _filteredInstitutions[idx];
+                            return InkWell(
+                              onTap: () => _selectInstitution(inst),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      inst['name'] ?? 'Unknown',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: _kInk,
+                                      ),
+                                    ),
+                                    if (inst['code'] != null)
+                                      Text(
+                                        inst['code'] ?? '',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: _kMuted,
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ] else if (_isSearchingInstitutions) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_kAccent)),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Searching institutions…', style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
-                ],
-              ),
-            ),
-          ],
-          if (hasSelection) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _kFieldTint,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _kAccent, width: 1.5),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: _kAccent, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _selectedInstitution['name'] ?? 'Unknown',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: _kAccent,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(() {
-                      _selectedInstitution = null;
-                      _institutionSearchCtrl.clear();
-                      _regNumberCtrl.clear();
-                      _filteredInstitutions = [];
-                      _showInstitutionDropdown = false;
-                      _isSearchingInstitutions = false;
-                    }),
-                    child: Icon(Icons.close, color: _kAccent, size: 18),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: hasSelection
-                  ? Container(
-                      key: const ValueKey('reg-number'),
-                      child: AnimatedOpacity(
-                        opacity: 1.0,
-                        duration: const Duration(milliseconds: 300),
-                        child: _FilledField(
-                          label: 'Institutional Registration Number',
-                          controller: _regNumberCtrl,
-                          hint: 'e.g., STU-2024-001',
-                          enabled: true,
+                            );
+                          },
                         ),
                       ),
-                    )
-                  : const SizedBox.shrink(key: ValueKey('empty')),
+                    ] else if (_isLoadingInstitutions) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_kAccent)),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Loading institutions…', style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+                          ],
+                        ),
+                      ),
+                    ] else if (_isSearchingInstitutions) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_kAccent)),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Searching institutions…', style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+                          ],
+                        ),
+                      ),
+                    ] else if (!_isLoadingInstitutions && _institutions.isNotEmpty && _filteredInstitutions.isEmpty) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text('No institutions match your search.', style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+                      ),
+                    ] else if (!_isLoadingInstitutions && _institutions.isEmpty) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text('No institutions available. Check your connection and try again.', style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+                      ),
+                    ],
+                    if (hasSelection) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _kFieldTint,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _kAccent, width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: _kAccent, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _selectedInstitution['name'] ?? 'Unknown',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _kAccent,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => setState(() {
+                                _selectedInstitution = null;
+                                _institutionSearchCtrl.clear();
+                                _regNumberCtrl.clear();
+                                _filteredInstitutions = [];
+                                _showInstitutionDropdown = false;
+                                _isSearchingInstitutions = false;
+                              }),
+                              child: Icon(Icons.close, color: _kAccent, size: 18),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 280),
+                        child: hasSelection
+                            ? Container(
+                                key: const ValueKey('reg-number'),
+                                child: AnimatedOpacity(
+                                  opacity: 1.0,
+                                  duration: const Duration(milliseconds: 300),
+                                  child: _FilledField(
+                                    label: 'Institutional Registration Number',
+                                    controller: _regNumberCtrl,
+                                    hint: 'e.g., STU-2024-001',
+                                    enabled: true,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink(key: ValueKey('empty')),
+                      ),
+                    ],
+                    if (_errorMsg.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _ErrorBanner(message: _errorMsg),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+              color: Colors.transparent,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: _isRegistering ? null : _skipInstitutionStage,
+                      child: Text(
+                        'Skip for now',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _kAccent,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 160,
+                    child: _PillCTA(
+                      label: _isRegistering ? 'Creating account…' : 'Continue',
+                      isLoading: _isRegistering,
+                      onPressed: _isRegistering
+                          ? null
+                          : () {
+                              if (_canContinueFromInstitutionStage()) {
+                                _nextPage();
+                              } else {
+                                if (_filteredInstitutions.isEmpty && _institutions.isNotEmpty) {
+                                  setState(() {
+                                    _filteredInstitutions = List<dynamic>.from(_institutions);
+                                    _showInstitutionDropdown = true;
+                                  });
+                                } else if (_institutions.isEmpty) {
+                                  _loadInstitutions();
+                                }
+                                FocusScope.of(context).requestFocus(_institutionSearchFocus);
+                              }
+                            },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-          if (_errorMsg.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _ErrorBanner(message: _errorMsg),
-          ],
-          const SizedBox(height: 24),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextButton(
-                onPressed: _isRegistering ? null : _skipInstitutionStage,
-                child: Text(
-                  'Skip for now',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: _kAccent,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: _PillCTA(
-                  label: _isRegistering ? 'Creating account…' : 'Continue',
-                  isLoading: _isRegistering,
-                  onPressed: _isRegistering || !_canContinueFromInstitutionStage() ? null : _nextPage,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-        ],
+        ),
       ),
     );
   }
@@ -1055,16 +1172,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     setState(() => _isLoadingInstitutions = true);
     try {
       final institutions = await ApiService.instance.fetchInstitutions();
+      print('DEBUG: Loaded ${institutions.length} institutions');
       if (mounted) {
         setState(() {
           _institutions = institutions;
           _filteredInstitutions = institutions;
+          _showInstitutionDropdown = institutions.isNotEmpty;
           _isLoadingInstitutions = false;
         });
       }
     } catch (e) {
+      print('DEBUG: Error loading institutions: $e');
       if (mounted) {
-        setState(() => _isLoadingInstitutions = false);
+        setState(() {
+          _isLoadingInstitutions = false;
+          _setError('Failed to load institutions. Error: $e');
+        });
       }
     }
   }
@@ -1075,8 +1198,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     final trimmedQuery = query.trim();
     if (trimmedQuery.isEmpty) {
       setState(() {
-        _filteredInstitutions = [];
-        _showInstitutionDropdown = false;
+        // Show all institutions when search is cleared
+        _filteredInstitutions = List<dynamic>.from(_institutions);
+        _showInstitutionDropdown = _institutions.isNotEmpty;
         _isSearchingInstitutions = false;
       });
       return;
@@ -1144,8 +1268,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
       if (!mounted) return;
       setState(() => _otpSent = true);
       _otpFocus.requestFocus();
-      // Advance page if not already on stage 3
-      if (_currentPage == 1) {
+      // Advance page if currently on the avatar stage (index 2)
+      if (_currentPage == 2) {
         _pageCtrl.nextPage(
           duration: const Duration(milliseconds: 380),
           curve: Curves.easeInOut,
@@ -1627,19 +1751,40 @@ class _FilledField extends StatefulWidget {
 class _FilledFieldState extends State<_FilledField> {
   final _focus = FocusNode();
   bool _focused = false;
+  late FocusNode _effectiveFocus;
+  VoidCallback? _focusListener;
 
   @override
   void initState() {
     super.initState();
-    (widget.focusNode ?? _focus).addListener(() => setState(() => _focused = (widget.focusNode ?? _focus).hasFocus));
+    _effectiveFocus = widget.focusNode ?? _focus;
+    _focusListener = () => setState(() => _focused = _effectiveFocus.hasFocus);
+    _effectiveFocus.addListener(_focusListener!);
   }
 
   @override
   void dispose() {
+    if (_focusListener != null) {
+      _effectiveFocus.removeListener(_focusListener!);
+    }
     if (widget.focusNode == null) {
       _focus.dispose();
     }
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FilledField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      // remove old
+      if (_focusListener != null) {
+        _effectiveFocus.removeListener(_focusListener!);
+      }
+      _effectiveFocus = widget.focusNode ?? _focus;
+      _focusListener = () => setState(() => _focused = _effectiveFocus.hasFocus);
+      _effectiveFocus.addListener(_focusListener!);
+    }
   }
 
   @override
