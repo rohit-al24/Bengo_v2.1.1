@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from django import forms
-from .models import User, Role, UserRole
+from .models import User, Role, UserRole, StudentProfile
 
 
 # ── Custom creation form (add user) ──────────────────────────────────────────
@@ -89,3 +89,10 @@ class UserRoleAdmin(admin.ModelAdmin):
     list_filter   = ['role']
     search_fields = ['user__email', 'user__username']
     autocomplete_fields = ['user', 'role']
+
+
+@admin.register(StudentProfile)
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'institution', 'institutional_registration_number', 'updated_at']
+    search_fields = ['user__email', 'user__username', 'institutional_registration_number']
+    autocomplete_fields = ['user', 'institution']

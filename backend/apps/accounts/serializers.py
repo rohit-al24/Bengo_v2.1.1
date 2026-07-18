@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import User, Role, UserRole, EmailVerification
+from .models import User, Role, UserRole, EmailVerification, StudentProfile
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -95,6 +95,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         if institutional_registration_number:
             user.institutional_registration_number = institutional_registration_number
         user.save()
+
+        profile, _ = StudentProfile.objects.get_or_create(user=user)
+        if institution_id:
+            profile.institution_id = institution_id
+        if institutional_registration_number:
+            profile.institutional_registration_number = institutional_registration_number
+        profile.save()
 
         role, _ = Role.objects.get_or_create(name=Role.USER)
         UserRole.objects.create(user=user, role=role)

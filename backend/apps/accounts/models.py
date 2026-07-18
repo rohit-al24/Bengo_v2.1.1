@@ -58,6 +58,20 @@ class User(AbstractUser):
         return self.roles.filter(name=Role.MENTOR).exists()
 
 
+class StudentProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    institution = models.ForeignKey('institutions.Institution', null=True, blank=True, on_delete=models.SET_NULL, related_name='student_profiles')
+    institutional_registration_number = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['user__username']
+
+    def __str__(self):
+        return f'{self.user.username} profile'
+
+
 class UserRole(models.Model):
     user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_roles')
     role       = models.ForeignKey(Role, on_delete=models.CASCADE, related_name='user_roles')

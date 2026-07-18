@@ -1,0 +1,15 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  <li>
+    <form method="post" action="{{ import_url }}" enctype="multipart/form-data" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+      {% csrf_token %}
+      <input type="file" name="excel_file" accept=".xlsx,.xlsm,.xls" required>
+      <button type="submit" class="button">Import Excel</button>
+    </form>
+  </li>
+  <li>
+    <a href="{{ download_url }}" class="button">Download Template</a>
+  </li>
+{% endblock %}
