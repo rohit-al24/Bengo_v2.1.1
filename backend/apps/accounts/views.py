@@ -309,12 +309,16 @@ class AdminUserListView(APIView):
     """Admin or institutional admin: list users."""
 
     def get(self, request):
+        from django.db.models import Q
         if request.user.is_admin:
             # Admin sees all users
             users = User.objects.prefetch_related('roles').all()
         elif request.user.is_institutional_admin and request.user.institution_id:
-            # Institutional admin sees only users in their institution
-            users = User.objects.filter(institution_id=request.user.institution_id).prefetch_related('roles')
+            # Institutional admin sees users in their institution + unassigned users with 'user' role
+            # This allows them to see students that haven't been assigned to an institution yet
+            users = User.objects.filter(
+                Q(institution_id=request.user.institution_id) | Q(institution_id__isnull=True, roles__name='user')
+            ).prefetch_related('roles').distinct()
         else:
             return Response({'detail': 'Forbidden.'}, status=403)
         return Response(UserSerializer(users, many=True).data)

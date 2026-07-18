@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { me } from '../api/client';
+import { me, getInstitution } from '../api/client';
 import './Layout.css';
 
 const NAV = [
@@ -20,6 +20,7 @@ export default function Layout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInstitutionAdmin, setIsInstitutionAdmin] = useState(false);
   const [isMentor, setIsMentor] = useState(false);
+  const [institutionName, setInstitutionName] = useState('');
 
   useEffect(() => {
     me().then(r => {
@@ -27,6 +28,13 @@ export default function Layout() {
       setIsAdmin(roles.includes('admin'));
       setIsInstitutionAdmin(roles.includes('institutional_admin'));
       setIsMentor(roles.includes('mentor'));
+      
+      // Fetch institution name for institutional admin
+      if (roles.includes('institutional_admin') && r.data?.institution) {
+        getInstitution(r.data.institution).then(inst => {
+          setInstitutionName(inst.data?.name || '');
+        }).catch(()=>{});
+      }
     }).catch(() => {});
   }, []);
 
@@ -36,10 +44,9 @@ export default function Layout() {
       return NAV; // Admin sees all pages
     }
     if (isInstitutionAdmin) {
-      // Institution admin sees dashboard, daily revision, and users only
+      // Institution admin sees dashboard and users only
       return [
         { to: '/',            icon: '⊞',  label: 'Dashboard'     },
-        { to: '/daily-revision', icon: '🔁', label: 'Daily Revision' },
         { to: '/users',       icon: '👥', label: 'Users'         },
       ];
     }
@@ -58,7 +65,7 @@ export default function Layout() {
       <aside className="sidebar">
         <div className="sidebar-brand">
           <span className="brand-logo">BenGo</span>
-          <span className="brand-sub">Admin Panel</span>
+          <span className="brand-sub">{isInstitutionAdmin && institutionName ? institutionName : 'Admin Panel'}</span>
         </div>
         <nav className="sidebar-nav">
           {getNavItems().map(n => (

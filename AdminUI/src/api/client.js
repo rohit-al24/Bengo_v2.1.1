@@ -94,7 +94,7 @@ export const getInstitutions = () => api.get('/institutions/');
 export const createInstitution = d => api.post('/institutions/', d);
 export const getInstitution = id => api.get(`/institutions/${id}/`);
 export const updateInstitution = (id, d) => api.patch(`/institutions/${id}/`, d);
-export const getInstitutionStudents = institutionId => api.get(`/institutions/${institutionId}/students/`);
+export const getInstitutionStudents = institutionId => api.get(`/auth/admin/users/?institution_id=${institutionId}`);
 export const getInstitutionMentors = institutionId => api.get(`/institutions/${institutionId}/mentors/`);
 export const assignMentor = (institutionId, studentId, mentorId) =>
   api.post(`/institutions/${institutionId}/assignments/`, { student_id: studentId, mentor_id: mentorId });

@@ -1,14 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { getAdminExams, allUsers } from '../api/client';
+import { getAdminExams, allUsers, me, getInstitution } from '../api/client';
 
 export default function Dashboard() {
   const [exams, setExams] = useState([]);
   const [users, setUsers] = useState([]);
+  const [institutionName, setInstitutionName] = useState('');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     getAdminExams().then(r => setExams(r.data)).catch(()=>{});
     allUsers().then(r => setUsers(r.data)).catch(()=>{});
+    
+    // Fetch institution name for institutional admin
+    me().then(r => {
+      if (r.data?.institution && r.data?.roles?.some(role => role.name === 'institutional_admin')) {
+        getInstitution(r.data.institution).then(inst => {
+          setInstitutionName(inst.data?.name || '');
+        }).catch(()=>{});
+      }
+    }).catch(()=>{});
   }, []);
 
   const totalLessons = exams.reduce((s,e) =>
@@ -18,7 +28,9 @@ export default function Dashboard() {
     <div>
       <div style={{ marginBottom:28 }}>
         <h2 style={{ fontSize:24, fontWeight:800 }}>👋 Welcome, {user.username || 'Admin'}</h2>
-        <p style={{ color:'var(--text-muted)', marginTop:4 }}>BenGo Admin Dashboard</p>
+        <p style={{ color:'var(--text-muted)', marginTop:4 }}>
+          {institutionName ? `${institutionName} - Admin Dashboard` : 'BenGo Admin Dashboard'}
+        </p>
       </div>
 
       {/* Stats */}
