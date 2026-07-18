@@ -30,6 +30,7 @@ class _DailyRevisionScreenState extends State<DailyRevisionScreen> {
   int _attemptsToday = 0;
   int _attemptLimit = 1;
   int _remainingAttempts = 1;
+  int _streakTimeRemainingSeconds = 0;
 
   @override
   void initState() {
@@ -60,6 +61,7 @@ class _DailyRevisionScreenState extends State<DailyRevisionScreen> {
           (config['daily_limit'] as int? ?? 1);
       final remainingAttempts = session['remaining_attempts'] as int? ??
           (attemptLimit - attemptsToday);
+      final streakTimeRemaining = session['streak_time_remaining_seconds'] as int? ?? 0;
       setState(() {
         _config = config;
         _questions = questions;
@@ -67,6 +69,7 @@ class _DailyRevisionScreenState extends State<DailyRevisionScreen> {
         _attemptsToday = attemptsToday;
         _attemptLimit = attemptLimit;
         _remainingAttempts = remainingAttempts < 0 ? 0 : remainingAttempts;
+        _streakTimeRemainingSeconds = streakTimeRemaining;
         _loading = false;
       });
       _startTimer();
@@ -247,6 +250,11 @@ class _DailyRevisionScreenState extends State<DailyRevisionScreen> {
           Text('Time left: ${_formatSeconds(_secondsLeft)}',
               style: AppTextStyles.bodyMedium
                   .copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: 6),
+          Text(
+            'Streak window: ${_formatSeconds(_streakTimeRemainingSeconds)} left to complete today’s revision',
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary),
+          ),
           const SizedBox(height: 16),
           Container(
             width: double.infinity,

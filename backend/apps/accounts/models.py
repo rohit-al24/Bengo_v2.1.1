@@ -31,6 +31,7 @@ class User(AbstractUser):
     streak_days     = models.IntegerField(default=0)
     last_study_date = models.DateField(null=True, blank=True)
     last_active     = models.DateTimeField(default=timezone.now)
+    daily_revision_completed_at = models.DateTimeField(null=True, blank=True)
     institution     = models.ForeignKey('institutions.Institution', null=True, blank=True, on_delete=models.SET_NULL, related_name='users')
 <<<<<<< HEAD
     institutional_register_number = models.CharField(max_length=120, blank=True, null=True)

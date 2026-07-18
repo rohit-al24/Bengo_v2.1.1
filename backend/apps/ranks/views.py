@@ -258,12 +258,20 @@ class TestLogViewSet(viewsets.ModelViewSet):
         questions = self._build_daily_revision_questions(request.user)
         today = timezone.now().date()
         attempts_today = DailyRevisionAttempt.objects.filter(user=request.user, created_at__date=today).count()
+        now = timezone.now()
+        from datetime import timedelta
+        last_completed_at = request.user.daily_revision_completed_at
+        streak_reset_at = (last_completed_at + timedelta(hours=24)) if last_completed_at else (now + timedelta(hours=24))
+        time_remaining_seconds = max(0, int((streak_reset_at - now).total_seconds()))
         return Response({
             'config': DailyRevisionConfigSerializer(cfg).data,
             'questions': questions,
             'attempts_today': attempts_today,
             'attempt_limit': cfg.daily_limit,
             'remaining_attempts': max(0, cfg.daily_limit - attempts_today),
+            'streak_window_hours': 24,
+            'streak_reset_at': streak_reset_at.isoformat(),
+            'streak_time_remaining_seconds': time_remaining_seconds,
         })
 
     @action(detail=False, methods=['post'])
@@ -279,8 +287,9 @@ class TestLogViewSet(viewsets.ModelViewSet):
         wrong = int(request.data.get('wrong', 0))
         timed_out = int(request.data.get('timed_out', 0))
         score_pct = round((correct / total) * 100, 2) if total > 0 else 0.0
-        xp_gained = cfg.overall_completion_xp + (correct * cfg.per_question_xp)
-        streak_gained = cfg.streak_count
+        completed = total > 0 and (correct + wrong + timed_out) > 0
+        xp_gained = cfg.overall_completion_xp + (correct * cfg.per_question_xp) if completed else 0
+        streak_gained = cfg.streak_count if completed else 0
 
         attempt = DailyRevisionAttempt.objects.create(
             user=request.user,
@@ -294,16 +303,21 @@ class TestLogViewSet(viewsets.ModelViewSet):
         )
 
         request.user.xp += xp_gained
-        today_dt = timezone.now().date()
+        now = timezone.now()
+        today_dt = now.date()
         from datetime import timedelta
-        if request.user.last_study_date == today_dt - timedelta(days=1):
-            request.user.streak_days = (request.user.streak_days or 0) + streak_gained
-        elif request.user.last_study_date != today_dt:
-            request.user.streak_days = streak_gained
-        else:
-            request.user.streak_days = (request.user.streak_days or 0) + streak_gained
+        if request.user.daily_revision_completed_at and now - request.user.daily_revision_completed_at > timedelta(hours=24):
+            request.user.streak_days = 0
+        if completed:
+            if request.user.last_study_date == today_dt - timedelta(days=1):
+                request.user.streak_days = (request.user.streak_days or 0) + streak_gained
+            elif request.user.last_study_date != today_dt:
+                request.user.streak_days = streak_gained
+            else:
+                request.user.streak_days = (request.user.streak_days or 0) + streak_gained
+            request.user.daily_revision_completed_at = now
         request.user.last_study_date = today_dt
-        request.user.save(update_fields=['xp', 'streak_days', 'last_study_date'])
+        request.user.save(update_fields=['xp', 'streak_days', 'last_study_date', 'daily_revision_completed_at'])
 
         return Response({
             'attempt': DailyRevisionAttemptSerializer(attempt).data,
@@ -312,6 +326,9 @@ class TestLogViewSet(viewsets.ModelViewSet):
             'total_xp': request.user.xp,
             'streak_days': request.user.streak_days,
             'score_pct': score_pct,
+            'completed': completed,
+            'streak_window_hours': 24,
+            'streak_reset_at': (request.user.daily_revision_completed_at + timedelta(hours=24)).isoformat() if request.user.daily_revision_completed_at else (now + timedelta(hours=24)).isoformat(),
         })
 
     def create(self, request, *args, **kwargs):
