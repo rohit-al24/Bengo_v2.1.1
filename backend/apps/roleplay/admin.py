@@ -4,8 +4,8 @@ from . import models
 
 @admin.register(models.RolePlayStory)
 class RolePlayStoryAdmin(admin.ModelAdmin):
-    list_display  = ['id', 'title', 'category', 'jlpt_level', 'difficulty', 'is_published', 'created_at']
-    list_filter   = ['is_published', 'jlpt_level', 'difficulty']
+    list_display  = ['id', 'title', 'category', 'exam', 'difficulty', 'is_published', 'created_at']
+    list_filter   = ['is_published', 'exam', 'difficulty']
     search_fields = ['title', 'category']
 
 
