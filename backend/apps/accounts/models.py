@@ -32,11 +32,7 @@ class User(AbstractUser):
     last_study_date = models.DateField(null=True, blank=True)
     last_active     = models.DateTimeField(default=timezone.now)
     institution     = models.ForeignKey('institutions.Institution', null=True, blank=True, on_delete=models.SET_NULL, related_name='users')
-<<<<<<< HEAD
-    institutional_register_number = models.CharField(max_length=120, blank=True, null=True)
-=======
     institutional_registration_number = models.CharField(max_length=100, blank=True, null=True)
->>>>>>> 522cffcff85eae21da45cfe7dd2b54043331f4e1
     preferred_level = models.CharField(max_length=100, blank=True, null=True)
     learning_goal   = models.CharField(max_length=120, blank=True, null=True)
     roles           = models.ManyToManyField(Role, through='UserRole', related_name='users')

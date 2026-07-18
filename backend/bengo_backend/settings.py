@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     # Local apps
     'apps.institutions',
     'apps.accounts',
-    'apps.institutions',
     'apps.courses',
     'apps.progress',
     'apps.community',
