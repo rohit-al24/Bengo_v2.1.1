@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django_filters',
     # Local apps
     'apps.accounts',
+    'apps.institutions',
     'apps.courses',
     'apps.progress',
     'apps.community',
