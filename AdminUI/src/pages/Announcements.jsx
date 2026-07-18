@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createAnnouncement, getAnnouncements, updateAnnouncement } from '../api/client';
 
 const emptyForm = {
@@ -15,8 +15,10 @@ export default function Announcements() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm);
   const [imageFile, setImageFile] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const imageInputRef = useRef(null);
 
   const loadAnnouncements = async () => {
     try {
@@ -39,6 +41,13 @@ export default function Announcements() {
     inactiveAnnouncements: announcements.filter(item => !item.is_active),
   }), [announcements]);
 
+  const resetForm = () => {
+    setForm(emptyForm);
+    setImageFile(null);
+    setEditingId(null);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -54,13 +63,15 @@ export default function Announcements() {
       if (form.link_url) fd.append('link_url', form.link_url);
       if (imageFile) fd.append('image', imageFile);
 
-      await createAnnouncement(fd);
-      setForm(emptyForm);
-      setImageFile(null);
-      document.getElementById('announcement-image').value = '';
+      if (editingId) {
+        await updateAnnouncement(editingId, fd);
+      } else {
+        await createAnnouncement(fd);
+      }
+      resetForm();
       await loadAnnouncements();
     } catch (err) {
-      setError('Unable to create announcement.');
+      setError(editingId ? 'Unable to update announcement.' : 'Unable to create announcement.');
     } finally {
       setSubmitting(false);
     }
@@ -73,6 +84,20 @@ export default function Announcements() {
     } catch (err) {
       setError('Unable to update announcement.');
     }
+  };
+
+  const handleEdit = (announcement) => {
+    setEditingId(announcement.id);
+    setForm({
+      title: announcement.title || '',
+      description: announcement.description || '',
+      link_enabled: Boolean(announcement.link_enabled),
+      link_url: announcement.link_url || '',
+      button_text: announcement.button_text || 'Learn more',
+      is_active: Boolean(announcement.is_active),
+    });
+    setImageFile(null);
+    if (imageInputRef.current) imageInputRef.current.value = '';
   };
 
   return (
@@ -88,7 +113,7 @@ export default function Announcements() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 20, alignItems: 'start' }}>
         <div style={{ background: '#fff', borderRadius: 16, padding: 20, boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ marginTop: 0 }}>Create announcement</h3>
+          <h3 style={{ marginTop: 0 }}>{editingId ? 'Edit announcement' : 'Create announcement'}</h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
             <input
               placeholder="Title"
@@ -106,6 +131,7 @@ export default function Announcements() {
               style={{ ...inputStyle, minHeight: 92, resize: 'vertical' }}
             />
             <input
+              ref={imageInputRef}
               id="announcement-image"
               type="file"
               accept="image/*"
@@ -136,15 +162,22 @@ export default function Announcements() {
                 />
               </>
             ) : null}
-            <button type="submit" disabled={submitting} style={buttonStyle}>
-              {submitting ? 'Saving...' : 'Save announcement'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="submit" disabled={submitting} style={buttonStyle}>
+                {submitting ? 'Saving...' : editingId ? 'Update announcement' : 'Save announcement'}
+              </button>
+              {editingId ? (
+                <button type="button" onClick={resetForm} style={secondaryButtonStyle}>
+                  Cancel
+                </button>
+              ) : null}
+            </div>
           </form>
         </div>
 
         <div style={{ display: 'grid', gap: 16 }}>
-          <Section title="Active" items={activeAnnouncements} onToggle={handleToggle} />
-          <Section title="Inactive" items={inactiveAnnouncements} onToggle={handleToggle} />
+          <Section title="Active" items={activeAnnouncements} onToggle={handleToggle} onEdit={handleEdit} />
+          <Section title="Inactive" items={inactiveAnnouncements} onToggle={handleToggle} onEdit={handleEdit} />
         </div>
       </div>
 
@@ -153,7 +186,7 @@ export default function Announcements() {
   );
 }
 
-function Section({ title, items, onToggle }) {
+function Section({ title, items, onToggle, onEdit }) {
   return (
     <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
       <h3 style={{ marginTop: 0 }}>{title}</h3>
@@ -163,9 +196,14 @@ function Section({ title, items, onToggle }) {
             <div key={item.id} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                 <strong>{item.title}</strong>
-                <button onClick={() => onToggle(item)} style={secondaryButtonStyle}>
-                  {item.is_active ? 'Deactivate' : 'Activate'}
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => onEdit(item)} style={secondaryButtonStyle}>
+                    Edit
+                  </button>
+                  <button onClick={() => onToggle(item)} style={secondaryButtonStyle}>
+                    {item.is_active ? 'Deactivate' : 'Activate'}
+                  </button>
+                </div>
               </div>
               <p style={{ margin: '6px 0', color: '#555' }}>{item.description}</p>
               {item.image ? <img src={item.image} alt={item.title} style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 8 }} /> : null}

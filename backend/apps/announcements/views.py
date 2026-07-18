@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +11,7 @@ from .serializers import AnnouncementSerializer
 
 class AnnouncementListCreateView(APIView):
     permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_permissions(self):
         if self.request.method == 'POST':
@@ -29,7 +31,7 @@ class AnnouncementListCreateView(APIView):
         if not request.user.is_authenticated or not getattr(request.user, 'is_admin', False):
             return Response({'detail': 'Only admins can create announcements.'}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = AnnouncementSerializer(data=request.data)
+        serializer = AnnouncementSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -38,6 +40,7 @@ class AnnouncementListCreateView(APIView):
 
 class AnnouncementDetailView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def patch(self, request, pk, *args, **kwargs):
         if not getattr(request.user, 'is_admin', False):
@@ -48,7 +51,7 @@ class AnnouncementDetailView(APIView):
         except Announcement.DoesNotExist:
             return Response({'detail': 'Announcement not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = AnnouncementSerializer(announcement, data=request.data, partial=True)
+        serializer = AnnouncementSerializer(announcement, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

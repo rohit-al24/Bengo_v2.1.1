@@ -1,9 +1,13 @@
+from io import BytesIO
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
-from rest_framework.test import APIClient
+from PIL import Image
+from rest_framework.test import APIClient, APIRequestFactory
 
-from apps.accounts.models import Role, User
 from .models import Announcement
+from .serializers import AnnouncementSerializer
 
 
 class AnnouncementApiTests(TestCase):
@@ -17,3 +21,17 @@ class AnnouncementApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
         self.assertEqual(response.json()[0]['title'], 'Spring Event')
+
+    def test_serializer_returns_absolute_image_url_with_request_context(self):
+        buffer = BytesIO()
+        Image.new('RGB', (1, 1), color='red').save(buffer, format='PNG')
+        uploaded = SimpleUploadedFile('test.png', buffer.getvalue(), content_type='image/png')
+
+        announcement = Announcement.objects.create(title='Image Event', description='Hello')
+        announcement.image.save('test.png', uploaded, save=True)
+
+        factory = APIRequestFactory()
+        request = factory.get('/')
+        serializer = AnnouncementSerializer(announcement, context={'request': request})
+
+        self.assertIn('http', serializer.data['image'])
