@@ -50,8 +50,8 @@ class BenGoBottomNav extends StatelessWidget {
                 onTap: () => onTap(1),
               ),
               _NavItem(
-                icon: Icons.groups_rounded,
-                label: 'Teams',
+                icon: Icons.theater_comedy_rounded,
+                label: 'RolePlay',
                 isActive: currentIndex == 2,
                 activeColor: activeColor,
                 inactiveColor: inactiveColor,

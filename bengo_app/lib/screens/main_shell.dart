@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/bottom_nav.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'courses/courses_screen.dart';
-import 'teams/teams_screen.dart';
+import 'roleplay/roleplay_home_screen.dart';
 import 'profile/profile_screen.dart';
 
 /// Main shell that manages the 4 bottom navigation tabs.
@@ -20,7 +20,7 @@ class _MainShellState extends State<MainShell> {
   late int _currentIndex;
 
   // Whether the current tab uses a dark bottom nav
-  final List<bool> _darkNavPages = [false, false, true, false];
+  final List<bool> _darkNavPages = [false, false, false, false];
 
   @override
   void initState() {
@@ -40,7 +40,7 @@ class _MainShellState extends State<MainShell> {
         children: const [
           DashboardScreen(),
           CoursesScreen(),
-          TeamsScreen(),
+          RolePlayHomeScreen(),
           ProfileScreen(),
         ],
       ),

@@ -31,6 +31,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic> _dailyRevisionMeta = {};
   List<dynamic> _announcements = [];
   Timer? _revisionCountdownTimer;
+  Timer? _announcementCarouselTimer;
+  final PageController _announcementPageController =
+      PageController(viewportFraction: 0.94);
 
   @override
   void initState() {
@@ -43,6 +46,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _revisionCountdownTimer?.cancel();
+    _announcementCarouselTimer?.cancel();
+    _announcementPageController.dispose();
     super.dispose();
   }
 
@@ -61,7 +66,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Timer(const Duration(seconds: 2), () {
             if (mounted) {
               NotificationService.instance.showNotification(
-                title: 'Welcome to BenGo, ${me['first_name'] ?? me['username']}!',
+                title:
+                    'Welcome to BenGo, ${me['first_name'] ?? me['username']}!',
                 message: 'Start learning or revision to unlock new badges!',
                 icon: Icons.emoji_events_rounded,
               );
@@ -93,6 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _announcements = announcements;
       });
+      _startAnnouncementCarousel();
     } catch (_) {}
   }
 
@@ -100,7 +107,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _revisionCountdownTimer?.cancel();
     _revisionCountdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      final remaining = (_dailyRevisionMeta['streak_time_remaining_seconds'] as int? ?? 0) - 1;
+      final remaining =
+          (_dailyRevisionMeta['streak_time_remaining_seconds'] as int? ?? 0) -
+              1;
       if (remaining <= 0) {
         _revisionCountdownTimer?.cancel();
         if (mounted) {
@@ -118,6 +127,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  void _startAnnouncementCarousel() {
+    _announcementCarouselTimer?.cancel();
+    if (_announcements.length < 2) return;
+
+    _announcementCarouselTimer =
+        Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_announcementPageController.hasClients) return;
+      final currentPage = (_announcementPageController.page ?? 0).round();
+      final nextPage =
+          currentPage >= _announcements.length - 1 ? 0 : currentPage + 1;
+      _announcementPageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
   String _formatDuration(int seconds) {
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
@@ -131,9 +158,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '$secs s';
   }
 
+  String _resolveAnnouncementImageUrl(Object? rawValue) {
+    if (rawValue == null) {
+      return '';
+    }
+
+    if (rawValue is Map) {
+      final nestedValue = rawValue['url'] ??
+          rawValue['src'] ??
+          rawValue['image'] ??
+          rawValue['path'];
+      return _resolveAnnouncementImageUrl(nestedValue);
+    }
+
+    final value = rawValue.toString().trim();
+    if (value.isEmpty) {
+      return '';
+    }
+
+    if (value.startsWith('http://')) {
+      return value.replaceFirst('http://', 'https://');
+    }
+    if (value.startsWith('https://')) {
+      return value;
+    }
+
+    final origin = Uri.parse(kBaseUrl).origin;
+    if (value.startsWith('/')) {
+      return '$origin$value';
+    }
+    return '$origin/$value';
+  }
+
   String get _greeting {
     final h = TimeOfDay.now().hour;
-    if (h < 5)  return 'Good night';
+    if (h < 5) return 'Good night';
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
@@ -141,7 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String get _greetingEmoji {
     final h = TimeOfDay.now().hour;
-    if (h < 5)  return '🌙';
+    if (h < 5) return '🌙';
     if (h < 12) return '☀️';
     if (h < 17) return '🌤';
     return '🌅';
@@ -157,9 +216,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final streak = (u['streak_days'] ?? 0) as int;
         final firstName = (u['first_name'] ?? '').toString().trim();
         final username = (u['username'] ?? '').toString().trim();
-        final displayName = firstName.isNotEmpty ? firstName : (username.isNotEmpty ? username : 'Samurai');
+        final displayName = firstName.isNotEmpty
+            ? firstName
+            : (username.isNotEmpty ? username : 'Samurai');
         final avatarId = u['avatar_id']?.toString() ?? 'a1';
-        final institutionSettings = u['institution_settings'] as Map<String, dynamic>?;
+        final institutionSettings =
+            u['institution_settings'] as Map<String, dynamic>?;
         final waitingApproval = (u['is_approved'] as bool? ?? true) == false &&
             u['institution'] != null &&
             institutionSettings?['approval_required'] == true;
@@ -169,7 +231,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             body: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFAF8F5), Color(0xFFF8F5FF), Color(0xFFFFF5F7)],
+                  colors: [
+                    Color(0xFFFAF8F5),
+                    Color(0xFFF8F5FF),
+                    Color(0xFFFFF5F7)
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   stops: [0.0, 0.55, 1.0],
@@ -182,24 +248,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.lock_outline_rounded, size: 72, color: Color(0xFFC41230)),
+                        const Icon(Icons.lock_outline_rounded,
+                            size: 72, color: Color(0xFFC41230)),
                         const SizedBox(height: 20),
                         Text(
                           'Waiting for institution approval',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: _kInk),
+                          style: GoogleFonts.inter(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: _kInk),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Your institution administrator must approve your account before the dashboard is available.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 15, color: _kMuted, height: 1.5),
+                          style: GoogleFonts.inter(
+                              fontSize: 15, color: _kMuted, height: 1.5),
                         ),
                         const SizedBox(height: 24),
                         Text(
                           'If you think this is a mistake, contact your institution admin directly.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 13, color: _kMuted),
+                          style:
+                              GoogleFonts.inter(fontSize: 13, color: _kMuted),
                         ),
                       ],
                     ),
@@ -299,7 +371,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Daily Revision ──────────────────────────────────────────────────────────
   Widget _buildDailyRevisionCard() {
-    final remainingSeconds = (_dailyRevisionMeta['streak_time_remaining_seconds'] as int? ?? 0);
+    final remainingSeconds =
+        (_dailyRevisionMeta['streak_time_remaining_seconds'] as int? ?? 0);
     final timerLabel = remainingSeconds > 0
         ? 'Keep your streak alive • ${_formatDuration(remainingSeconds)} left'
         : 'Complete today’s revision to restart your streak window';
@@ -321,8 +394,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFEDD5D8)),
             ),
-            child:
-                const Icon(Icons.repeat_rounded, color: _kAccent, size: 26),
+            child: const Icon(Icons.repeat_rounded, color: _kAccent, size: 26),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -346,7 +418,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 4),
                 Text(
                   timerLabel,
-                  style: GoogleFonts.inter(fontSize: 11, color: _kAccent, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: _kAccent,
+                      fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -356,8 +431,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             compact: true,
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (_) => const DailyRevisionScreen()),
+              MaterialPageRoute(builder: (_) => const DailyRevisionScreen()),
             ),
           ),
         ],
@@ -380,7 +454,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFFFECB3)),
               ),
-              child: const Center(child: Text('🌸', style: TextStyle(fontSize: 24))),
+              child: const Center(
+                  child: Text('🌸', style: TextStyle(fontSize: 24))),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -394,84 +469,130 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    return Column(
-      children: _announcements.map((item) {
-        final title = (item['title'] ?? 'Announcement').toString();
-        final description = (item['description'] ?? '').toString();
-        final imageUrl = item['image']?.toString();
-        final linkEnabled = item['link_enabled'] == true;
-        final linkUrl = item['link_url']?.toString() ?? '';
-        final buttonText = (item['button_text'] ?? 'Learn more').toString();
+    return SizedBox(
+      height: 132,
+      child: PageView.builder(
+        controller: _announcementPageController,
+        itemCount: _announcements.length,
+        itemBuilder: (context, index) {
+          final item = _announcements[index];
+          final title = (item['title'] ?? 'Announcement').toString();
+          final description = (item['description'] ?? '').toString();
+          final imageUrl = _resolveAnnouncementImageUrl(
+            item['image'] ??
+                item['image_url'] ??
+                item['imageUrl'] ??
+                item['banner'] ??
+                item['thumbnail'],
+          );
+          final linkEnabled = item['link_enabled'] == true;
+          final linkUrl = item['link_url']?.toString() ?? '';
+          final buttonText = (item['button_text'] ?? 'Learn more').toString();
+          final hasAction = linkEnabled && linkUrl.isNotEmpty;
+          final hasDescription = description.trim().isNotEmpty;
+          final titleIsLong = title.length > 24;
+          final cardHeight = hasAction
+              ? (titleIsLong || hasDescription ? 148.0 : 136.0)
+              : (titleIsLong || hasDescription ? 128.0 : 116.0);
+          final titleFontSize = hasAction ? 15.0 : 14.0;
+          final titleMaxLines = hasAction ? 2 : 1;
+          final descriptionFontSize = hasAction ? 12.0 : 11.0;
+          final descriptionMaxLines = hasAction ? 2 : 1;
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: _Card3D(
-            accentColor: const Color(0xFFFF6B35),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: 58,
-                    height: 58,
-                    color: const Color(0xFFFFF8E1),
-                    child: imageUrl != null && imageUrl.isNotEmpty
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : const Center(child: Text('🌸', style: TextStyle(fontSize: 24))),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'LIVE UPDATE',
-                        style: GoogleFonts.inter(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: _kAccent,
-                          letterSpacing: 1.2,
-                        ),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: SizedBox(
+              height: cardHeight,
+              child: _Card3D(
+                accentColor: const Color(0xFFFF6B35),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: 66,
+                        height: 66,
+                        color: const Color(0xFFFFF8E1),
+                        child: imageUrl.isNotEmpty
+                            ? Image.network(
+                                imageUrl,
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Center(
+                                      child: Text('🌸',
+                                          style: TextStyle(fontSize: 24)));
+                                },
+                              )
+                            : const Center(
+                                child:
+                                    Text('🌸', style: TextStyle(fontSize: 24))),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        title,
-                        style: GoogleFonts.spaceGrotesk(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: _kInk,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        description,
-                        style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
-                      ),
-                      if (linkEnabled && linkUrl.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        GestureDetector(
-                          onTap: () => launchUrl(Uri.parse(linkUrl)),
-                          child: Text(
-                            '$buttonText →',
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LIVE UPDATE',
                             style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
                               color: _kAccent,
+                              letterSpacing: 1.2,
                             ),
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
+                          const SizedBox(height: 4),
+                          Text(
+                            title,
+                            maxLines: titleMaxLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.spaceGrotesk(
+                              fontSize: titleFontSize,
+                              fontWeight: FontWeight.w700,
+                              color: _kInk,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          if (hasDescription) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              description,
+                              maxLines: descriptionMaxLines,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: descriptionFontSize,
+                                color: _kMuted,
+                              ),
+                            ),
+                          ],
+                          if (hasAction) ...[
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () => launchUrl(Uri.parse(linkUrl)),
+                              child: Text(
+                                '$buttonText →',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: _kAccent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        },
+      ),
     );
   }
 
@@ -485,8 +606,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(100),
@@ -714,7 +834,8 @@ class _StatChip extends StatelessWidget {
   final String emoji;
   final String value;
   final String label;
-  const _StatChip({required this.emoji, required this.value, required this.label});
+  const _StatChip(
+      {required this.emoji, required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -783,8 +904,14 @@ class _Card3DState extends State<_Card3D> {
       },
       onPanEnd: (_) => setState(() => _tilt = Offset.zero),
       onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() { _pressed = false; _tilt = Offset.zero; }),
-      onTapCancel: () => setState(() { _pressed = false; _tilt = Offset.zero; }),
+      onTapUp: (_) => setState(() {
+        _pressed = false;
+        _tilt = Offset.zero;
+      }),
+      onTapCancel: () => setState(() {
+        _pressed = false;
+        _tilt = Offset.zero;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,

@@ -581,6 +581,78 @@ class ApiService {
     final res = await _req('GET', '/community/leaderboard/?type=$type');
     return _decodeList(res);
   }
+
+  // ── RolePlay: Stories ──────────────────────────────────────────────────────
+  Future<List<dynamic>> getRolePlayStories() async {
+    final res = await _req('GET', '/roleplay/stories/');
+    return _decodeList(res);
+  }
+
+  Future<Map<String, dynamic>> getRolePlayStory(int id) async {
+    final res = await _req('GET', '/roleplay/stories/$id/');
+    return _decode(res);
+  }
+
+  // ── RolePlay: Rooms ────────────────────────────────────────────────────────
+  Future<List<dynamic>> getRolePlayRooms({String? visibility}) async {
+    final path = visibility != null
+        ? '/roleplay/rooms/?visibility=$visibility'
+        : '/roleplay/rooms/';
+    final res = await _req('GET', path);
+    return _decodeList(res);
+  }
+
+  Future<Map<String, dynamic>> createRolePlayRoom({
+    required String visibility,
+    required int maxPlayers,
+  }) async {
+    final res = await _req('POST', '/roleplay/rooms/', body: {
+      'visibility': visibility,
+      'max_players': maxPlayers,
+    });
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getRolePlayRoom(String code) async {
+    final res = await _req('GET', '/roleplay/rooms/${code.toUpperCase()}/');
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> joinRolePlayRoom(String code) async {
+    final res = await _req('POST', '/roleplay/rooms/${code.toUpperCase()}/join/');
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> spinRolePlayRoom(String code) async {
+    final res = await _req('POST', '/roleplay/rooms/${code.toUpperCase()}/spin/');
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> selectRolePlayCharacter(String code, int characterId) async {
+    final res = await _req('POST', '/roleplay/rooms/${code.toUpperCase()}/select-character/', body: {
+      'character_id': characterId,
+    });
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> submitRolePlayLine(String code, {
+    required int dialogueId,
+    required bool correct,
+    required double score,
+  }) async {
+    final res = await _req('POST', '/roleplay/rooms/${code.toUpperCase()}/submit-line/', body: {
+      'dialogue_id': dialogueId,
+      'correct': correct,
+      'score': score,
+    });
+    return _decode(res);
+  }
+
+  // ── RolePlay: History ──────────────────────────────────────────────────────
+  Future<List<dynamic>> getRolePlayHistory() async {
+    final res = await _req('GET', '/roleplay/history/');
+    return _decodeList(res);
+  }
 }
 
 class ApiException implements Exception {

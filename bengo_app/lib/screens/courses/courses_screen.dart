@@ -32,7 +32,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
   String _error = '';
   final Map<int, Map<String, dynamic>> _rankByExamId = {};
   final Map<int, Map<String, dynamic>> _upgradeMetaByExamId = {};
-  Map<String, dynamic> _userData = {};          // real user xp/streak
+  Map<String, dynamic> _userData = {}; // real user xp/streak
 
   @override
   void initState() {
@@ -113,7 +113,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
         }
 
         upgradeMetaByExamId[examId] = {
-          'canUpgrade': matchedRank?['is_completed'] == true && nextRank != null,
+          'canUpgrade':
+              matchedRank?['is_completed'] == true && nextRank != null,
           'nextRank': nextRank,
         };
       }
@@ -148,36 +149,49 @@ class _CoursesScreenState extends State<CoursesScreen> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               const SliverToBoxAdapter(child: BenGoHeader()),
-              if (_error.isNotEmpty)
-                SliverToBoxAdapter(child: _buildError()),
+              if (_error.isNotEmpty) SliverToBoxAdapter(child: _buildError()),
               // Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
                   child: _buildHeader(),
                 ),
               ),
               if (_loading)
                 const SliverToBoxAdapter(child: _LoadingWidget())
               else ...[
-                // ── Unlocked exams ──────────────────────────────────────────
-                ..._exams.where((e) => e['is_unlocked'] == true).map(
-                      (e) => SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                          child: _buildExamCard(e, unlocked: true),
+                if (_exams.any((e) => e['is_unlocked'] == true)) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      child: Text(
+                        'Your Exams',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: _kInk,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ),
-                // ── Locked exams ────────────────────────────────────────────
+                  ),
+                  ..._exams.where((e) => e['is_unlocked'] == true).map(
+                        (e) => SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                            child: _buildExamCard(e, unlocked: true),
+                          ),
+                        ),
+                      ),
+                ],
                 if (_exams.any((e) => e['is_unlocked'] != true)) ...[
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                       child: Text(
-                        'Unlock Exams',
+                        'Unlock for more progress',
                         style: GoogleFonts.spaceGrotesk(
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: _kInk,
                           letterSpacing: -0.4,
@@ -194,7 +208,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         ),
                       ),
                 ],
-                // ── Fallback static ─────────────────────────────────────────
                 if (_exams.isEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
@@ -202,38 +215,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       child: _buildStaticN5Card(),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                      child: Text('Unlock Exams',
-                          style: GoogleFonts.spaceGrotesk(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: _kInk,
-                              letterSpacing: -0.4)),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                      child: _buildStaticLocked('JLPT N4', 'Limited Proficiency'),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                      child: _buildStaticLocked('JLPT N3', 'Intermediate'),
-                    ),
-                  ),
                 ],
               ],
-              // Boost card
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                  child: _buildBoostCard(),
-                ),
-              ),
             ],
           ),
         ),
@@ -243,54 +226,22 @@ class _CoursesScreenState extends State<CoursesScreen> {
 
   // ── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Available Exams',
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                color: _kInk,
-                letterSpacing: -0.5,
-              ),
-            ),
-            Text(
-              'Choose your JLPT path and start studying.',
-              style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
-            ),
-          ],
-        ),
-        GestureDetector(
-          onTap: _loadExams,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: _kFieldTint,
-              borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: _kFieldBorder),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.refresh_rounded, size: 13, color: _kAccent),
-                const SizedBox(width: 4),
-                Text(
-                  'REFRESH',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: _kAccent,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ],
-            ),
+        Text(
+          'Available Exams',
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: _kInk,
+            letterSpacing: -0.5,
           ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Choose your JLPT path and start studying.',
+          style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
         ),
       ],
     );
@@ -307,7 +258,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.wifi_off_rounded, color: Color(0xFFEA580C), size: 16),
+          const Icon(Icons.wifi_off_rounded,
+              color: Color(0xFFEA580C), size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text('Offline mode — showing cached data',
@@ -321,243 +273,234 @@ class _CoursesScreenState extends State<CoursesScreen> {
   Widget _buildExamCard(Map<String, dynamic> exam, {required bool unlocked}) {
     final examId = exam['id'] as int?;
     final currentRank = examId == null ? null : _rankByExamId[examId];
-    final upgradeMeta = examId == null ? null : _upgradeMetaByExamId[examId];
-    final canUpgrade = upgradeMeta?['canUpgrade'] == true;
-    final nextRank = (upgradeMeta?['nextRank'] as Map<String, dynamic>?) ??
-        const <String, dynamic>{};
     final rankName = (currentRank?['rank_name'] ?? '').toString();
     final rankIcon = (currentRank?['rank_icon'] ?? '🏆').toString();
+    final title = (exam['title'] ?? '').toString();
+    final description = (exam['description'] ?? '').toString();
+    final level = (exam['level'] ?? '').toString();
 
     return _TappableCard(
       onTap: () async {
         if (!unlocked) {
           try {
             await ApiService.instance.unlockExam(exam['id'] as int);
-            _loadExams();
+            if (!mounted) return;
+            await _loadExams();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${exam['title']} unlocked!')),
+            );
           } catch (_) {}
           return;
         }
         await _showRankJourneySheet(exam);
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Hero header — dark gradient ──────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1B1B1D), Color(0xFF2E1A1F)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _kSurface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: _kBorderLight),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F000000),
+              blurRadius: 20,
+              offset: Offset(0, 8),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Level chip
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _kGreenText.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(100),
-                          border: Border.all(color: _kGreenText.withOpacity(0.35)),
-                        ),
-                        child: Text(
-                          'Level: ${exam['level']}',
-                          style: GoogleFonts.inter(
-                            fontSize: 10, color: _kGreenText, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        exam['title'] ?? '',
-                        style: GoogleFonts.spaceGrotesk(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -0.4,
-                          height: 1.15,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        exam['description'] ?? '',
-                        style: GoogleFonts.inter(
-                          fontSize: 12, color: Colors.white60, height: 1.5),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.15)),
-                  ),
-                  child: const Icon(Icons.menu_book_rounded, color: Colors.white70, size: 24),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Body ────────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Rank badge row
-                Row(
-                  children: [
-                    Text(rankIcon, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        rankName.isNotEmpty ? 'Current rank: $rankName' : 'Start learning',
-                        style: GoogleFonts.inter(
-                          fontSize: 12, fontWeight: FontWeight.w600, color: _kAccent),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _kFieldTint,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      level.isNotEmpty ? level : 'JLPT',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _kAccent,
                       ),
                     ),
-                    // Subject chips inline
-                    _SubjectChip(icon: Icons.g_translate_rounded, label: 'Vocab'),
-                    const SizedBox(width: 6),
-                    _SubjectChip(icon: Icons.edit_note_rounded, label: 'Grammar'),
-                  ],
-                ),
-
-                if (canUpgrade) ...[
-                  const SizedBox(height: 10),
-                  _buildUpgradeButton(exam, nextRank),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: unlocked ? const Color(0xFFEAEAF8) : _kFieldTint,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      unlocked ? 'Ready' : 'Locked',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: unlocked ? const Color(0xFF3B49DF) : _kMuted,
+                      ),
+                    ),
+                  ),
                 ],
-
-                const SizedBox(height: 14),
-
-                // ── Big CTA ──────────────────────────────────────────────
-                Container(
-                  height: 50,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFC41230), Color(0xFFE0183A)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: _kAccentShadow,
-                        blurRadius: 14,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'OPEN EXAM',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
-                    ],
-                  ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: _kInk,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: _kMuted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDF7F0),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(rankIcon, style: const TextStyle(fontSize: 14)),
+                        const SizedBox(width: 8),
+                        Text(
+                          rankName.isNotEmpty
+                              ? 'Rank • $rankName'
+                              : 'Rank • New',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _kAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 11),
+                    decoration: BoxDecoration(
+                      color: unlocked ? const Color(0xFF1B1B1D) : _kFieldTint,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      unlocked ? 'OPEN' : 'UNLOCK',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: unlocked ? Colors.white : _kAccent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   // ── Locked exam row ────────────────────────────────────────────────────────
   Widget _buildLockedExamCard(Map<String, dynamic> exam) {
+    final title = (exam['title'] ?? '').toString();
+    final level = (exam['level'] ?? '').toString();
+
     return _TappableCard(
       onTap: () async {
         try {
           await ApiService.instance.unlockExam(exam['id'] as int);
-          _loadExams();
+          if (!mounted) return;
+          await _loadExams();
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${exam['title']} unlocked!')),
+            SnackBar(content: Text('$title unlocked!')),
           );
         } catch (_) {}
       },
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Lock icon block
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F7),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
-              ),
-              child: const Icon(Icons.lock_outline_rounded,
-                  color: Color(0xFFB0B0B0), size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    exam['title'] ?? '',
-                    style: GoogleFonts.spaceGrotesk(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: _kInk,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Level ${exam['level']} · Tap to unlock now',
-                    style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Unlock CTA pill
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFC41230), Color(0xFFE0183A)],
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F5FF),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE9DFFB)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                borderRadius: BorderRadius.circular(100),
-                boxShadow: const [
-                  BoxShadow(color: _kAccentShadow, blurRadius: 8, offset: Offset(0, 3)),
-                ],
+                child: const Icon(Icons.lock_outline_rounded,
+                    color: _kAccent, size: 20),
               ),
-              child: Text(
-                'UNLOCK',
-                style: GoogleFonts.inter(
-                    fontSize: 11,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: _kInk,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Level $level · Tap to unlock and start',
+                      style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _kAccent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  'UNLOCK',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
-                    letterSpacing: 0.5),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -631,7 +574,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
             const SizedBox(height: 14),
             Row(
               children: [
-                _SubjectChip(icon: Icons.g_translate_rounded, label: 'Vocabulary'),
+                _SubjectChip(
+                    icon: Icons.g_translate_rounded, label: 'Vocabulary'),
                 const SizedBox(width: 10),
                 _SubjectChip(icon: Icons.edit_note_rounded, label: 'Grammar'),
               ],
@@ -701,8 +645,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
     final rankName = (rankProgress?['rank_name'] ?? '').toString();
     final icon = (rankProgress?['rank_icon'] ?? '').toString().trim();
     final displayIcon = icon.isNotEmpty ? icon : '🏆';
-    final label =
-        rankName.isNotEmpty ? 'Current rank: $rankName' : 'Rank: Start learning';
+    final label = rankName.isNotEmpty
+        ? 'Current rank: $rankName'
+        : 'Rank: Start learning';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -738,7 +683,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
           color: _kAccent,
           borderRadius: BorderRadius.circular(100),
           boxShadow: const [
-            BoxShadow(color: _kAccentShadow, blurRadius: 0, offset: Offset(0, 3)),
+            BoxShadow(
+                color: _kAccentShadow, blurRadius: 0, offset: Offset(0, 3)),
           ],
         ),
         child: Row(
@@ -775,7 +721,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
       final progressByRankId = <int, Map<String, dynamic>>{};
       for (final p in rankProgresses) {
         final rankId = p['rank'] as int?;
-        if (rankId != null) progressByRankId[rankId] = Map<String, dynamic>.from(p);
+        if (rankId != null)
+          progressByRankId[rankId] = Map<String, dynamic>.from(p);
       }
 
       if (!mounted) return;
@@ -793,8 +740,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
               return Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 child: Column(
                   children: [
@@ -858,14 +804,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         itemBuilder: (context, index) {
                           final rank = ranks[index] as Map<String, dynamic>;
                           final progress = progressByRankId[rank['id'] as int];
-                          final isCompleted =
-                              progress?['is_completed'] == true;
+                          final isCompleted = progress?['is_completed'] == true;
                           final isCurrent = progress?['is_current'] == true;
                           final firstRankId = ranks.isNotEmpty
                               ? ranks.first['id'] as int?
                               : null;
-                          final isFirstRank = firstRankId != null &&
-                              rank['id'] == firstRankId;
+                          final isFirstRank =
+                              firstRankId != null && rank['id'] == firstRankId;
                           final hasProgress = progress != null;
                           final canOpen = hasProgress || isFirstRank;
                           final progressLabel = isCompleted
@@ -873,8 +818,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                               : canOpen
                                   ? 'Current rank'
                                   : 'Locked';
-                          final icon =
-                              (rank['icon'] ?? '🏆').toString();
+                          final icon = (rank['icon'] ?? '🏆').toString();
                           final percent =
                               ((progress?['progress_pct'] as num?) ?? 0)
                                   .toDouble();
@@ -969,9 +913,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                           }
                                         : null,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: canOpen
-                                          ? _kAccent
-                                          : _kBorderLight,
+                                      backgroundColor:
+                                          canOpen ? _kAccent : _kBorderLight,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                           borderRadius:
@@ -1009,7 +952,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                           minChildSize: 0.5,
                                           maxChildSize: 0.95,
                                           builder: (detailScrollContext,
-                                              detailController) =>
+                                                  detailController) =>
                                               Container(
                                             decoration: const BoxDecoration(
                                               color: Colors.white,
@@ -1031,9 +974,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                                 ),
                                                 const SizedBox(height: 14),
                                                 Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                          horizontal: 20),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 20),
                                                   child: Row(
                                                     children: [
                                                       Expanded(
@@ -1065,7 +1008,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                                                     _kBorderLight),
                                                           ),
                                                           child: const Icon(
-                                                              Icons.close_rounded,
+                                                              Icons
+                                                                  .close_rounded,
                                                               size: 16,
                                                               color: _kMuted),
                                                         ),
@@ -1076,25 +1020,29 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                                 const SizedBox(height: 10),
                                                 Expanded(
                                                   child: ListView.builder(
-                                                    controller: detailController,
-                                                    padding:
-                                                        const EdgeInsets.fromLTRB(
-                                                            20, 8, 20, 24),
+                                                    controller:
+                                                        detailController,
+                                                    padding: const EdgeInsets
+                                                        .fromLTRB(
+                                                        20, 8, 20, 24),
                                                     itemCount: logs.length,
                                                     itemBuilder:
                                                         (logContext, logIndex) {
                                                       final log = logs[logIndex]
-                                                          as Map<String, dynamic>;
+                                                          as Map<String,
+                                                              dynamic>;
                                                       return Container(
                                                         margin: const EdgeInsets
                                                             .only(bottom: 10),
-                                                        padding: const EdgeInsets
-                                                            .all(14),
-                                                        decoration: BoxDecoration(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(14),
+                                                        decoration:
+                                                            BoxDecoration(
                                                           color: _kBg,
                                                           borderRadius:
-                                                              BorderRadius.circular(
-                                                                  14),
+                                                              BorderRadius
+                                                                  .circular(14),
                                                           border: Border.all(
                                                               color:
                                                                   _kBorderLight),
@@ -1146,26 +1094,27 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                                                 .instance
                                                                 .getMyCertificates();
                                                         final cert = certificates
-                                                            .whereType<Map<
-                                                                String,
-                                                                dynamic>>()
+                                                            .whereType<
+                                                                Map<String,
+                                                                    dynamic>>()
                                                             .firstWhere(
                                                               (item) =>
-                                                                  (item['certificate']
-                                                                      as Map<
+                                                                  (item['certificate'] as Map<
                                                                           String,
-                                                                          dynamic>?)?['rank'] ==
+                                                                          dynamic>?)?[
+                                                                      'rank'] ==
                                                                   rank['id'],
                                                               orElse: () =>
                                                                   <String,
                                                                       dynamic>{},
                                                             );
-                                                        final url = ((cert[
-                                                                        'certificate']
-                                                                    as Map<String,
-                                                                        dynamic>?)?[
-                                                                'template_url'] ??
-                                                            '').toString();
+                                                        final url = ((cert['certificate']
+                                                                        as Map<
+                                                                            String,
+                                                                            dynamic>?)?[
+                                                                    'template_url'] ??
+                                                                '')
+                                                            .toString();
                                                         if (url.isNotEmpty) {
                                                           await launchUrl(
                                                               Uri.parse(url),
@@ -1175,7 +1124,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                                       },
                                                       style: ElevatedButton
                                                           .styleFrom(
-                                                        backgroundColor: _kAccent,
+                                                        backgroundColor:
+                                                            _kAccent,
                                                         foregroundColor:
                                                             Colors.white,
                                                         shape: RoundedRectangleBorder(
@@ -1187,10 +1137,11 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                                       ),
                                                       child: Text(
                                                           'Open certificate',
-                                                          style: GoogleFonts.inter(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w700)),
+                                                          style:
+                                                              GoogleFonts.inter(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700)),
                                                     ),
                                                   ),
                                                 ),
@@ -1250,13 +1201,14 @@ class _CoursesScreenState extends State<CoursesScreen> {
             const SizedBox(height: 10),
             Row(
               children: [
-                Text(nextRankIcon,
-                    style: const TextStyle(fontSize: 22)),
+                Text(nextRankIcon, style: const TextStyle(fontSize: 22)),
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(nextRankName,
                         style: GoogleFonts.inter(
-                            fontSize: 15, fontWeight: FontWeight.w600, color: _kInk))),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: _kInk))),
               ],
             ),
             const SizedBox(height: 12),
@@ -1266,15 +1218,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
             Text('Question timer: ${timer}s',
                 style: GoogleFonts.inter(fontSize: 13, color: _kInk)),
             const SizedBox(height: 4),
-            Text('Your next lessons will start fresh with this rank\'s settings.',
+            Text(
+                'Your next lessons will start fresh with this rank\'s settings.',
                 style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel',
-                style: GoogleFonts.inter(color: _kMuted)),
+            child: Text('Cancel', style: GoogleFonts.inter(color: _kMuted)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -1307,158 +1259,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
         );
       }
     }
-  }
-
-  // ── Your Progress card (real data) ────────────────────────────────────────
-  Widget _buildBoostCard() {
-    final xp = (_userData['xp'] ?? 0) as int;
-    final streak = (_userData['streak_days'] ?? 0) as int;
-    final firstName = (_userData['first_name'] ?? '').toString().trim();
-    final greeting = firstName.isNotEmpty ? 'Hi, $firstName 👋' : 'Your Progress';
-
-    // XP milestones: 0 → 500 → 1000 → 2500 → 5000 → 10000
-    const milestones = [500, 1000, 2500, 5000, 10000];
-    int milestone = milestones.firstWhere((m) => xp < m, orElse: () => 10000);
-    final xpProgress = (xp / milestone).clamp(0.0, 1.0);
-    final xpDisplay = xp > 999
-        ? '${(xp / 1000).toStringAsFixed(1)}k'
-        : '$xp';
-    final milestoneDisplay = milestone >= 1000
-        ? '${(milestone / 1000).toStringAsFixed(0)}k XP'
-        : '$milestone XP';
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _kSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _kBorderLight),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x07000000), blurRadius: 10, offset: Offset(0, 3))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      greeting,
-                      style: GoogleFonts.spaceGrotesk(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: _kInk,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Keep up the momentum!',
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: _kMuted),
-                    ),
-                  ],
-                ),
-              ),
-              // Streak badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: streak > 0
-                      ? const Color(0xFFFFF7ED)
-                      : const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: streak > 0
-                        ? const Color(0xFFFED7AA)
-                        : _kBorderLight,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      streak > 0 ? '🔥' : '💤',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(width: 6),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$streak',
-                          style: GoogleFonts.spaceGrotesk(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: _kInk,
-                          ),
-                        ),
-                        Text(
-                          streak == 1 ? 'Day' : 'Days',
-                          style: GoogleFonts.inter(
-                              fontSize: 10, color: _kMuted),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-          Divider(color: _kBorderLight, height: 1),
-          const SizedBox(height: 16),
-
-          // XP progress
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'TOTAL XP',
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: _kMuted,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Text(
-                '$xpDisplay / $milestoneDisplay',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: _kAccent,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(100),
-            child: LinearProgressIndicator(
-              value: xpProgress,
-              backgroundColor: _kBorderLight,
-              valueColor: const AlwaysStoppedAnimation<Color>(_kAccent),
-              minHeight: 8,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            xp == 0
-                ? 'Complete a lesson to earn your first XP!'
-                : '$xp XP earned · ${((1 - xpProgress) * milestone).toInt()} XP to next milestone',
-            style: GoogleFonts.inter(fontSize: 11, color: _kMuted),
-          ),
-        ],
-      ),
-    );
   }
 }
 

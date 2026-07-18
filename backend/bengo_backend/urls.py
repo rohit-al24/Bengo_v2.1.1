@@ -14,4 +14,5 @@ urlpatterns = [
     path('api/certificates/', include('apps.certificates.urls')),
     path('api/teams/', include('apps.teams.urls')),
     path('api/announcements/', include('apps.announcements.urls')),
+    path('api/roleplay/',     include('apps.roleplay.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

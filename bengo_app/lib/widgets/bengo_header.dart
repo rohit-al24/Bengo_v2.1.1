@@ -6,6 +6,7 @@ import '../services/notification_service.dart';
 import '../widgets/bengo_avatar.dart';
 import '../screens/friends/friends_screen.dart';
 import '../screens/leaderboard/leaderboard_screen.dart';
+import '../screens/profile/profile_screen.dart';
 
 // ── Tokens ────────────────────────────────────────────────────────────────────
 const _kAccent = Color(0xFFC41230);
@@ -97,8 +98,18 @@ class _BenGoHeaderState extends State<BenGoHeader>
                     ),
                     const SizedBox(width: 12),
                     _HeaderStats(streak: streak, xp: xp),
-                  ] else ...[  
-                    BenGoAvatar(avatarId: avatarId, size: 42, showRing: true),
+                  ] else ...[
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const ProfileScreen()),
+                      ),
+                      child: BenGoAvatar(
+                        avatarId: avatarId,
+                        size: 42,
+                        showRing: true,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     _HeaderStats(streak: streak, xp: xp),
                   ],
@@ -339,7 +350,8 @@ class _FriendsIconBtnState extends State<_FriendsIconBtn>
       TweenSequenceItem(tween: Tween<double>(begin: 1.3, end: 1.0), weight: 70),
     ]).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutBack));
 
-    NotificationService.instance.newRequestAnimationTrigger.addListener(_onNewRequest);
+    NotificationService.instance.newRequestAnimationTrigger
+        .addListener(_onNewRequest);
   }
 
   void _onNewRequest() {
@@ -350,7 +362,8 @@ class _FriendsIconBtnState extends State<_FriendsIconBtn>
 
   @override
   void dispose() {
-    NotificationService.instance.newRequestAnimationTrigger.removeListener(_onNewRequest);
+    NotificationService.instance.newRequestAnimationTrigger
+        .removeListener(_onNewRequest);
     _animCtrl.dispose();
     super.dispose();
   }
@@ -392,7 +405,8 @@ class _FriendsIconBtnState extends State<_FriendsIconBtn>
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            const Icon(Icons.people_alt_rounded, size: 18, color: _kMuted),
+                            const Icon(Icons.people_alt_rounded,
+                                size: 18, color: _kMuted),
                             if (pendingCount > 0)
                               Positioned(
                                 top: 6,
@@ -414,7 +428,7 @@ class _FriendsIconBtnState extends State<_FriendsIconBtn>
                 ),
               ),
             ),
-            
+
             // Floating "+1" animated text
             AnimatedBuilder(
               animation: _animCtrl,
@@ -425,7 +439,8 @@ class _FriendsIconBtnState extends State<_FriendsIconBtn>
                   child: Opacity(
                     opacity: _opacity.value,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: _kAccent,
                         borderRadius: BorderRadius.circular(8),

@@ -109,4 +109,33 @@ export const getAnnouncements = () => api.get('/announcements/');
 export const createAnnouncement = d => api.post('/announcements/', d);
 export const updateAnnouncement = (id, d) => api.patch(`/announcements/${id}/`, d);
 
+// ── RolePlay: Admin Stories ─────────────────────────────────────────────────
+export const rpAdminGetStories    = ()      => api.get('/roleplay/admin/stories/');
+export const rpAdminGetStory      = id      => api.get(`/roleplay/admin/stories/${id}/`);
+export const rpAdminUpdateStory   = (id, d) => api.patch(`/roleplay/admin/stories/${id}/`, d);
+export const rpAdminDeleteStory   = id      => api.delete(`/roleplay/admin/stories/${id}/`);
+export const rpAdminDownloadTemplate = ()   => api.get('/roleplay/admin/stories/template/', { responseType: 'blob' });
+export const rpAdminImportExcel = file => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/roleplay/admin/stories/import/', fd);
+};
+
+// ── RolePlay: Public ────────────────────────────────────────────────────────
+export const rpGetStories  = ()   => api.get('/roleplay/stories/');
+export const rpGetStory    = id   => api.get(`/roleplay/stories/${id}/`);
+
+// ── RolePlay: Rooms ─────────────────────────────────────────────────────────
+export const rpGetRooms         = params => api.get('/roleplay/rooms/', { params });
+export const rpCreateRoom       = d      => api.post('/roleplay/rooms/', d);
+export const rpGetRoom          = code   => api.get(`/roleplay/rooms/${code}/`);
+export const rpJoinRoom         = code   => api.post(`/roleplay/rooms/${code}/join/`);
+export const rpSpinRoom         = code   => api.post(`/roleplay/rooms/${code}/spin/`);
+export const rpSelectCharacter  = (code, charId) => api.post(`/roleplay/rooms/${code}/select-character/`, { character_id: charId });
+export const rpSubmitLine       = (code, d)       => api.post(`/roleplay/rooms/${code}/submit-line/`, d);
+
+// ── RolePlay: History ───────────────────────────────────────────────────────
+export const rpGetHistory = () => api.get('/roleplay/history/');
+
 export default api;
+

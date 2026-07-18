@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'apps.certificates',
     'apps.teams',
     'apps.announcements',
+    'apps.roleplay',
 ]
 
 MIDDLEWARE = [
