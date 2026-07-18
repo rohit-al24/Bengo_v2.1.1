@@ -1,17 +1,41 @@
 import React, { useEffect, useState } from 'react';
-import { allUsers, assignRole } from '../api/client';
+import { me, allUsers, assignRole } from '../api/client';
 
 export default function UserManagement() {
-  const [users,   setUsers]   = useState([]);
+  const [allUsersList, setAllUsers] = useState([]);
+  const [isInstitutionAdmin, setIsInstitutionAdmin] = useState(false);
+  const [institutionId, setInstitutionId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [modal,   setModal]   = useState(null);  // user to assign role to
+  const [modal,   setModal]   = useState(null);
   const [role,    setRole]    = useState('admin');
   const [msg,     setMsg]     = useState('');
 
   const load = () => {
     setLoading(true);
-    allUsers().then(r => setUsers(r.data)).finally(() => setLoading(false));
+    me().then(r => {
+      const roles = (r.data?.roles || []).map(x => x.name || x);
+      setIsInstitutionAdmin(roles.includes('institutional_admin'));
+      setInstitutionId(r.data?.institution_id);
+    }).catch(()=>{});
+    
+    allUsers().then(r => setAllUsers(r.data)).finally(() => setLoading(false));
   };
+  
+  const getDisplayUsers = () => {
+    let display = allUsersList;
+    if (isInstitutionAdmin && institutionId) {
+      display = display.filter(u => u.institution_id === institutionId);
+    }
+    return display.filter(u => {
+      const hasRelevantRole = u.roles?.some(r => 
+        r.name === 'user' || r.name === 'mentor' || r.name === 'institutional_admin'
+      );
+      return hasRelevantRole;
+    });
+  };
+  
+  const users = getDisplayUsers();
+  
   useEffect(() => { load(); }, []);
 
   const assign = async () => {
