@@ -121,6 +121,18 @@ class InstitutionMentorsView(APIView):
 class MentorAssignmentView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, institution_id):
+        try:
+            institution = Institution.objects.get(pk=institution_id)
+        except Institution.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if not (request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == institution.id)):
+            return Response({'detail': 'Forbidden.'}, status=403)
+
+        assignments = MentorAssignment.objects.filter(institution=institution).select_related('mentor', 'student').order_by('assigned_at')
+        return Response(MentorAssignmentSerializer(assignments, many=True).data)
+
     def post(self, request, institution_id):
         student_id = request.data.get('student_id')
         mentor_id = request.data.get('mentor_id')

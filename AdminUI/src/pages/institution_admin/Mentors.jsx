@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { me, getInstitutionMentors, register, updateUser, deleteUser, resetUserPassword } from '../../api/client';
+import { me, getInstitutionMentors, getInstitutionAssignments, register, updateUser, deleteUser, resetUserPassword } from '../../api/client';
 import * as XLSX from 'xlsx';
 
 function downloadCSV(rows, filename = 'mentors-template.csv'){
@@ -15,6 +15,9 @@ export default function Mentors(){
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [assignments, setAssignments] = useState([]);
+  const [editingMentor, setEditingMentor] = useState(null);
+  const [editForm, setEditForm] = useState({ username: '', email: '', first_name: '', last_name: '' });
   const [formData, setFormData] = useState({ username: '', email: '', first_name: '', last_name: '', password: '' });
 
   const load = async () => {
@@ -24,10 +27,15 @@ export default function Mentors(){
       setUser(u);
       const institutionId = u.institution || u.institution_id;
       if (institutionId) {
-        const { data } = await getInstitutionMentors(institutionId);
-        setMentors(Array.isArray(data) ? data : []);
+        const [{ data: mentorData }, { data: assignmentData }] = await Promise.all([
+          getInstitutionMentors(institutionId),
+          getInstitutionAssignments(institutionId),
+        ]);
+        setMentors(Array.isArray(mentorData) ? mentorData : []);
+        setAssignments(Array.isArray(assignmentData) ? assignmentData : []);
       } else {
         setMentors([]);
+        setAssignments([]);
       }
     }catch(e){ setMsg('❌ Failed to load mentors'); }
     setLoading(false);
@@ -92,13 +100,29 @@ export default function Mentors(){
     }
   };
 
-  const handleEdit = async (m) => {
-    const username = prompt('Username', m.username) || m.username;
-    const first_name = prompt('First name', m.first_name || '') || m.first_name;
-    const last_name = prompt('Last name', m.last_name || '') || m.last_name;
+  const openEditMentor = (m) => {
+    setEditingMentor(m);
+    setEditForm({
+      username: m.username || '',
+      email: m.email || '',
+      first_name: m.first_name || '',
+      last_name: m.last_name || '',
+    });
+  };
+
+  const handleEditMentorSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingMentor) return;
     try{
-      await updateUser(m.id, { username, first_name, last_name });
-      setMsg('✅ Updated'); load();
+      await updateUser(editingMentor.id, {
+        username: editForm.username,
+        email: editForm.email,
+        first_name: editForm.first_name,
+        last_name: editForm.last_name,
+      });
+      setMsg('✅ Updated');
+      setEditingMentor(null);
+      load();
     }catch(e){ setMsg('❌ ' + JSON.stringify(e.response?.data || e.message)); }
   };
 
@@ -172,24 +196,55 @@ export default function Mentors(){
         </div>
       )}
 
+      {editingMentor && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ padding: 24, maxWidth: 420, width: '90%' }}>
+            <h3>Edit Mentor</h3>
+            <form onSubmit={handleEditMentorSubmit} style={{ marginTop: 16, display: 'grid', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>Email</label>
+                <input type="email" value={editForm.email} onChange={e=>setEditForm({...editForm, email:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>Username</label>
+                <input type="text" value={editForm.username} onChange={e=>setEditForm({...editForm, username:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>First Name</label>
+                <input type="text" value={editForm.first_name} onChange={e=>setEditForm({...editForm, first_name:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>Last Name</label>
+                <input type="text" value={editForm.last_name} onChange={e=>setEditForm({...editForm, last_name:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save</button>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={()=>setEditingMentor(null)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Actions</th></tr></thead>
+          <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Entries</th><th>Actions</th></tr></thead>
           <tbody>
-            {loading && <tr><td colSpan={4} style={{textAlign:'center'}}>Loading…</td></tr>}
+            {loading && <tr><td colSpan={5} style={{textAlign:'center'}}>Loading…</td></tr>}
             {!loading && mentors.map((s,i)=> (
               <tr key={s.id}>
                 <td>{i+1}</td>
                 <td>{s.username}</td>
                 <td>{s.email}</td>
+                <td>{(assignments || []).filter(a => String(a.mentor) === String(s.id)).length}</td>
                 <td style={{ display:'flex', gap:6 }}>
-                  <button className="btn btn-secondary btn-sm" onClick={()=>handleEdit(s)}>Edit</button>
+                  <button className="btn btn-secondary btn-sm" onClick={()=>openEditMentor(s)}>Edit</button>
                   <button className="btn btn-warning btn-sm" onClick={()=>handleReset(s)}>Reset</button>
                   <button className="btn btn-danger btn-sm" onClick={()=>handleRemove(s)}>Remove</button>
                 </td>
               </tr>
             ))}
-            {!loading && mentors.length===0 && <tr><td colSpan={4} style={{textAlign:'center'}}>No mentors.</td></tr>}
+            {!loading && mentors.length===0 && <tr><td colSpan={5} style={{textAlign:'center'}}>No mentors.</td></tr>}
           </tbody>
         </table>
       </div>

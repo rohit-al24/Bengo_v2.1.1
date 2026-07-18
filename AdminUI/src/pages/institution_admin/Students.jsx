@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { me, getInstitutionStudents, register, updateUser, deleteUser, resetUserPassword } from '../../api/client';
+import { me, getInstitutionStudents, getInstitutionMentors, getInstitutionAssignments, register, updateUser, deleteUser, resetUserPassword, assignMentor, deleteMentorAssignment } from '../../api/client';
 import * as XLSX from 'xlsx';
 
 function downloadCSV(rows, filename = 'students-template.csv'){
@@ -15,6 +15,10 @@ export default function Students(){
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [mentors, setMentors] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editForm, setEditForm] = useState({ username: '', email: '', first_name: '', last_name: '', institutional_registration_number: '' });
   const [formData, setFormData] = useState({ username: '', email: '', first_name: '', last_name: '', institutional_registration_number: '', password: '' });
 
   const load = async () => {
@@ -24,12 +28,21 @@ export default function Students(){
       setUser(u);
       const institutionId = u.institution || u.institution_id;
       if (institutionId) {
-        const { data } = await getInstitutionStudents(institutionId);
-        // Filter users with 'user' role (students)
-        const studentsList = Array.isArray(data) ? data.filter(s => s.roles?.some(r => r.name === 'user')) : [];
+        const [{ data: studentData }, { data: mentorData }, { data: assignmentData }] = await Promise.all([
+          getInstitutionStudents(institutionId),
+          getInstitutionMentors(institutionId),
+          getInstitutionAssignments(institutionId),
+        ]);
+        const studentsList = Array.isArray(studentData)
+          ? studentData.filter(s => s.roles?.some(r => r === 'user' || r?.name === 'user'))
+          : [];
         setStudents(studentsList);
+        setMentors(Array.isArray(mentorData) ? mentorData : []);
+        setAssignments(Array.isArray(assignmentData) ? assignmentData : []);
       } else {
         setStudents([]);
+        setMentors([]);
+        setAssignments([]);
       }
     }catch(e){ setMsg('❌ Failed to load students'); }
     setLoading(false);
@@ -95,14 +108,51 @@ export default function Students(){
     }
   };
 
-  const handleEdit = async (s) => {
-    const username = prompt('Username', s.username) || s.username;
-    const first_name = prompt('First name', s.first_name || '') || s.first_name;
-    const last_name = prompt('Last name', s.last_name || '') || s.last_name;
+  const openEditStudent = (s) => {
+    setEditingStudent(s);
+    setEditForm({
+      username: s.username || '',
+      email: s.email || '',
+      first_name: s.first_name || '',
+      last_name: s.last_name || '',
+      institutional_registration_number: s.institutional_registration_number || '',
+    });
+  };
+
+  const handleEditStudentSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingStudent) return;
     try{
-      await updateUser(s.id, { username, first_name, last_name });
-      setMsg('✅ Updated'); load();
+      await updateUser(editingStudent.id, {
+        username: editForm.username,
+        email: editForm.email,
+        first_name: editForm.first_name,
+        last_name: editForm.last_name,
+        institutional_registration_number: editForm.institutional_registration_number,
+      });
+      setMsg('✅ Updated');
+      setEditingStudent(null);
+      load();
     }catch(e){ setMsg('❌ ' + JSON.stringify(e.response?.data || e.message)); }
+  };
+
+  const handleMentorAssignmentChange = async (student, mentorId) => {
+    const currentAssignment = assignments.find(a => String(a.student) === String(student.id));
+    try {
+      if (!mentorId) {
+        if (currentAssignment?.id) {
+          await deleteMentorAssignment(currentAssignment.id);
+          setAssignments(prev => prev.filter(a => a.id !== currentAssignment.id));
+        }
+        setMsg('✅ Mentor removed');
+        return;
+      }
+      await assignMentor(user?.institution || user?.institution_id, student.id, mentorId);
+      setMsg('✅ Mentor updated');
+      await load();
+    } catch (e) {
+      setMsg('❌ ' + JSON.stringify(e.response?.data || e.message));
+    }
   };
 
   const handleRemove = async (s) => {
@@ -127,6 +177,8 @@ export default function Students(){
       load();
     }catch(e){ setMsg('❌ ' + JSON.stringify(e.response?.data || e.message)); }
   };
+
+  const assignmentByStudent = Object.fromEntries((assignments || []).map(a => [String(a.student), a]));
 
   return (
     <div>
@@ -179,25 +231,69 @@ export default function Students(){
         </div>
       )}
 
+      {editingStudent && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ padding: 24, maxWidth: 420, width: '90%' }}>
+            <h3>Edit Student</h3>
+            <form onSubmit={handleEditStudentSubmit} style={{ marginTop: 16, display: 'grid', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>Email</label>
+                <input type="email" value={editForm.email} onChange={e=>setEditForm({...editForm, email:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>Username</label>
+                <input type="text" value={editForm.username} onChange={e=>setEditForm({...editForm, username:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>First Name</label>
+                <input type="text" value={editForm.first_name} onChange={e=>setEditForm({...editForm, first_name:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>Last Name</label>
+                <input type="text" value={editForm.last_name} onChange={e=>setEditForm({...editForm, last_name:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>Registration #</label>
+                <input type="text" value={editForm.institutional_registration_number} onChange={e=>setEditForm({...editForm, institutional_registration_number:e.target.value})} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save</button>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={()=>setEditingStudent(null)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Reg#</th><th>Actions</th></tr></thead>
+          <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Reg#</th><th>Mentor</th><th>Actions</th></tr></thead>
           <tbody>
-            {loading && <tr><td colSpan={5} style={{textAlign:'center'}}>Loading…</td></tr>}
+            {loading && <tr><td colSpan={6} style={{textAlign:'center'}}>Loading…</td></tr>}
             {!loading && students.map((s,i)=> (
               <tr key={s.id}>
                 <td>{i+1}</td>
                 <td>{s.username}</td>
                 <td>{s.email}</td>
                 <td>{s.institutional_registration_number||'-'}</td>
+                <td>
+                  <select
+                    value={assignmentByStudent[String(s.id)]?.mentor || ''}
+                    onChange={(e)=>handleMentorAssignmentChange(s, e.target.value)}
+                    style={{ padding: 6, borderRadius: 4, border: '1px solid #ccc', minWidth: 140 }}
+                  >
+                    <option value="">Unassigned</option>
+                    {mentors.map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
+                  </select>
+                </td>
                 <td style={{ display:'flex', gap:6 }}>
-                  <button className="btn btn-secondary btn-sm" onClick={()=>handleEdit(s)}>Edit</button>
+                  <button className="btn btn-secondary btn-sm" onClick={()=>openEditStudent(s)}>Edit</button>
                   <button className="btn btn-warning btn-sm" onClick={()=>handleReset(s)}>Reset</button>
                   <button className="btn btn-danger btn-sm" onClick={()=>handleRemove(s)}>Remove</button>
                 </td>
               </tr>
             ))}
-            {!loading && students.length===0 && <tr><td colSpan={5} style={{textAlign:'center'}}>No students.</td></tr>}
+            {!loading && students.length===0 && <tr><td colSpan={6} style={{textAlign:'center'}}>No students.</td></tr>}
           </tbody>
         </table>
       </div>
