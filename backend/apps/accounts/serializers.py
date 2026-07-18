@@ -54,13 +54,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     institutional_registration_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     password = serializers.CharField(write_only=True, min_length=6)
     password2 = serializers.CharField(write_only=True)
+    skip_email_verification = serializers.BooleanField(required=False, default=False, write_only=True)
 
     class Meta:
         model = User
         fields = [
             'username', 'email', 'password', 'password2',
             'first_name', 'last_name', 'preferred_level', 'learning_goal', 'avatar_id',
-            'institution_id', 'institutional_registration_number',
+            'institution_id', 'institutional_registration_number', 'skip_email_verification',
         ]
 
     def validate(self, data):
@@ -73,13 +74,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         if User.objects.filter(username__iexact=data['username']).exists():
             raise serializers.ValidationError({'username': 'That username is already taken.'})
 
-        verified = EmailVerification.objects.filter(
-            email__iexact=data['email'], verified=True
-        ).order_by('-created_at').first()
-        if not verified or verified.is_expired:
-            raise serializers.ValidationError({
-                'email': 'Please verify your email before completing registration.'
-            })
+        request = self.context.get('request')
+        is_admin_create = bool(
+            request and request.user and request.user.is_authenticated and
+            (request.user.is_admin or request.user.is_institutional_admin)
+        )
+        skip_email_verification = data.pop('skip_email_verification', False) or is_admin_create
+
+        if not skip_email_verification:
+            verified = EmailVerification.objects.filter(
+                email__iexact=data['email'], verified=True
+            ).order_by('-created_at').first()
+            if not verified or verified.is_expired:
+                raise serializers.ValidationError({
+                    'email': 'Please verify your email before completing registration.'
+                })
         return data
 
     def create(self, validated_data):

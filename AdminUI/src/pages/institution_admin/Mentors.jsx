@@ -52,7 +52,9 @@ export default function Mentors(){
           first_name: (row.first_name || row.First_Name || '').trim() || '',
           last_name: (row.last_name || row.Last_Name || '').trim() || '',
           password: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
+          password2: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
           institution_id: user?.institution_id,
+          skip_email_verification: true,
         };
         try{
           await register(payload);
@@ -73,6 +75,7 @@ export default function Mentors(){
         ...formData,
         institution_id: user?.institution_id,
         password2: formData.password,
+        skip_email_verification: true,
       };
       await register(payload);
       setMsg('✅ Mentor added');

@@ -54,8 +54,10 @@ export default function Students(){
           first_name: (row.first_name || row.First_Name || '').trim() || '',
           last_name: (row.last_name || row.Last_Name || '').trim() || '',
           password: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
+          password2: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
           institution_id: user?.institution_id,
           institutional_registration_number: (row.registration_number || row.Registration_Number || row.reg_number || '').trim(),
+          skip_email_verification: true,
         };
         try{
           await register(payload);
@@ -76,6 +78,7 @@ export default function Students(){
         ...formData,
         institution_id: user?.institution_id,
         password2: formData.password,
+        skip_email_verification: true,
       };
       await register(payload);
       setMsg('✅ Student added');
