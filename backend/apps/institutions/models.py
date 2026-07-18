@@ -6,6 +6,9 @@ class Institution(models.Model):
     code = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
+    approval_required = models.BooleanField(default=False)
+    mentor_assign_enabled = models.BooleanField(default=False)
+    mentor_change_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

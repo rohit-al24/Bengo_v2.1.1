@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/api_service.dart';
+import '../main_shell.dart';
 import 'login_screen.dart';
 
 // ── Tokens ────────────────────────────────────────────────────────────────────
@@ -94,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Phase transition
     _timer = Timer(const Duration(milliseconds: _kPhase1Ms), _startPhase2);
-    Timer(const Duration(milliseconds: _kTotalMs), _goToLogin);
+    Timer(const Duration(milliseconds: _kTotalMs), _checkExistingToken);
   }
 
   Animation<double> _intervalFade(AnimationController ctrl, double b, double e) {
@@ -119,7 +122,7 @@ class _SplashScreenState extends State<SplashScreen>
     _contentCtrl.forward();
   }
 
-  void _goToLogin() {
+  Future<void> _goToLogin() async {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
@@ -130,6 +133,35 @@ class _SplashScreenState extends State<SplashScreen>
         transitionDuration: const Duration(milliseconds: 500),
       ),
     );
+  }
+
+  Future<void> _checkExistingToken() async {
+    if (!mounted) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      if (token != null && token.isNotEmpty) {
+        try {
+          await ApiService.instance.getMe();
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              PageRouteBuilder(
+                pageBuilder: (_, a, __) => const MainShell(),
+                transitionsBuilder: (_, anim, __, child) {
+                  return FadeTransition(opacity: anim, child: child);
+                },
+                transitionDuration: const Duration(milliseconds: 500),
+              ),
+            );
+          }
+          return;
+        } catch (_) {
+          await prefs.remove('access_token');
+          await prefs.remove('refresh_token');
+        }
+      }
+    } catch (_) {}
+    await _goToLogin();
   }
 
   @override

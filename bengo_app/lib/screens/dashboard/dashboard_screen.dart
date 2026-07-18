@@ -146,6 +146,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final username = (u['username'] ?? '').toString().trim();
         final displayName = firstName.isNotEmpty ? firstName : (username.isNotEmpty ? username : 'Samurai');
         final avatarId = u['avatar_id']?.toString() ?? 'a1';
+        final institutionSettings = u['institution_settings'] as Map<String, dynamic>?;
+        final waitingApproval = (u['is_approved'] as bool? ?? true) == false &&
+            u['institution'] != null &&
+            institutionSettings?['approval_required'] == true;
+
+        if (waitingApproval) {
+          return Scaffold(
+            body: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFAF8F5), Color(0xFFF8F5FF), Color(0xFFFFF5F7)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.0, 0.55, 1.0],
+                ),
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.lock_outline_rounded, size: 72, color: Color(0xFFC41230)),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Waiting for institution approval',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: _kInk),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Your institution administrator must approve your account before the dashboard is available.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(fontSize: 15, color: _kMuted, height: 1.5),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'If you think this is a mistake, contact your institution admin directly.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(fontSize: 13, color: _kMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
 
         return Scaffold(
           body: Container(

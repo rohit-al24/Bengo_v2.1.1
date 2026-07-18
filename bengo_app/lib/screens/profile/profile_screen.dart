@@ -6,6 +6,7 @@ import '../../services/api_service.dart';
 import '../../widgets/bengo_avatar.dart';
 import '../../widgets/bengo_header.dart';
 import '../friends/friends_screen.dart';
+import '../auth/login_screen.dart';
 
 // ── Tokens ────────────────────────────────────────────────────────────────────
 const _kAccent = Color(0xFFC41230);
@@ -135,6 +136,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
 
+                    // ── Institution + Mentor row ──────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        child: Builder(builder: (_) {
+                          final instName = (u['institution_name'] ?? '')?.toString() ?? '';
+
+                          // mentor may be provided as mentor_name, a map, or scalar
+                          String mentorName = '';
+                          if (u['mentor_name'] != null) {
+                            mentorName = u['mentor_name'].toString();
+                          } else {
+                            final mentor = u['mentor'];
+                            if (mentor is Map) {
+                              mentorName = (mentor['username'] ?? mentor['name'] ?? '').toString();
+                            } else if (mentor is String) {
+                              mentorName = mentor;
+                            }
+                          }
+
+                          final instSettings = u['institution_settings'] as Map<String, dynamic>?;
+                          final mentorAssignEnabled = instSettings?['mentor_assign_enabled'] == true;
+                          final mentorChangeEnabled = instSettings?['mentor_change_enabled'] == true;
+                          final canChangeMentor = mentorAssignEnabled || (mentorChangeEnabled && mentorName.isNotEmpty);
+
+                          if (instName.isEmpty) return const SizedBox.shrink();
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: const Color(0xFFEDE8F8)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextButton(
+                                    onPressed: () {},
+                                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                                    child: Text(
+                                      instName,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: GoogleFonts.inter(fontSize: 14, color: _kInk, fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        mentorName.isNotEmpty ? mentorName : 'No mentor assigned',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          color: mentorName.isNotEmpty ? _kMuted : const Color(0xFF8A8A8A),
+                                          fontStyle: mentorName.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                                        ),
+                                      ),
+                                      if (canChangeMentor)
+                                        TextButton(
+                                          onPressed: () => _showMentorPicker(context, u),
+                                          style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+                                          child: Text('Change mentor', style: GoogleFonts.inter(fontSize: 12, color: _kAccent)),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+
                     // ── Membership card ──────────────────────────────────────
                     SliverToBoxAdapter(
                       child: Padding(
@@ -154,11 +233,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // ── Friends button ───────────────────────────────────────
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 40),
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                         child: _FriendsButton(
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (_) => const FriendsScreen()),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ── Logout button ────────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 40),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              await ApiService.instance.clearTokens();
+                              if (mounted) {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                  (_) => false,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.logout_rounded),
+                            label: const Text('Logout'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFDC2626),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
                           ),
                         ),
                       ),
@@ -185,6 +291,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _loadProfile();
         },
       ),
+    );
+  }
+
+  Future<void> _showMentorPicker(BuildContext context, Map<String, dynamic> user) async {
+    final institutionValue = user['institution'];
+    final institutionId = institutionValue is Map
+        ? institutionValue['id']
+        : institutionValue;
+    if (institutionId == null) return;
+
+    late final List<dynamic> mentors;
+    try {
+      mentors = await ApiService.instance.fetchInstitutionMentors(int.parse(institutionId.toString()));
+    } catch (_) {
+      return;
+    }
+
+    int? selectedMentorId;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Choose mentor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 12),
+                  if (mentors.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Text('No mentors are available for your institution.', style: GoogleFonts.inter(color: _kMuted)),
+                    )
+                  else
+                    ...mentors.map((mentor) {
+                      final mentorId = mentor['id'] as int?;
+                      final mentorLabel = mentor['username'] ?? mentor['email'] ?? 'Mentor';
+                      return ListTile(
+                        title: Text(mentorLabel.toString()),
+                        trailing: selectedMentorId == mentorId ? const Icon(Icons.check_circle, color: _kAccent) : null,
+                        onTap: () {
+                          setState(() {
+                            selectedMentorId = mentorId;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: selectedMentorId == null
+                              ? null
+                              : () async {
+                                  try {
+                                    await ApiService.instance.assignMentor(
+                                      institutionId: int.parse(institutionId.toString()),
+                                      studentId: user['id'] as int,
+                                      mentorId: selectedMentorId!,
+                                    );
+                                    Navigator.of(context).pop();
+                                    _loadProfile();
+                                  } catch (_) {
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(backgroundColor: _kAccent),
+                          child: Text('Save mentor', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

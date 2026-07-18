@@ -8,7 +8,11 @@ from .models import Institution, MentorAssignment
 class InstitutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Institution
-        fields = ['id', 'code', 'name', 'is_active', 'created_at']
+        fields = [
+            'id', 'code', 'name', 'is_active',
+            'approval_required', 'mentor_assign_enabled', 'mentor_change_enabled',
+            'created_at'
+        ]
 
 
 class InstitutionImportSerializer(serializers.Serializer):

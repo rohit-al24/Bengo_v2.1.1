@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from apps.institutions.models import MentorAssignment
 from .models import User, Role, UserRole, EmailVerification, StudentProfile
 
 
@@ -12,15 +13,35 @@ class RoleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     roles = RoleSerializer(many=True, read_only=True)
+    institution_name = serializers.SerializerMethodField(read_only=True)
+    mentor_name = serializers.SerializerMethodField(read_only=True)
+    institution_settings = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'avatar',
             'avatar_id', 'xp', 'streak_days', 'last_study_date', 'institution',
+            'institution_name', 'institution_settings', 'is_approved',
             'preferred_level', 'learning_goal', 'roles', 'date_joined'
         ]
         read_only_fields = ['id', 'date_joined']
+
+    def get_institution_name(self, obj):
+        return obj.institution.name if obj.institution else None
+
+    def get_institution_settings(self, obj):
+        if not obj.institution:
+            return None
+        return {
+            'approval_required': obj.institution.approval_required,
+            'mentor_assign_enabled': obj.institution.mentor_assign_enabled,
+            'mentor_change_enabled': obj.institution.mentor_change_enabled,
+        }
+
+    def get_mentor_name(self, obj):
+        assignment = MentorAssignment.objects.filter(student=obj).order_by('-assigned_at').select_related('mentor').first()
+        return assignment.mentor.username if assignment and assignment.mentor else None
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -81,12 +102,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.preferred_level = preferred_level
         user.learning_goal = learning_goal
         user.avatar_id = avatar_id
+        institution = None
         if institution_id:
             from apps.institutions.models import Institution
-            try:
-                user.institution_id = institution_id
-            except Exception:
-                pass
             try:
                 institution = Institution.objects.get(id=institution_id)
                 user.institution = institution
@@ -94,6 +112,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 pass
         if institutional_registration_number:
             user.institutional_registration_number = institutional_registration_number
+        if institution and institution.approval_required and institutional_registration_number:
+            user.is_approved = False
         user.save()
 
         profile, _ = StudentProfile.objects.get_or_create(user=user)

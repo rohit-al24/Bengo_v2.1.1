@@ -9,6 +9,11 @@ import CategoryDetail  from './pages/CourseEditor/CategoryDetail';
 import LessonEditor    from './pages/CourseEditor/LessonEditor';
 import QuestionBank    from './pages/CourseEditor/QuestionBank';
 import UserManagement  from './pages/UserManagement';
+import Institutions     from './pages/Institutions';
+import InstitutionDetail from './pages/InstitutionDetail';
+import InstAdminStudents from './pages/institution_admin/Students';
+import InstAdminMentors  from './pages/institution_admin/Mentors';
+import InstAdminAuth     from './pages/institution_admin/Authentications';
 import RankExamList    from './pages/Ranks/RankExamList';
 import ExamRankDetail  from './pages/Ranks/ExamRankDetail';
 import XPConfigPage    from './pages/Ranks/XPConfigPage';
@@ -38,6 +43,12 @@ export default function App() {
           <Route path="courses/:examId/categories/:catId/lessons/:lessonId/banks" element={<QuestionBank />} />
           {/* Users */}
           <Route path="users" element={<UserManagement />} />
+          <Route path="institutions" element={<Institutions />} />
+          <Route path="institutions/:id" element={<InstitutionDetail />} />
+          {/* Institution-admin specific pages */}
+          <Route path="institution-admin/students" element={<InstAdminStudents />} />
+          <Route path="institution-admin/mentors" element={<InstAdminMentors />} />
+          <Route path="institution-admin/auth" element={<InstAdminAuth />} />
           {/* Ranks */}
           <Route path="ranks" element={<RankExamList />} />
           <Route path="ranks/:examId" element={<ExamRankDetail />} />

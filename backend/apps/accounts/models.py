@@ -34,6 +34,7 @@ class User(AbstractUser):
     daily_revision_completed_at = models.DateTimeField(null=True, blank=True)
     institution     = models.ForeignKey('institutions.Institution', null=True, blank=True, on_delete=models.SET_NULL, related_name='users')
     institutional_registration_number = models.CharField(max_length=100, blank=True, null=True)
+    is_approved     = models.BooleanField(default=True)
     preferred_level = models.CharField(max_length=100, blank=True, null=True)
     learning_goal   = models.CharField(max_length=120, blank=True, null=True)
     roles           = models.ManyToManyField(Role, through='UserRole', related_name='users')

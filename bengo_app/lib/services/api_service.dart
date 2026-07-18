@@ -184,22 +184,30 @@ class ApiService {
           ? '/institutions/?search=$search'
           : '/institutions/';
       final res = await _req('GET', url);
-      final data = _decode(res);
-      print('DEBUG: API response for institutions: $data');
-      if (data is List) {
-        print('DEBUG: Direct list response, length: ${data.length}');
-        return data;
-      } else if (data is Map) {
-        final results = data['results'] ?? [];
-        print('DEBUG: Wrapped response, results length: ${results.length}');
-        return results;
-      }
-      print('DEBUG: Unexpected response format: $data');
-      return [];
+      final data = _decodeList(res);
+      print('DEBUG: Fetched ${data.length} institutions');
+      return data;
     } catch (e) {
       print('DEBUG: Exception in fetchInstitutions: $e');
       rethrow;
     }
+  }
+
+  Future<List<dynamic>> fetchInstitutionMentors(int institutionId) async {
+    final res = await _req('GET', '/institutions/$institutionId/mentors/');
+    return _decodeList(res);
+  }
+
+  Future<Map<String, dynamic>> assignMentor({
+    required int institutionId,
+    required int studentId,
+    required int mentorId,
+  }) async {
+    final res = await _req('POST', '/institutions/$institutionId/assignments/', body: {
+      'student_id': studentId,
+      'mentor_id': mentorId,
+    });
+    return _decode(res);
   }
 
   Future<Map<String, dynamic>> sendVerificationCode({

@@ -46,6 +46,29 @@ class InstitutionDetailView(APIView):
             return Response({'detail': 'Not found.'}, status=404)
         return Response(InstitutionSerializer(institution).data)
 
+    def patch(self, request, pk):
+        try:
+            institution = Institution.objects.get(pk=pk)
+        except Institution.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if not (request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == institution.id)):
+            return Response({'detail': 'Forbidden.'}, status=403)
+
+        data = request.data
+        if 'name' in data:
+            institution.name = data.get('name') or institution.name
+        if 'is_active' in data:
+            institution.is_active = bool(data.get('is_active'))
+        if 'approval_required' in data:
+            institution.approval_required = bool(data.get('approval_required'))
+        if 'mentor_assign_enabled' in data:
+            institution.mentor_assign_enabled = bool(data.get('mentor_assign_enabled'))
+        if 'mentor_change_enabled' in data:
+            institution.mentor_change_enabled = bool(data.get('mentor_change_enabled'))
+        institution.save()
+        return Response(InstitutionSerializer(institution).data)
+
 
 class InstitutionStudentsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -65,8 +88,12 @@ class InstitutionStudentsView(APIView):
             payload.append({
                 'id': user.id,
                 'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
                 'email': user.email,
                 'institutional_registration_number': user.institutional_registration_number,
+                'is_approved': user.is_approved,
+                'is_active': user.is_active,
                 'roles': [role.name for role in user.roles.all()],
             })
         return Response(payload)
@@ -95,9 +122,6 @@ class MentorAssignmentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, institution_id):
-        if not (request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == institution_id)):
-            return Response({'detail': 'Forbidden.'}, status=403)
-
         student_id = request.data.get('student_id')
         mentor_id = request.data.get('mentor_id')
         if not student_id or not mentor_id:
@@ -111,6 +135,23 @@ class MentorAssignmentView(APIView):
 
         if student.institution_id != institution_id or mentor.institution_id != institution_id:
             return Response({'detail': 'Mentor and student must belong to the same institution.'}, status=400)
+
+        try:
+            institution = Institution.objects.get(pk=institution_id)
+        except Institution.DoesNotExist:
+            return Response({'detail': 'Institution not found.'}, status=404)
+
+        allowed = request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == institution_id)
+        if not allowed:
+            if request.user.id != student.id:
+                return Response({'detail': 'Forbidden.'}, status=403)
+            if student.institution_id != institution_id:
+                return Response({'detail': 'Forbidden.'}, status=403)
+            current_assignment = MentorAssignment.objects.filter(student=student).order_by('-assigned_at').first()
+            if current_assignment is None and not institution.mentor_assign_enabled:
+                return Response({'detail': 'Mentor self-assignment is disabled.'}, status=403)
+            if current_assignment is not None and not institution.mentor_change_enabled:
+                return Response({'detail': 'Mentor changes are disabled.'}, status=403)
 
         role = Role.objects.get_or_create(name=Role.MENTOR)[0]
         UserRole.objects.get_or_create(user=mentor, role=role)

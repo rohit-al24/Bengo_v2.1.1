@@ -328,3 +328,96 @@ class AdminAssignRoleView(APIView):
             return Response({'detail': f'Role {role.name} assigned.'})
         except (User.DoesNotExist, Role.DoesNotExist) as e:
             return Response({'detail': str(e)}, status=400)
+
+
+class AdminUserDetailView(APIView):
+    """Admin or institutional admin: view, update, delete a user."""
+
+    def get_object(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+
+    def get(self, request, user_id):
+        user = self.get_object(user_id)
+        if user is None:
+            return Response({'detail': 'Not found.'}, status=404)
+        # only admins or institutional admins of same institution
+        if not (request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == user.institution_id)):
+            return Response({'detail': 'Forbidden.'}, status=403)
+        return Response(UserSerializer(user).data)
+
+    def patch(self, request, user_id):
+        user = self.get_object(user_id)
+        if user is None:
+            return Response({'detail': 'Not found.'}, status=404)
+        if not (request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == user.institution_id)):
+            return Response({'detail': 'Forbidden.'}, status=403)
+
+        data = request.data
+        allowed = ['username', 'first_name', 'last_name', 'email']
+        for k in allowed:
+            if k in data:
+                setattr(user, k, data.get(k) or getattr(user, k))
+        if 'is_approved' in data:
+            user.is_approved = bool(data.get('is_approved'))
+        if 'is_active' in data:
+            user.is_active = bool(data.get('is_active'))
+        # institution and registration number can be set by admin
+        if 'institution_id' in data and request.user.is_admin:
+            try:
+                from apps.institutions.models import Institution
+                inst = Institution.objects.get(pk=int(data.get('institution_id')))
+                user.institution = inst
+            except Exception:
+                pass
+        if 'institutional_registration_number' in data:
+            user.institutional_registration_number = data.get('institutional_registration_number')
+            try:
+                profile, _ = StudentProfile.objects.get_or_create(user=user)
+                profile.institutional_registration_number = data.get('institutional_registration_number')
+                profile.save()
+            except Exception:
+                pass
+
+        user.save()
+        return Response(UserSerializer(user).data)
+
+    def delete(self, request, user_id):
+        user = self.get_object(user_id)
+        if user is None:
+            return Response({'detail': 'Not found.'}, status=404)
+        # only admins can delete users; institutional admins may remove students in their institution
+        if not (request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == user.institution_id)):
+            return Response({'detail': 'Forbidden.'}, status=403)
+        user.delete()
+        return Response(status=204)
+
+
+class AdminUserResetPasswordView(APIView):
+    """Admin or institutional admin: reset a user's password."""
+
+    def post(self, request, user_id):
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if not (request.user.is_admin or (request.user.is_institutional_admin and request.user.institution_id == user.institution_id)):
+            return Response({'detail': 'Forbidden.'}, status=403)
+
+        pwd = request.data.get('password')
+        generated = False
+        if not pwd:
+            import random, string
+            pwd = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            generated = True
+
+        user.set_password(pwd)
+        user.save()
+
+        payload = {'detail': 'Password reset.'}
+        if generated:
+            payload['password'] = pwd
+        return Response(payload)

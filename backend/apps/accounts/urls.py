@@ -14,4 +14,6 @@ urlpatterns = [
     path('token/refresh/',      TokenRefreshView.as_view(),          name='token-refresh'),
     path('admin/users/',        views.AdminUserListView.as_view(),   name='admin-users'),
     path('admin/users/<int:user_id>/assign-role/', views.AdminAssignRoleView.as_view(), name='admin-assign-role'),
+    path('admin/users/<int:user_id>/', views.AdminUserDetailView.as_view(), name='admin-user-detail'),
+    path('admin/users/<int:user_id>/reset-password/', views.AdminUserResetPasswordView.as_view(), name='admin-user-reset-password'),
 ]

@@ -36,9 +36,14 @@ api.interceptors.response.use(
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const login    = d => api.post('/auth/login/', d);
 export const me       = ()  => api.get('/auth/me/');
+export const register = d => api.post('/auth/register/', d);
 export const allUsers = ()  => api.get('/auth/admin/users/');
 export const assignRole = (userId, role) =>
   api.post(`/auth/admin/users/${userId}/assign-role/`, { role });
+
+export const updateUser = (userId, d) => api.patch(`/auth/admin/users/${userId}/`, d);
+export const deleteUser = (userId) => api.delete(`/auth/admin/users/${userId}/`);
+export const resetUserPassword = (userId, d) => api.post(`/auth/admin/users/${userId}/reset-password/`, d || {});
 
 // ── Exams ─────────────────────────────────────────────────────────────────────
 export const getAdminExams  = ()     => api.get('/courses/admin/exams/');
@@ -83,5 +88,15 @@ export const importBank = (bankId, file) => {
   fd.append('file', file);
   return api.post(`/courses/admin/banks/${bankId}/import/`, fd);
 };
+
+// ── Institutions ─────────────────────────────────────────────────────────────
+export const getInstitutions = () => api.get('/institutions/');
+export const createInstitution = d => api.post('/institutions/', d);
+export const getInstitution = id => api.get(`/institutions/${id}/`);
+export const updateInstitution = (id, d) => api.patch(`/institutions/${id}/`, d);
+export const getInstitutionStudents = institutionId => api.get(`/institutions/${institutionId}/students/`);
+export const getInstitutionMentors = institutionId => api.get(`/institutions/${institutionId}/mentors/`);
+export const assignMentor = (institutionId, studentId, mentorId) =>
+  api.post(`/institutions/${institutionId}/assignments/`, { student_id: studentId, mentor_id: mentorId });
 
 export default api;
