@@ -36,7 +36,7 @@ class BenGoApp extends StatelessWidget {
           displayColor: const Color(0xFF1A1A2E),
         ),
         scaffoldBackgroundColor: const Color(0xFFF4F7FB),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: const Color(0xFFFFFFFF),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),

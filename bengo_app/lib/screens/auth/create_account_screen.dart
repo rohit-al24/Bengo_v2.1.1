@@ -25,6 +25,7 @@ const _kStepTitles = [
   'Your Avatar',
   'Verify Email',
   'Your Identity',
+  'Select Institution',
 ];
 const _kStepSubtitles = [
   'Tell us a little about yourself',
@@ -32,6 +33,7 @@ const _kStepSubtitles = [
   'Choose your BenGo companion',
   'Confirm your email address',
   'Choose a unique username',
+  'Which institution are you from?',
 ];
 const _kStepIcons = [
   Icons.person_outline_rounded,
@@ -39,6 +41,7 @@ const _kStepIcons = [
   Icons.face_retouching_natural_outlined,
   Icons.mark_email_read_outlined,
   Icons.badge_outlined,
+  Icons.business_outlined,
 ];
 
 class CreateAccountScreen extends StatefulWidget {
@@ -52,7 +55,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     with TickerProviderStateMixin {
   final _pageCtrl = PageController();
   int _currentPage = 0;
-  static const _totalPages = 5;
+  static const _totalPages = 6;
 
   // Stage 1
   final _firstNameCtrl = TextEditingController();
@@ -82,6 +85,15 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
   final _usernameCtrl = TextEditingController();
   bool _isRegistering = false;
 
+  // Stage 6 — Institution Selection
+  List<dynamic> _institutions = [];
+  dynamic _selectedInstitution;
+  final _institutionSearchCtrl = TextEditingController();
+  List<dynamic> _filteredInstitutions = [];
+  bool _showInstitutionDropdown = false;
+  final _regNumberCtrl = TextEditingController();
+  bool _isLoadingInstitutions = false;
+
   // Page transition animation controller
   late final AnimationController _pageAnimCtrl;
 
@@ -107,6 +119,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     _otpCtrl.dispose();
     _otpFocus.dispose();
     _usernameCtrl.dispose();
+    _institutionSearchCtrl.dispose();
+    _regNumberCtrl.dispose();
     super.dispose();
   }
 
@@ -128,6 +142,17 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     }
     if (_currentPage == 3) {
       await _verifyOtp();
+      return;
+    }
+    if (_currentPage == 4) {
+      if (!_validateStage4()) return;
+      // Load institutions before moving to institution stage
+      await _loadInstitutions();
+      if (!mounted) return;
+    }
+    if (_currentPage == 5) {
+      // Complete registration with institution selection
+      await _completeRegistration();
       return;
     }
     if (_currentPage < _totalPages - 1) {
@@ -174,6 +199,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
                 _buildStageAvatar(),
                 _buildStage3(),
                 _buildStage4(),
+                _buildStageInstitution(),
               ],
             ),
           ),
@@ -195,58 +221,67 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[0],
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: _FilledField(
-                  label: 'First name',
-                  controller: _firstNameCtrl,
-                  hint: 'Kenji',
-                ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _FilledField(
+                          label: 'First name',
+                          controller: _firstNameCtrl,
+                          hint: 'Kenji',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _FilledField(
+                          label: 'Last name',
+                          controller: _lastNameCtrl,
+                          hint: 'Tanaka',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  _FilledField(
+                    label: 'Email address',
+                    controller: _emailCtrl,
+                    hint: 'student@bengo.edu',
+                    prefixIcon: Icons.alternate_email_rounded,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 14),
+                  _FilledField(
+                    label: 'Password',
+                    controller: _passwordCtrl,
+                    hint: '••••••••',
+                    prefixIcon: Icons.lock_outline_rounded,
+                    isPassword: true,
+                    obscureText: _obscurePw,
+                    onToggleObscure: () => setState(() => _obscurePw = !_obscurePw),
+                  ),
+                  const SizedBox(height: 14),
+                  _FilledField(
+                    label: 'Confirm password',
+                    controller: _confirmCtrl,
+                    hint: '••••••••',
+                    prefixIcon: Icons.shield_outlined,
+                    isPassword: true,
+                    obscureText: _obscureConfirm,
+                    onToggleObscure: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
+                  if (_errorMsg.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _ErrorBanner(message: _errorMsg),
+                  ],
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _FilledField(
-                  label: 'Last name',
-                  controller: _lastNameCtrl,
-                  hint: 'Tanaka',
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 14),
-          _FilledField(
-            label: 'Email address',
-            controller: _emailCtrl,
-            hint: 'student@bengo.edu',
-            prefixIcon: Icons.alternate_email_rounded,
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 14),
-          _FilledField(
-            label: 'Password',
-            controller: _passwordCtrl,
-            hint: '••••••••',
-            prefixIcon: Icons.lock_outline_rounded,
-            isPassword: true,
-            obscureText: _obscurePw,
-            onToggleObscure: () => setState(() => _obscurePw = !_obscurePw),
-          ),
-          const SizedBox(height: 14),
-          _FilledField(
-            label: 'Confirm password',
-            controller: _confirmCtrl,
-            hint: '••••••••',
-            prefixIcon: Icons.shield_outlined,
-            isPassword: true,
-            obscureText: _obscureConfirm,
-            onToggleObscure: () =>
-                setState(() => _obscureConfirm = !_obscureConfirm),
-          ),
-          if (_errorMsg.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _ErrorBanner(message: _errorMsg),
-          ],
           const SizedBox(height: 28),
           _PillCTA(label: 'Continue', onPressed: _nextPage),
           const SizedBox(height: 32),
@@ -280,37 +315,46 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[1],
           ),
           const SizedBox(height: 24),
-          _SectionLabel(label: 'JLPT Level'),
-          const SizedBox(height: 10),
-          ...levels.map((l) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _LevelTile(
-                  title: l.$1,
-                  subtitle: l.$2,
-                  stars: l.$3,
-                  isSelected: _selectedLevel == l.$1,
-                  onTap: () => setState(() => _selectedLevel = l.$1),
-                ),
-              )),
-          const SizedBox(height: 20),
-          _SectionLabel(label: 'Learning Goal'),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: goals
-                .map((g) => _GoalChip(
-                      label: g.$1,
-                      icon: g.$2,
-                      isSelected: _selectedGoal == g.$1,
-                      onTap: () => setState(() => _selectedGoal = g.$1),
-                    ))
-                .toList(),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionLabel(label: 'JLPT Level'),
+                  const SizedBox(height: 10),
+                  ...levels.map((l) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _LevelTile(
+                          title: l.$1,
+                          subtitle: l.$2,
+                          stars: l.$3,
+                          isSelected: _selectedLevel == l.$1,
+                          onTap: () => setState(() => _selectedLevel = l.$1),
+                        ),
+                      )),
+                  const SizedBox(height: 20),
+                  _SectionLabel(label: 'Learning Goal'),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: goals
+                        .map((g) => _GoalChip(
+                              label: g.$1,
+                              icon: g.$2,
+                              isSelected: _selectedGoal == g.$1,
+                              onTap: () => setState(() => _selectedGoal = g.$1),
+                            ))
+                        .toList(),
+                  ),
+                  if (_errorMsg.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _ErrorBanner(message: _errorMsg),
+                  ],
+                ],
+              ),
+            ),
           ),
-          if (_errorMsg.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _ErrorBanner(message: _errorMsg),
-          ],
           const SizedBox(height: 28),
           _PillCTA(
             label: _isSendingOtp ? 'Sending code…' : 'Continue',
@@ -337,53 +381,60 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[2],
           ),
           const SizedBox(height: 20),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // 3D-tilt animated preview of selected avatar
+                  Center(
+                    child: _Avatar3DPreview(
+                      key: ValueKey(_selectedAvatarId),
+                      avatarId: _selectedAvatarId,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      def.label,
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1B1B1D),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Accent pill using shadow colour
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: def.shadow.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: def.shadow.withOpacity(0.28)),
+                      ),
+                      child: Text(
+                        'Your Companion',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: def.shadow,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
-          // 3D-tilt animated preview of selected avatar
-          Center(
-            child: _Avatar3DPreview(
-              key: ValueKey(_selectedAvatarId),
-              avatarId: _selectedAvatarId,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              def.label,
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1B1B1D),
-                letterSpacing: -0.3,
+                  // Avatar picker grid
+                  BenGoAvatarPicker(
+                    selectedId: _selectedAvatarId,
+                    onSelect: (id) => setState(() => _selectedAvatarId = id),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          // Accent pill using shadow colour
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: def.shadow.withOpacity(0.10),
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: def.shadow.withOpacity(0.28)),
-              ),
-              child: Text(
-                'Your Companion',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: def.shadow,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Avatar picker grid
-          BenGoAvatarPicker(
-            selectedId: _selectedAvatarId,
-            onSelect: (id) => setState(() => _selectedAvatarId = id),
           ),
           const SizedBox(height: 28),
 
@@ -410,81 +461,89 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             centred: true,
           ),
           const SizedBox(height: 8),
-          // Email badge
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: _kFieldTint,
-              borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: _kFieldBorder),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.alternate_email_rounded,
-                    size: 14, color: _kAccent),
-                const SizedBox(width: 6),
-                Text(
-                  _emailCtrl.text.trim().isEmpty
-                      ? 'your@email.com'
-                      : _emailCtrl.text.trim(),
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _kAccent,
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Email badge
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _kFieldTint,
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: _kFieldBorder),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.alternate_email_rounded,
+                            size: 14, color: _kAccent),
+                        const SizedBox(width: 6),
+                        Text(
+                          _emailCtrl.text.trim().isEmpty
+                              ? 'your@email.com'
+                              : _emailCtrl.text.trim(),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _kAccent,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _otpSent
-                ? 'Code sent — check your inbox.'
-                : 'Tap Continue to receive your code.',
-            style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 28),
-
-          // OTP boxes
-          _OtpInputRow(
-            controller: _otpCtrl,
-            focusNode: _otpFocus,
-            onChanged: () => setState(() {}),
-          ),
-          const SizedBox(height: 20),
-
-          // Resend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text("Didn't receive the code? ",
-                  style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
-              GestureDetector(
-                onTap: _isSendingOtp ? null : _sendVerificationCode,
-                child: Text(
-                  _isSendingOtp ? 'Sending…' : 'Resend',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: _kAccent,
+                  const SizedBox(height: 8),
+                  Text(
+                    _otpSent
+                        ? 'Code sent — check your inbox.'
+                        : 'Tap Continue to receive your code.',
+                    style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                    textAlign: TextAlign.center,
                   ),
-                ),
+                  const SizedBox(height: 28),
+
+                  // OTP boxes
+                  _OtpInputRow(
+                    controller: _otpCtrl,
+                    focusNode: _otpFocus,
+                    onChanged: () => setState(() {}),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Resend
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Didn't receive the code? ",
+                          style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+                      GestureDetector(
+                        onTap: _isSendingOtp ? null : _sendVerificationCode,
+                        child: Text(
+                          _isSendingOtp ? 'Sending…' : 'Resend',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _kAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Envelope illustration
+                  _EnvelopeIllustration(hasMail: _otpSent),
+                  const SizedBox(height: 28),
+
+                  if (_errorMsg.isNotEmpty) ...[
+                    _ErrorBanner(message: _errorMsg),
+                    const SizedBox(height: 14),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 28),
-
-          // Envelope illustration
-          _EnvelopeIllustration(hasMail: _otpSent),
-          const SizedBox(height: 28),
-
-          if (_errorMsg.isNotEmpty) ...[
-            _ErrorBanner(message: _errorMsg),
-            const SizedBox(height: 14),
-          ],
           _PillCTA(
             label: _isVerifyingOtp ? 'Verifying…' : 'Verify & Continue',
             isLoading: _isVerifyingOtp,
@@ -509,33 +568,205 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[4],
           ),
           const SizedBox(height: 24),
-          _SectionLabel(label: 'Username'),
-          const SizedBox(height: 10),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionLabel(label: 'Username'),
+                  const SizedBox(height: 10),
 
-          // Username field
-          _UsernameField(controller: _usernameCtrl),
-          const SizedBox(height: 16),
+                  // Username field
+                  _UsernameField(controller: _usernameCtrl),
+                  const SizedBox(height: 16),
 
-          // Preview card
-          _UsernamePreview(
-            username: _usernameCtrl.text.trim(),
-            firstName: _firstNameCtrl.text.trim(),
-            lastName: _lastNameCtrl.text.trim(),
+                  // Preview card
+                  _UsernamePreview(
+                    username: _usernameCtrl.text.trim(),
+                    firstName: _firstNameCtrl.text.trim(),
+                    lastName: _lastNameCtrl.text.trim(),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Others will find you by this name on the leaderboard.',
+                    style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                  ),
+                  if (_errorMsg.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _ErrorBanner(message: _errorMsg),
+                  ],
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Others will find you by this name on the leaderboard.',
-            style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+          const SizedBox(height: 28),
+          _PillCTA(
+            label: 'Continue',
+            onPressed: _nextPage,
           ),
-          if (_errorMsg.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _ErrorBanner(message: _errorMsg),
-          ],
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  // ── Stage 6: Institution Selection ─────────────────────────────────────────
+  Widget _buildStageInstitution() {
+    return _StageShell(
+      animCtrl: _pageAnimCtrl,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StageHeading(
+            icon: _kStepIcons[5],
+            title: _kStepTitles[5],
+            subtitle: _kStepSubtitles[5],
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionLabel(label: 'Institution'),
+                  const SizedBox(height: 10),
+
+                  // Institution search field
+                  _FilledField(
+                    label: 'Search institution',
+                    controller: _institutionSearchCtrl,
+                    hint: 'Type to search...',
+                    prefixIcon: Icons.search_outlined,
+                    onChanged: _filterInstitutions,
+                  ),
+
+                  // Institution dropdown
+                  if (_showInstitutionDropdown && _filteredInstitutions.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: _kSurface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _kFieldBorder),
+                      ),
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _filteredInstitutions.length,
+                        itemBuilder: (ctx, idx) {
+                          final inst = _filteredInstitutions[idx];
+                          return InkWell(
+                            onTap: () => _selectInstitution(inst),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    inst['name'] ?? 'Unknown',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _kInk,
+                                    ),
+                                  ),
+                                  if (inst['code'] != null)
+                                    Text(
+                                      inst['code'] ?? '',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: _kMuted,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+
+                  // Selected institution display
+                  if (_selectedInstitution != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _kFieldTint,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _kAccent, width: 1.5),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: _kAccent, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _selectedInstitution['name'] ?? 'Unknown',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: _kAccent,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => setState(() {
+                              _selectedInstitution = null;
+                              _institutionSearchCtrl.clear();
+                              _regNumberCtrl.clear();
+                              _filterInstitutions('');
+                            }),
+                            child: Icon(Icons.close, color: _kAccent, size: 18),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Registration number field with fade animation
+                    AnimatedOpacity(
+                      opacity: _selectedInstitution != null ? 1.0 : 0.5,
+                      duration: const Duration(milliseconds: 300),
+                      child: _FilledField(
+                        label: 'Institutional Registration Number',
+                        controller: _regNumberCtrl,
+                        hint: 'e.g., STU-2024-001 (optional)',
+                        enabled: _selectedInstitution != null,
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 16),
+                    // Skip option
+                    Center(
+                      child: GestureDetector(
+                        onTap: _nextPage,
+                        child: Text(
+                          'Skip for now',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _kAccent,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  if (_errorMsg.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _ErrorBanner(message: _errorMsg),
+                  ],
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 28),
           _PillCTA(
             label: _isRegistering ? 'Creating account…' : 'Finish Setup',
             isLoading: _isRegistering,
-            onPressed: _isRegistering ? null : _completeRegistration,
+            onPressed: _isRegistering ? null : _nextPage,
           ),
           const SizedBox(height: 32),
         ],
@@ -576,7 +807,60 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     return true;
   }
 
+  bool _validateStage4() {
+    final username = _usernameCtrl.text.trim();
+    if (username.isEmpty || username.length < 3) {
+      _setError('Choose a username with at least 3 characters.');
+      return false;
+    }
+    _setError('');
+    return true;
+  }
+
   void _setError(String msg) => setState(() => _errorMsg = msg);
+
+  Future<void> _loadInstitutions() async {
+    setState(() => _isLoadingInstitutions = true);
+    try {
+      final institutions = await ApiService.instance.fetchInstitutions();
+      if (mounted) {
+        setState(() {
+          _institutions = institutions;
+          _filteredInstitutions = institutions;
+          _isLoadingInstitutions = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingInstitutions = false);
+      }
+    }
+  }
+
+  void _filterInstitutions(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredInstitutions = _institutions;
+        _showInstitutionDropdown = false;
+      } else {
+        _filteredInstitutions = _institutions.where((inst) {
+          final name = inst['name']?.toString().toLowerCase() ?? '';
+          final code = inst['code']?.toString().toLowerCase() ?? '';
+          final searchLower = query.toLowerCase();
+          return name.contains(searchLower) || code.contains(searchLower);
+        }).toList();
+        _showInstitutionDropdown = _filteredInstitutions.isNotEmpty;
+      }
+    });
+  }
+
+  void _selectInstitution(dynamic institution) {
+    setState(() {
+      _selectedInstitution = institution;
+      _institutionSearchCtrl.text = institution['name'] ?? '';
+      _showInstitutionDropdown = false;
+    });
+  }
 
   Future<void> _sendVerificationCode() async {
     setState(() {
@@ -657,6 +941,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
         preferredLevel: _selectedLevel ?? '',
         learningGoal: _selectedGoal ?? '',
         avatarId: _selectedAvatarId,
+        institutionId: _selectedInstitution != null
+            ? int.tryParse(_selectedInstitution['id'].toString())
+            : null,
+        institutionalRegistrationNumber: _regNumberCtrl.text.trim().isEmpty
+            ? null
+            : _regNumberCtrl.text.trim(),
       );
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
@@ -1041,6 +1331,8 @@ class _FilledField extends StatefulWidget {
   final bool obscureText;
   final VoidCallback? onToggleObscure;
   final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
+  final bool enabled;
 
   const _FilledField({
     required this.label,
@@ -1051,6 +1343,8 @@ class _FilledField extends StatefulWidget {
     this.obscureText = false,
     this.onToggleObscure,
     this.keyboardType,
+    this.onChanged,
+    this.enabled = true,
   });
 
   @override
@@ -1107,8 +1401,10 @@ class _FilledFieldState extends State<_FilledField> {
           child: TextField(
             controller: widget.controller,
             focusNode: _focus,
+            enabled: widget.enabled,
             obscureText: widget.isPassword && widget.obscureText,
             keyboardType: widget.keyboardType,
+            onChanged: widget.onChanged,
             style: GoogleFonts.inter(
                 fontSize: 15, color: _kInk, fontWeight: FontWeight.w500),
             cursorColor: _kAccent,

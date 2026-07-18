@@ -29,6 +29,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     preferred_level = serializers.CharField(required=False, allow_blank=True)
     learning_goal = serializers.CharField(required=False, allow_blank=True)
     avatar_id = serializers.CharField(required=False, allow_blank=True, default='a1')
+    institution_id = serializers.IntegerField(required=False, allow_null=True)
+    institutional_registration_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     password = serializers.CharField(write_only=True, min_length=6)
     password2 = serializers.CharField(write_only=True)
 
@@ -37,6 +39,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'username', 'email', 'password', 'password2',
             'first_name', 'last_name', 'preferred_level', 'learning_goal', 'avatar_id',
+            'institution_id', 'institutional_registration_number',
         ]
 
     def validate(self, data):
@@ -65,6 +68,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         preferred_level = validated_data.pop('preferred_level', '')
         learning_goal = validated_data.pop('learning_goal', '')
         avatar_id = validated_data.pop('avatar_id', 'a1')
+        institution_id = validated_data.pop('institution_id', None)
+        institutional_registration_number = validated_data.pop('institutional_registration_number', None)
 
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -76,6 +81,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.preferred_level = preferred_level
         user.learning_goal = learning_goal
         user.avatar_id = avatar_id
+        if institution_id:
+            from apps.institutions.models import Institution
+            try:
+                user.institution_id = institution_id
+            except Exception:
+                pass
+            try:
+                institution = Institution.objects.get(id=institution_id)
+                user.institution = institution
+            except Institution.DoesNotExist:
+                pass
+        if institutional_registration_number:
+            user.institutional_registration_number = institutional_registration_number
         user.save()
 
         role, _ = Role.objects.get_or_create(name=Role.USER)

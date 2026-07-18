@@ -145,8 +145,10 @@ class ApiService {
     required String preferredLevel,
     required String learningGoal,
     String avatarId = 'a1',
+    int? institutionId,
+    String? institutionalRegistrationNumber,
   }) async {
-    final res = await _req('POST', '/auth/register/', body: {
+    final Map<String, dynamic> body = {
       'username': username,
       'email': email,
       'password': password,
@@ -156,7 +158,14 @@ class ApiService {
       'preferred_level': preferredLevel,
       'learning_goal': learningGoal,
       'avatar_id': avatarId,
-    });
+    };
+    if (institutionId != null) {
+      body['institution_id'] = institutionId;
+    }
+    if (institutionalRegistrationNumber != null && institutionalRegistrationNumber.isNotEmpty) {
+      body['institutional_registration_number'] = institutionalRegistrationNumber;
+    }
+    final res = await _req('POST', '/auth/register/', body: body);
     final data = _decode(res);
     await saveTokens(data['tokens']['access'], data['tokens']['refresh']);
     final prefs = await SharedPreferences.getInstance();
@@ -164,6 +173,16 @@ class ApiService {
     _cachedMe = data['user'];
     currentUserNotifier.value = data['user'];
     return data;
+  }
+
+  // Fetch institutions with optional search query
+  Future<List<dynamic>> fetchInstitutions({String? search}) async {
+    final url = search != null && search.isNotEmpty
+        ? '/institutions/?search=$search'
+        : '/institutions/';
+    final res = await _req('GET', url);
+    final data = _decode(res);
+    return data is List ? data : data['results'] ?? [];
   }
 
   Future<Map<String, dynamic>> sendVerificationCode({
