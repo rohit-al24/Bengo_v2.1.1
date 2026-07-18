@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/bengo_avatar.dart';
@@ -28,6 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _loading = true;
   bool _welcomeShown = false;
   Map<String, dynamic> _dailyRevisionMeta = {};
+  List<dynamic> _announcements = [];
   Timer? _revisionCountdownTimer;
 
   @override
@@ -35,6 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _loadUser();
     _loadDailyRevisionMeta();
+    _loadAnnouncements();
   }
 
   @override
@@ -80,6 +83,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _dailyRevisionMeta = meta;
       });
       _startRevisionCountdown();
+    } catch (_) {}
+  }
+
+  Future<void> _loadAnnouncements() async {
+    try {
+      final announcements = await ApiService.instance.fetchAnnouncements();
+      if (!mounted) return;
+      setState(() {
+        _announcements = announcements;
+      });
     } catch (_) {}
   }
 
@@ -354,91 +367,111 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Announcement ────────────────────────────────────────────────────────────
   Widget _buildAnnouncementCard() {
-    return _Card3D(
-      accentColor: const Color(0xFFFF6B35),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF8E1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFECB3)),
+    if (_announcements.isEmpty) {
+      return _Card3D(
+        accentColor: const Color(0xFFFF6B35),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8E1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFFECB3)),
+              ),
+              child: const Center(child: Text('🌸', style: TextStyle(fontSize: 24))),
             ),
-            child: const Center(
-              child: Text('🌸', style: TextStyle(fontSize: 24)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'No new announcements right now. Check back soon for updates.',
+                style: GoogleFonts.inter(fontSize: 13, color: _kMuted),
+              ),
             ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: _announcements.map((item) {
+        final title = (item['title'] ?? 'Announcement').toString();
+        final description = (item['description'] ?? '').toString();
+        final imageUrl = item['image']?.toString();
+        final linkEnabled = item['link_enabled'] == true;
+        final linkUrl = item['link_url']?.toString() ?? '';
+        final buttonText = (item['button_text'] ?? 'Learn more').toString();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _Card3D(
+            accentColor: const Color(0xFFFF6B35),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'LIVE EVENT',
-                      style: GoogleFonts.inter(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        color: _kAccent,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3EC),
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: const Color(0xFFFFCBA4)),
-                      ),
-                      child: Text(
-                        '3 days left',
-                        style: GoogleFonts.inter(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFFE65100),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Cherry Blossom Festival',
-                  style: GoogleFonts.spaceGrotesk(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: _kInk,
-                    letterSpacing: -0.2,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    color: const Color(0xFFFFF8E1),
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? Image.network(imageUrl, fit: BoxFit.cover)
+                        : const Center(child: Text('🌸', style: TextStyle(fontSize: 24))),
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  'Earn exclusive badges & 500 bonus XP.',
-                  style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
-                ),
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: () {},
-                  child: Text(
-                    'View details →',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: _kAccent,
-                    ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'LIVE UPDATE',
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: _kAccent,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        title,
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: _kInk,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        description,
+                        style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                      ),
+                      if (linkEnabled && linkUrl.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        GestureDetector(
+                          onTap: () => launchUrl(Uri.parse(linkUrl)),
+                          child: Text(
+                            '$buttonText →',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _kAccent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 

@@ -6,6 +6,7 @@ import './Layout.css';
 const NAV = [
   { to: '/',            icon: '⊞',  label: 'Dashboard'     },
   { to: '/daily-revision', icon: '🔁', label: 'Daily Revision' },
+  { to: '/announcements', icon: '📢', label: 'Announcements' },
   { to: '/courses',     icon: '📚', label: 'Course Editor' },
   { to: '/ranks',       icon: '🏅', label: 'Ranks'         },
   { to: '/certificates',icon: '🎓', label: 'Certificates'  },

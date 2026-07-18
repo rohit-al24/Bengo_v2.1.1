@@ -48,6 +48,7 @@ class ApiService {
       '/auth/check-email/',
       '/auth/token/refresh/',
       '/institutions/',
+      '/announcements/',
     };
     return {
       'Content-Type': 'application/json',
@@ -271,6 +272,11 @@ class ApiService {
     currentUserNotifier.value = data;
     await _saveUserToStorage(data);
     return data;
+  }
+
+  Future<List<dynamic>> fetchAnnouncements() async {
+    final res = await _req('GET', '/announcements/');
+    return _decodeList(res);
   }
 
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {

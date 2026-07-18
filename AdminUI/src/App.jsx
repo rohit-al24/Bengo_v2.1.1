@@ -18,6 +18,7 @@ import RankExamList    from './pages/Ranks/RankExamList';
 import ExamRankDetail  from './pages/Ranks/ExamRankDetail';
 import XPConfigPage    from './pages/Ranks/XPConfigPage';
 import DailyRevisionPage from './pages/DailyRevisionPage';
+import AnnouncementsPage from './pages/Announcements';
 import CertExamList    from './pages/Certificates/CertExamList';
 import CertExamDetail  from './pages/Certificates/CertExamDetail';
 
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="courses/:examId/categories/:catId/lessons/:lessonId/banks" element={<QuestionBank />} />
           {/* Users */}
           <Route path="users" element={<UserManagement />} />
+          <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="institutions" element={<Institutions />} />
           <Route path="institutions/:id" element={<InstitutionDetail />} />
           {/* Institution-admin specific pages */}

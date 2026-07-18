@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'apps.ranks',
     'apps.certificates',
     'apps.teams',
+    'apps.announcements',
 ]
 
 MIDDLEWARE = [

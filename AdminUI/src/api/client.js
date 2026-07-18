@@ -8,6 +8,9 @@ const api = axios.create({ baseURL: BASE });
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('access_token');
   if (token) cfg.headers.Authorization = `Bearer ${token}`;
+  if (cfg.data instanceof FormData) {
+    delete cfg.headers['Content-Type'];
+  }
   return cfg;
 });
 
@@ -100,5 +103,10 @@ export const getInstitutionAssignments = institutionId => api.get(`/institutions
 export const assignMentor = (institutionId, studentId, mentorId) =>
   api.post(`/institutions/${institutionId}/assignments/`, { student_id: studentId, mentor_id: mentorId });
 export const deleteMentorAssignment = assignmentId => api.delete(`/institutions/assignments/${assignmentId}/`);
+
+// ── Announcements ───────────────────────────────────────────────────────────
+export const getAnnouncements = () => api.get('/announcements/');
+export const createAnnouncement = d => api.post('/announcements/', d);
+export const updateAnnouncement = (id, d) => api.patch(`/announcements/${id}/`, d);
 
 export default api;
