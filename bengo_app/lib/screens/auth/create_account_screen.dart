@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -85,6 +86,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
   final _usernameCtrl = TextEditingController();
   bool _isRegistering = false;
 
+  // Email validation
+  final _emailFocus = FocusNode();
+  bool _isCheckingEmail = false;
+  bool? _emailAvailable;
+  bool _isEmailFormatValid = false;
+  String _emailStatusMessage = '';
+  
+  // Username validation
+  bool _isCheckingUsername = false;
+  bool? _usernameAvailable; // null = not checked, true = available, false = taken
+  Timer? _usernameCheckTimer;
+
   // Stage 6 — Institution Selection
   List<dynamic> _institutions = [];
   dynamic _selectedInstitution;
@@ -105,6 +118,31 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
       duration: const Duration(milliseconds: 600),
     )..forward();
     _usernameCtrl.addListener(() => setState(() {}));
+    _emailFocus.addListener(() {
+      if (!_emailFocus.hasFocus) {
+        _checkEmailAvailability(_emailCtrl.text.trim());
+      }
+    });
+    _emailCtrl.addListener(() {
+      final email = _emailCtrl.text.trim();
+      if (email.isEmpty) {
+        setState(() {
+          _isEmailFormatValid = false;
+          _emailAvailable = null;
+          _emailStatusMessage = '';
+          _isCheckingEmail = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _isEmailFormatValid = _isValidEmail(email);
+        if (!_isEmailFormatValid) {
+          _emailAvailable = null;
+          _emailStatusMessage = 'Please enter a valid email address.';
+        }
+      });
+    });
   }
 
   @override
@@ -118,9 +156,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     _confirmCtrl.dispose();
     _otpCtrl.dispose();
     _otpFocus.dispose();
+    _emailFocus.dispose();
     _usernameCtrl.dispose();
     _institutionSearchCtrl.dispose();
     _regNumberCtrl.dispose();
+    _usernameCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -213,6 +253,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     return _StageShell(
       animCtrl: _pageAnimCtrl,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _StageHeading(
@@ -221,69 +262,120 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[0],
           ),
           const SizedBox(height: 24),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _FilledField(
-                          label: 'First name',
-                          controller: _firstNameCtrl,
-                          hint: 'Kenji',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _FilledField(
-                          label: 'Last name',
-                          controller: _lastNameCtrl,
-                          hint: 'Tanaka',
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: _FilledField(
+                      label: 'First name',
+                      controller: _firstNameCtrl,
+                      hint: 'Kenji',
+                    ),
                   ),
-                  const SizedBox(height: 14),
-                  _FilledField(
-                    label: 'Email address',
-                    controller: _emailCtrl,
-                    hint: 'student@bengo.edu',
-                    prefixIcon: Icons.alternate_email_rounded,
-                    keyboardType: TextInputType.emailAddress,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _FilledField(
+                      label: 'Last name',
+                      controller: _lastNameCtrl,
+                      hint: 'Tanaka',
+                    ),
                   ),
-                  const SizedBox(height: 14),
-                  _FilledField(
-                    label: 'Password',
-                    controller: _passwordCtrl,
-                    hint: '••••••••',
-                    prefixIcon: Icons.lock_outline_rounded,
-                    isPassword: true,
-                    obscureText: _obscurePw,
-                    onToggleObscure: () => setState(() => _obscurePw = !_obscurePw),
-                  ),
-                  const SizedBox(height: 14),
-                  _FilledField(
-                    label: 'Confirm password',
-                    controller: _confirmCtrl,
-                    hint: '••••••••',
-                    prefixIcon: Icons.shield_outlined,
-                    isPassword: true,
-                    obscureText: _obscureConfirm,
-                    onToggleObscure: () =>
-                        setState(() => _obscureConfirm = !_obscureConfirm),
-                  ),
-                  if (_errorMsg.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _ErrorBanner(message: _errorMsg),
-                  ],
                 ],
               ),
-            ),
+              const SizedBox(height: 14),
+              _FilledField(
+                label: 'Email address',
+                controller: _emailCtrl,
+                hint: 'student@bengo.edu',
+                prefixIcon: Icons.alternate_email_rounded,
+                keyboardType: TextInputType.emailAddress,
+                focusNode: _emailFocus,
+                onChanged: (_) => setState(() {}),
+              ),
+              if (_isCheckingEmail) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(_kAccent),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Checking email availability…',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: _kMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (_emailStatusMessage.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      _emailAvailable == true
+                          ? Icons.check_circle_rounded
+                          : Icons.error_outline_rounded,
+                      size: 16,
+                      color: _emailAvailable == true
+                          ? const Color(0xFF2E7D32)
+                          : const Color(0xFFD32F2F),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _emailStatusMessage,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: _emailAvailable == true
+                            ? const Color(0xFF2E7D32)
+                            : const Color(0xFFD32F2F),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 14),
+              _FilledField(
+                label: 'Password',
+                controller: _passwordCtrl,
+                hint: '••••••••',
+                prefixIcon: Icons.lock_outline_rounded,
+                isPassword: true,
+                obscureText: _obscurePw,
+                onToggleObscure: () => setState(() => _obscurePw = !_obscurePw),
+              ),
+              const SizedBox(height: 14),
+              _FilledField(
+                label: 'Confirm password',
+                controller: _confirmCtrl,
+                hint: '••••••••',
+                prefixIcon: Icons.shield_outlined,
+                isPassword: true,
+                obscureText: _obscureConfirm,
+                onToggleObscure: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
+              ),
+              if (_errorMsg.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _ErrorBanner(message: _errorMsg),
+              ],
+            ],
           ),
           const SizedBox(height: 28),
-          _PillCTA(label: 'Continue', onPressed: _nextPage),
+          _PillCTA(
+            label: 'Continue',
+            onPressed: _canAdvanceFromStage1() ? _nextPage : null,
+          ),
           const SizedBox(height: 32),
         ],
       ),
@@ -307,6 +399,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     return _StageShell(
       animCtrl: _pageAnimCtrl,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _StageHeading(
@@ -315,45 +408,41 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[1],
           ),
           const SizedBox(height: 24),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionLabel(label: 'JLPT Level'),
-                  const SizedBox(height: 10),
-                  ...levels.map((l) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _LevelTile(
-                          title: l.$1,
-                          subtitle: l.$2,
-                          stars: l.$3,
-                          isSelected: _selectedLevel == l.$1,
-                          onTap: () => setState(() => _selectedLevel = l.$1),
-                        ),
-                      )),
-                  const SizedBox(height: 20),
-                  _SectionLabel(label: 'Learning Goal'),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: goals
-                        .map((g) => _GoalChip(
-                              label: g.$1,
-                              icon: g.$2,
-                              isSelected: _selectedGoal == g.$1,
-                              onTap: () => setState(() => _selectedGoal = g.$1),
-                            ))
-                        .toList(),
-                  ),
-                  if (_errorMsg.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _ErrorBanner(message: _errorMsg),
-                  ],
-                ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionLabel(label: 'JLPT Level'),
+              const SizedBox(height: 10),
+              ...levels.map((l) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _LevelTile(
+                      title: l.$1,
+                      subtitle: l.$2,
+                      stars: l.$3,
+                      isSelected: _selectedLevel == l.$1,
+                      onTap: () => setState(() => _selectedLevel = l.$1),
+                    ),
+                  )),
+              const SizedBox(height: 20),
+              _SectionLabel(label: 'Learning Goal'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: goals
+                    .map((g) => _GoalChip(
+                          label: g.$1,
+                          icon: g.$2,
+                          isSelected: _selectedGoal == g.$1,
+                          onTap: () => setState(() => _selectedGoal = g.$1),
+                        ))
+                    .toList(),
               ),
-            ),
+              if (_errorMsg.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _ErrorBanner(message: _errorMsg),
+              ],
+            ],
           ),
           const SizedBox(height: 28),
           _PillCTA(
@@ -370,80 +459,98 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
   // ── Stage Avatar: Pick Your Companion ──────────────────────────────────────
   Widget _buildStageAvatar() {
     final def = avatarById(_selectedAvatarId);
-    return _StageShell(
-      animCtrl: _pageAnimCtrl,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _StageHeading(
-            icon: _kStepIcons[2],
-            title: _kStepTitles[2],
-            subtitle: _kStepSubtitles[2],
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // 3D-tilt animated preview of selected avatar
-                  Center(
-                    child: _Avatar3DPreview(
-                      key: ValueKey(_selectedAvatarId),
-                      avatarId: _selectedAvatarId,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      def.label,
-                      style: GoogleFonts.spaceGrotesk(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1B1B1D),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Accent pill using shadow colour
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: def.shadow.withOpacity(0.10),
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: def.shadow.withOpacity(0.28)),
-                      ),
-                      child: Text(
-                        'Your Companion',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: def.shadow,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+    final fade = CurvedAnimation(parent: _pageAnimCtrl, curve: Curves.easeOut);
+    final slide = Tween<Offset>(
+      begin: const Offset(0, 0.04),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _pageAnimCtrl, curve: Curves.easeOut));
 
-                  // Avatar picker grid
-                  BenGoAvatarPicker(
-                    selectedId: _selectedAvatarId,
-                    onSelect: (id) => setState(() => _selectedAvatarId = id),
-                  ),
-                ],
+    return FadeTransition(
+      opacity: fade,
+      child: SlideTransition(
+        position: slide,
+        child: Column(
+          children: [
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _StageHeading(
+                      icon: _kStepIcons[2],
+                      title: _kStepTitles[2],
+                      subtitle: _kStepSubtitles[2],
+                    ),
+                    const SizedBox(height: 20),
+                    Column(
+                      children: [
+                        // 3D-tilt animated preview of selected avatar
+                        Center(
+                          child: _Avatar3DPreview(
+                            key: ValueKey(_selectedAvatarId),
+                            avatarId: _selectedAvatarId,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: Text(
+                            def.label,
+                            style: GoogleFonts.spaceGrotesk(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1B1B1D),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Accent pill using shadow colour
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: def.shadow.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(color: def.shadow.withOpacity(0.28)),
+                            ),
+                            child: Text(
+                              'Your Companion',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: def.shadow,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Avatar picker grid
+                        BenGoAvatarPicker(
+                          selectedId: _selectedAvatarId,
+                          onSelect: (id) => setState(() => _selectedAvatarId = id),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 28),
-
-          _PillCTA(
-            label: 'Continue',
-            onPressed: _nextPage,
-          ),
-          const SizedBox(height: 32),
-        ],
+            // Pinned button at bottom
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              child: _PillCTA(
+                label: 'Continue',
+                onPressed: _nextPage,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -453,6 +560,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     return _StageShell(
       animCtrl: _pageAnimCtrl,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _StageHeading(
             icon: _kStepIcons[3],
@@ -461,88 +569,80 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             centred: true,
           ),
           const SizedBox(height: 8),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Email badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _kFieldTint,
-                      borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: _kFieldBorder),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.alternate_email_rounded,
-                            size: 14, color: _kAccent),
-                        const SizedBox(width: 6),
-                        Text(
-                          _emailCtrl.text.trim().isEmpty
-                              ? 'your@email.com'
-                              : _emailCtrl.text.trim(),
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: _kAccent,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _otpSent
-                        ? 'Code sent — check your inbox.'
-                        : 'Tap Continue to receive your code.',
-                    style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
-
-                  // OTP boxes
-                  _OtpInputRow(
-                    controller: _otpCtrl,
-                    focusNode: _otpFocus,
-                    onChanged: () => setState(() {}),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Resend
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Didn't receive the code? ",
-                          style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
-                      GestureDetector(
-                        onTap: _isSendingOtp ? null : _sendVerificationCode,
-                        child: Text(
-                          _isSendingOtp ? 'Sending…' : 'Resend',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: _kAccent,
-                          ),
-                        ),
+          Column(
+            children: [
+              // Email badge
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _kFieldTint,
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(color: _kFieldBorder),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.alternate_email_rounded,
+                        size: 14, color: _kAccent),
+                    const SizedBox(width: 6),
+                    Text(
+                      _emailCtrl.text.trim().isEmpty
+                          ? 'your@email.com'
+                          : _emailCtrl.text.trim(),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _kAccent,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Envelope illustration
-                  _EnvelopeIllustration(hasMail: _otpSent),
-                  const SizedBox(height: 28),
-
-                  if (_errorMsg.isNotEmpty) ...[
-                    _ErrorBanner(message: _errorMsg),
-                    const SizedBox(height: 14),
+                    ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _otpSent
+                    ? 'Code sent — check your inbox.'
+                    : 'Tap Continue to receive your code.',
+                style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              // OTP boxes
+              _OtpInputRow(
+                controller: _otpCtrl,
+                focusNode: _otpFocus,
+                onChanged: () => setState(() {}),
+              ),
+              const SizedBox(height: 20),
+              // Resend
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Didn't receive the code? ",
+                      style: GoogleFonts.inter(fontSize: 12, color: _kMuted)),
+                  GestureDetector(
+                    onTap: _isSendingOtp ? null : _sendVerificationCode,
+                    child: Text(
+                      _isSendingOtp ? 'Sending…' : 'Resend',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _kAccent,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
+              const SizedBox(height: 28),
+              // Envelope illustration
+              _EnvelopeIllustration(hasMail: _otpSent),
+              const SizedBox(height: 28),
+              if (_errorMsg.isNotEmpty) ...[
+                _ErrorBanner(message: _errorMsg),
+                const SizedBox(height: 14),
+              ],
+            ],
           ),
           _PillCTA(
             label: _isVerifyingOtp ? 'Verifying…' : 'Verify & Continue',
@@ -560,6 +660,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     return _StageShell(
       animCtrl: _pageAnimCtrl,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _StageHeading(
@@ -568,36 +669,35 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[4],
           ),
           const SizedBox(height: 24),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionLabel(label: 'Username'),
-                  const SizedBox(height: 10),
-
-                  // Username field
-                  _UsernameField(controller: _usernameCtrl),
-                  const SizedBox(height: 16),
-
-                  // Preview card
-                  _UsernamePreview(
-                    username: _usernameCtrl.text.trim(),
-                    firstName: _firstNameCtrl.text.trim(),
-                    lastName: _lastNameCtrl.text.trim(),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Others will find you by this name on the leaderboard.',
-                    style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
-                  ),
-                  if (_errorMsg.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _ErrorBanner(message: _errorMsg),
-                  ],
-                ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionLabel(label: 'Username'),
+              const SizedBox(height: 10),
+              // Username field
+              _UsernameField(
+                controller: _usernameCtrl,
+                isChecking: _isCheckingUsername,
+                isAvailable: _usernameAvailable,
+                onChanged: _checkUsernameAvailability,
               ),
-            ),
+              const SizedBox(height: 16),
+              // Preview card
+              _UsernamePreview(
+                username: _usernameCtrl.text.trim(),
+                firstName: _firstNameCtrl.text.trim(),
+                lastName: _lastNameCtrl.text.trim(),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Others will find you by this name on the leaderboard.',
+                style: GoogleFonts.inter(fontSize: 12, color: _kMuted),
+              ),
+              if (_errorMsg.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _ErrorBanner(message: _errorMsg),
+              ],
+            ],
           ),
           const SizedBox(height: 28),
           _PillCTA(
@@ -615,6 +715,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     return _StageShell(
       animCtrl: _pageAnimCtrl,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _StageHeading(
@@ -623,144 +724,136 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
             subtitle: _kStepSubtitles[5],
           ),
           const SizedBox(height: 24),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionLabel(label: 'Institution'),
-                  const SizedBox(height: 10),
-
-                  // Institution search field
-                  _FilledField(
-                    label: 'Search institution',
-                    controller: _institutionSearchCtrl,
-                    hint: 'Type to search...',
-                    prefixIcon: Icons.search_outlined,
-                    onChanged: _filterInstitutions,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionLabel(label: 'Institution'),
+              const SizedBox(height: 10),
+              // Institution search field
+              _FilledField(
+                label: 'Search institution',
+                controller: _institutionSearchCtrl,
+                hint: 'Type to search...',
+                prefixIcon: Icons.search_outlined,
+                onChanged: _filterInstitutions,
+              ),
+              // Institution dropdown
+              if (_showInstitutionDropdown && _filteredInstitutions.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: _kSurface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _kFieldBorder),
                   ),
-
-                  // Institution dropdown
-                  if (_showInstitutionDropdown && _filteredInstitutions.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: _kSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _kFieldBorder),
-                      ),
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _filteredInstitutions.length,
-                        itemBuilder: (ctx, idx) {
-                          final inst = _filteredInstitutions[idx];
-                          return InkWell(
-                            onTap: () => _selectInstitution(inst),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    inst['name'] ?? 'Unknown',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: _kInk,
-                                    ),
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _filteredInstitutions.length,
+                    itemBuilder: (ctx, idx) {
+                      final inst = _filteredInstitutions[idx];
+                      return InkWell(
+                        onTap: () => _selectInstitution(inst),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                inst['name'] ?? 'Unknown',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _kInk,
+                                ),
+                              ),
+                              if (inst['code'] != null)
+                                Text(
+                                  inst['code'] ?? '',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: _kMuted,
                                   ),
-                                  if (inst['code'] != null)
-                                    Text(
-                                      inst['code'] ?? '',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: _kMuted,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-
-                  // Selected institution display
-                  if (_selectedInstitution != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _kFieldTint,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _kAccent, width: 1.5),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: _kAccent, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _selectedInstitution['name'] ?? 'Unknown',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: _kAccent,
-                              ),
-                            ),
+                                ),
+                            ],
                           ),
-                          GestureDetector(
-                            onTap: () => setState(() {
-                              _selectedInstitution = null;
-                              _institutionSearchCtrl.clear();
-                              _regNumberCtrl.clear();
-                              _filterInstitutions('');
-                            }),
-                            child: Icon(Icons.close, color: _kAccent, size: 18),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Registration number field with fade animation
-                    AnimatedOpacity(
-                      opacity: _selectedInstitution != null ? 1.0 : 0.5,
-                      duration: const Duration(milliseconds: 300),
-                      child: _FilledField(
-                        label: 'Institutional Registration Number',
-                        controller: _regNumberCtrl,
-                        hint: 'e.g., STU-2024-001 (optional)',
-                        enabled: _selectedInstitution != null,
-                      ),
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 16),
-                    // Skip option
-                    Center(
-                      child: GestureDetector(
-                        onTap: _nextPage,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              // Selected institution display
+              if (_selectedInstitution != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _kFieldTint,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _kAccent, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: _kAccent, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
                         child: Text(
-                          'Skip for now',
+                          _selectedInstitution['name'] ?? 'Unknown',
                           style: GoogleFonts.inter(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: _kAccent,
-                            decoration: TextDecoration.underline,
                           ),
                         ),
                       ),
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          _selectedInstitution = null;
+                          _institutionSearchCtrl.clear();
+                          _regNumberCtrl.clear();
+                          _filterInstitutions('');
+                        }),
+                        child: Icon(Icons.close, color: _kAccent, size: 18),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Registration number field with fade animation
+                AnimatedOpacity(
+                  opacity: _selectedInstitution != null ? 1.0 : 0.5,
+                  duration: const Duration(milliseconds: 300),
+                  child: _FilledField(
+                    label: 'Institutional Registration Number',
+                    controller: _regNumberCtrl,
+                    hint: 'e.g., STU-2024-001 (optional)',
+                    enabled: _selectedInstitution != null,
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 16),
+                // Skip option
+                Center(
+                  child: GestureDetector(
+                    onTap: _nextPage,
+                    child: Text(
+                      'Skip for now',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _kAccent,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
-                  ],
-
-                  if (_errorMsg.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _ErrorBanner(message: _errorMsg),
-                  ],
-                ],
-              ),
-            ),
+                  ),
+                ),
+              ],
+              if (_errorMsg.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _ErrorBanner(message: _errorMsg),
+              ],
+            ],
           ),
           const SizedBox(height: 28),
           _PillCTA(
@@ -775,15 +868,36 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
   }
 
   // ── Logic ──────────────────────────────────────────────────────────────────
+  bool _canAdvanceFromStage1() {
+    final email = _emailCtrl.text.trim();
+    return email.isNotEmpty &&
+        _isValidEmail(email) &&
+        !_isCheckingEmail &&
+        _emailAvailable == true;
+  }
+
+  bool _isValidEmail(String value) {
+    final regex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    return regex.hasMatch(value.trim());
+  }
+
   bool _validateStage1() {
     if (_firstNameCtrl.text.trim().isEmpty ||
         _lastNameCtrl.text.trim().isEmpty) {
       _setError('Enter your first and last name.');
       return false;
     }
-    if (_emailCtrl.text.trim().isEmpty ||
-        !_emailCtrl.text.contains('@')) {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty || !_isValidEmail(email)) {
       _setError('Enter a valid email address.');
+      return false;
+    }
+    if (_isCheckingEmail) {
+      _setError('Please wait while we verify your email.');
+      return false;
+    }
+    if (_emailAvailable != true) {
+      _setError('Please choose an email address that is available.');
       return false;
     }
     if (_passwordCtrl.text.length < 6) {
@@ -796,6 +910,61 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
     }
     _setError('');
     return true;
+  }
+
+  Future<void> _checkEmailAvailability(String email) async {
+    final trimmedEmail = email.trim();
+    if (trimmedEmail.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isCheckingEmail = false;
+          _emailAvailable = null;
+          _emailStatusMessage = '';
+          _isEmailFormatValid = false;
+        });
+      }
+      return;
+    }
+
+    if (!_isValidEmail(trimmedEmail)) {
+      if (mounted) {
+        setState(() {
+          _isCheckingEmail = false;
+          _emailAvailable = null;
+          _emailStatusMessage = 'Please enter a valid email address.';
+          _isEmailFormatValid = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isCheckingEmail = true;
+        _emailStatusMessage = 'Checking email availability…';
+        _isEmailFormatValid = true;
+      });
+    }
+
+    try {
+      final available = await ApiService.instance.checkEmailAvailability(trimmedEmail);
+      if (!mounted) return;
+      setState(() {
+        _emailAvailable = available;
+        _isCheckingEmail = false;
+        _emailStatusMessage = available
+            ? 'Email is available.'
+            : 'This email is already registered.';
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isCheckingEmail = false;
+          _emailAvailable = null;
+          _emailStatusMessage = 'Could not verify email right now.';
+        });
+      }
+    }
   }
 
   bool _validateStage2() {
@@ -813,11 +982,48 @@ class _CreateAccountScreenState extends State<CreateAccountScreen>
       _setError('Choose a username with at least 3 characters.');
       return false;
     }
+    if (_usernameAvailable != true) {
+      _setError('Username is not available or still checking. Please wait.');
+      return false;
+    }
     _setError('');
     return true;
   }
 
   void _setError(String msg) => setState(() => _errorMsg = msg);
+
+  Future<void> _checkUsernameAvailability(String username) async {
+    // Cancel previous timer if any
+    _usernameCheckTimer?.cancel();
+    
+    if (username.length < 3) {
+      setState(() => _usernameAvailable = null);
+      return;
+    }
+
+    // Set checking state
+    setState(() => _isCheckingUsername = true);
+
+    // Debounce: wait 600ms before checking
+    _usernameCheckTimer = Timer(const Duration(milliseconds: 600), () async {
+      try {
+        final available = await ApiService.instance.checkUsernameAvailability(username);
+        if (mounted) {
+          setState(() {
+            _usernameAvailable = available;
+            _isCheckingUsername = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _usernameAvailable = null;
+            _isCheckingUsername = false;
+          });
+        }
+      }
+    });
+  }
 
   Future<void> _loadInstitutions() async {
     setState(() => _isLoadingInstitutions = true);
@@ -1333,6 +1539,7 @@ class _FilledField extends StatefulWidget {
   final TextInputType? keyboardType;
   final ValueChanged<String>? onChanged;
   final bool enabled;
+  final FocusNode? focusNode;
 
   const _FilledField({
     required this.label,
@@ -1345,6 +1552,7 @@ class _FilledField extends StatefulWidget {
     this.keyboardType,
     this.onChanged,
     this.enabled = true,
+    this.focusNode,
   });
 
   @override
@@ -1358,12 +1566,14 @@ class _FilledFieldState extends State<_FilledField> {
   @override
   void initState() {
     super.initState();
-    _focus.addListener(() => setState(() => _focused = _focus.hasFocus));
+    (widget.focusNode ?? _focus).addListener(() => setState(() => _focused = (widget.focusNode ?? _focus).hasFocus));
   }
 
   @override
   void dispose() {
-    _focus.dispose();
+    if (widget.focusNode == null) {
+      _focus.dispose();
+    }
     super.dispose();
   }
 
@@ -1400,7 +1610,7 @@ class _FilledFieldState extends State<_FilledField> {
           ),
           child: TextField(
             controller: widget.controller,
-            focusNode: _focus,
+            focusNode: widget.focusNode ?? _focus,
             enabled: widget.enabled,
             obscureText: widget.isPassword && widget.obscureText,
             keyboardType: widget.keyboardType,
@@ -1863,7 +2073,16 @@ class _EnvelopeIllustration extends StatelessWidget {
 /// Username field with @ prefix
 class _UsernameField extends StatefulWidget {
   final TextEditingController controller;
-  const _UsernameField({required this.controller});
+  final bool isChecking;
+  final bool? isAvailable;
+  final Function(String) onChanged;
+  
+  const _UsernameField({
+    required this.controller,
+    required this.isChecking,
+    required this.isAvailable,
+    required this.onChanged,
+  });
 
   @override
   State<_UsernameField> createState() => _UsernameFieldState();
@@ -1899,7 +2118,9 @@ class _UsernameFieldState extends State<_UsernameField> {
         ),
         border: Border(
           bottom: BorderSide(
-            color: _focused ? _kFieldFocus : _kFieldBorder,
+            color: _focused 
+              ? (widget.isAvailable == false ? const Color(0xFFD32F2F) : _kFieldFocus)
+              : (widget.isAvailable == false ? const Color(0xFFD32F2F) : _kFieldBorder),
             width: _focused ? 2 : 1,
           ),
         ),
@@ -1907,6 +2128,7 @@ class _UsernameFieldState extends State<_UsernameField> {
       child: TextField(
         controller: widget.controller,
         focusNode: _focus,
+        onChanged: widget.onChanged,
         style: GoogleFonts.inter(
             fontSize: 15, color: _kInk, fontWeight: FontWeight.w500),
         cursorColor: _kAccent,
@@ -1920,6 +2142,37 @@ class _UsernameFieldState extends State<_UsernameField> {
           hintText: 'yourhandle',
           hintStyle: GoogleFonts.inter(
               color: _kMuted.withOpacity(0.6), fontSize: 14),
+          suffixIcon: widget.isChecking
+            ? Padding(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(_kAccent),
+                  ),
+                ),
+              )
+            : widget.isAvailable == true
+              ? Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: const Color(0xFF4CAF50),
+                    size: 20,
+                  ),
+                )
+              : widget.isAvailable == false
+                ? Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.cancel,
+                      color: const Color(0xFFD32F2F),
+                      size: 20,
+                    ),
+                  )
+                : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
               horizontal: 14, vertical: 14),

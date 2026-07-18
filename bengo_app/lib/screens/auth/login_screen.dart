@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen>
           physics: const BouncingScrollPhysics(),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
                 child: FadeTransition(
@@ -85,28 +85,28 @@ class _LoginScreenState extends State<LoginScreen>
                       children: [
                         // ── Logo ──────────────────────────────────────────
                         _LogoWidget(),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         // ── Word-mark ─────────────────────────────────────
                         Text(
                           'BenGo',
                           style: GoogleFonts.spaceGrotesk(
-                            fontSize: 38,
+                            fontSize: 36,
                             fontWeight: FontWeight.w700,
                             color: _kInk,
                             letterSpacing: -1,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           'MASTERY THROUGH FOCUS',
                           style: GoogleFonts.inter(
-                            fontSize: 10,
+                            fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 3.2,
+                            letterSpacing: 2.8,
                             color: _kMuted,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 24),
 
                         // ── Form card ─────────────────────────────────────
                         Container(

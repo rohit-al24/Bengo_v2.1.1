@@ -45,6 +45,7 @@ class ApiService {
       '/auth/send-verification-code/',
       '/auth/verify-email/',
       '/auth/check-username/',
+      '/auth/check-email/',
       '/auth/token/refresh/',
     };
     return {
@@ -208,6 +209,14 @@ class ApiService {
   Future<bool> checkUsernameAvailability(String username) async {
     final uri = Uri.parse('$kBaseUrl/auth/check-username/?username=${Uri.encodeComponent(username)}');
     final headers = await _headersFor('/auth/check-username/');
+    final res = await http.get(uri, headers: headers);
+    final data = _decode(res);
+    return data['available'] == true;
+  }
+
+  Future<bool> checkEmailAvailability(String email) async {
+    final uri = Uri.parse('$kBaseUrl/auth/check-email/?email=${Uri.encodeComponent(email)}');
+    final headers = await _headersFor('/auth/check-email/');
     final res = await http.get(uri, headers: headers);
     final data = _decode(res);
     return data['available'] == true;

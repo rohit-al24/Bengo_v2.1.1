@@ -10,6 +10,7 @@ urlpatterns = [
     path('send-verification-code/', views.SendVerificationCodeView.as_view(), name='auth-send-verification-code'),
     path('verify-email/',       views.VerifyEmailView.as_view(),     name='auth-verify-email'),
     path('check-username/',     views.CheckUsernameView.as_view(),   name='auth-check-username'),
+    path('check-email/',        views.CheckEmailView.as_view(),      name='auth-check-email'),
     path('token/refresh/',      TokenRefreshView.as_view(),          name='token-refresh'),
     path('admin/users/',        views.AdminUserListView.as_view(),   name='admin-users'),
     path('admin/users/<int:user_id>/assign-role/', views.AdminAssignRoleView.as_view(), name='admin-assign-role'),

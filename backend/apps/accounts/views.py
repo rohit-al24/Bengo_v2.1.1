@@ -175,6 +175,17 @@ class CheckUsernameView(APIView):
         return Response({'available': is_available})
 
 
+class CheckEmailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        email = request.query_params.get('email', '').strip()
+        if not email:
+            return Response({'email': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+        is_available = not User.objects.filter(email__iexact=email).exists()
+        return Response({'available': is_available})
+
+
 class SendVerificationCodeView(APIView):
     permission_classes = [permissions.AllowAny]
 
