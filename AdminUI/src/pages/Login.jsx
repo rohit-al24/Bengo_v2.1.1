@@ -14,8 +14,11 @@ export default function Login() {
     setError(''); setLoading(true);
     try {
       const { data } = await login(form);
-      const isAdmin = data.user.roles?.some(r => r.name === 'admin');
-      if (!isAdmin) { setError('Access denied. Admin only.'); return; }
+      const isAdmin = data.user.roles?.some(r => r.name === 'admin' || r.name === 'institutional_admin');
+      if (!isAdmin) {
+        setError('Access denied. Admin or Institutional Admin only.');
+        return;
+      }
       localStorage.setItem('access_token',  data.tokens.access);
       localStorage.setItem('refresh_token', data.tokens.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));

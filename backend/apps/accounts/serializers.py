@@ -134,26 +134,22 @@ class LoginSerializer(serializers.Serializer):
 
     def validate(self, data):
         identifier = data['email'].strip()
-        user = None
+        request = self.context.get('request')
 
-        if '@' in identifier:
-            try:
-                user = User.objects.get(email__iexact=identifier)
-            except User.DoesNotExist:
-                user = None
-        else:
-            try:
-                user = User.objects.get(username__iexact=identifier)
-            except User.DoesNotExist:
-                user = None
-
-        if user is not None:
-            user = authenticate(username=user.email, password=data['password'])
+        user = authenticate(
+            request=request,
+            username=identifier,
+            password=data['password'],
+        )
 
         if not user:
-            raise serializers.ValidationError('Invalid username/email or password.')
+            raise serializers.ValidationError({
+                'non_field_errors': ['Invalid username/email or password.']
+            })
         if not user.is_active:
-            raise serializers.ValidationError('Account is disabled.')
+            raise serializers.ValidationError({
+                'non_field_errors': ['Account is disabled.']
+            })
         data['user'] = user
         return data
 

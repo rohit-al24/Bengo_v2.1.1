@@ -76,6 +76,7 @@ DATABASES = {
 
 # Custom user model
 AUTH_USER_MODEL = 'accounts.User'
+AUTHENTICATION_BACKENDS = ['apps.accounts.authentication.EmailOrUsernameModelBackend']
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = []
