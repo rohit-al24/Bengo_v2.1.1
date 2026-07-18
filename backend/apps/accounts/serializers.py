@@ -22,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'avatar',
             'avatar_id', 'xp', 'streak_days', 'last_study_date', 'institution',
-            'institution_name', 'institution_settings', 'is_approved',
+            'institution_name', 'institution_settings', 'is_approved', 'mentor_name',
             'preferred_level', 'learning_goal', 'roles', 'date_joined'
         ]
         read_only_fields = ['id', 'date_joined']
