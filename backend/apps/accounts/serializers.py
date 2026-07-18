@@ -100,6 +100,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         avatar_id = validated_data.pop('avatar_id', 'a1')
         institution_id = validated_data.pop('institution_id', None)
         institutional_registration_number = validated_data.pop('institutional_registration_number', None)
+        request = self.context.get('request')
+        is_admin_create = bool(
+            request and request.user and request.user.is_authenticated and
+            (request.user.is_admin or request.user.is_institutional_admin)
+        )
+        requested_role = None
+        if request and request.data and request.data.get('role'):
+            requested_role = request.data.get('role')
 
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -132,7 +140,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             profile.institutional_registration_number = institutional_registration_number
         profile.save()
 
-        role, _ = Role.objects.get_or_create(name=Role.USER)
+        default_role_name = Role.USER
+        if requested_role in [Role.MENTOR, Role.INSTITUTIONAL_ADMIN, Role.ADMIN]:
+            default_role_name = requested_role
+        elif is_admin_create and request and request.data and request.data.get('role') == Role.MENTOR:
+            default_role_name = Role.MENTOR
+
+        role, _ = Role.objects.get_or_create(name=default_role_name)
         UserRole.objects.create(user=user, role=role)
         return user
 

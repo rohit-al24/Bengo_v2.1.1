@@ -22,11 +22,14 @@ export default function Students(){
     try{
       const { data: u } = await me();
       setUser(u);
-      if (u.institution_id) {
-        const { data } = await getInstitutionStudents(u.institution_id);
+      const institutionId = u.institution || u.institution_id;
+      if (institutionId) {
+        const { data } = await getInstitutionStudents(institutionId);
         // Filter users with 'user' role (students)
         const studentsList = Array.isArray(data) ? data.filter(s => s.roles?.some(r => r.name === 'user')) : [];
         setStudents(studentsList);
+      } else {
+        setStudents([]);
       }
     }catch(e){ setMsg('❌ Failed to load students'); }
     setLoading(false);
@@ -55,9 +58,10 @@ export default function Students(){
           last_name: (row.last_name || row.Last_Name || '').trim() || '',
           password: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
           password2: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
-          institution_id: user?.institution_id,
+          institution_id: user?.institution || user?.institution_id,
           institutional_registration_number: (row.registration_number || row.Registration_Number || row.reg_number || '').trim(),
           skip_email_verification: true,
+          role: 'user',
         };
         try{
           await register(payload);
@@ -76,9 +80,10 @@ export default function Students(){
     try {
       const payload = {
         ...formData,
-        institution_id: user?.institution_id,
+        institution_id: user?.institution || user?.institution_id,
         password2: formData.password,
         skip_email_verification: true,
+        role: 'user',
       };
       await register(payload);
       setMsg('✅ Student added');

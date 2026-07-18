@@ -15,7 +15,7 @@ export default function UserManagement() {
     me().then(r => {
       const roles = (r.data?.roles || []).map(x => x.name || x);
       setIsInstitutionAdmin(roles.includes('institutional_admin'));
-      setInstitutionId(r.data?.institution_id);
+      setInstitutionId(r.data?.institution || r.data?.institution_id);
     }).catch(()=>{});
     
     allUsers().then(r => setAllUsers(r.data)).finally(() => setLoading(false));
@@ -24,7 +24,7 @@ export default function UserManagement() {
   const getDisplayUsers = () => {
     let display = allUsersList;
     if (isInstitutionAdmin && institutionId) {
-      display = display.filter(u => u.institution_id === institutionId);
+      display = display.filter(u => (u.institution || u.institution_id) == institutionId);
     }
     return display.filter(u => {
       const hasRelevantRole = u.roles?.some(r => 

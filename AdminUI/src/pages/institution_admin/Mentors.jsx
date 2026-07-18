@@ -22,9 +22,12 @@ export default function Mentors(){
     try{
       const { data: u } = await me();
       setUser(u);
-      if (u.institution_id) {
-        const { data } = await getInstitutionMentors(u.institution_id);
+      const institutionId = u.institution || u.institution_id;
+      if (institutionId) {
+        const { data } = await getInstitutionMentors(institutionId);
         setMentors(Array.isArray(data) ? data : []);
+      } else {
+        setMentors([]);
       }
     }catch(e){ setMsg('❌ Failed to load mentors'); }
     setLoading(false);
@@ -53,8 +56,9 @@ export default function Mentors(){
           last_name: (row.last_name || row.Last_Name || '').trim() || '',
           password: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
           password2: (row.password || row.Password || Math.random().toString(36).substr(2,8)).trim(),
-          institution_id: user?.institution_id,
+          institution_id: user?.institution || user?.institution_id,
           skip_email_verification: true,
+          role: 'mentor',
         };
         try{
           await register(payload);
@@ -73,9 +77,10 @@ export default function Mentors(){
     try {
       const payload = {
         ...formData,
-        institution_id: user?.institution_id,
+        institution_id: user?.institution || user?.institution_id,
         password2: formData.password,
         skip_email_verification: true,
+        role: 'mentor',
       };
       await register(payload);
       setMsg('✅ Mentor added');
