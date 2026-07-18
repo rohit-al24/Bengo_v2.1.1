@@ -306,12 +306,17 @@ class MeView(APIView):
 
 
 class AdminUserListView(APIView):
-    """Admin only: list all users."""
+    """Admin or institutional admin: list users."""
 
     def get(self, request):
-        if not request.user.is_admin:
+        if request.user.is_admin:
+            # Admin sees all users
+            users = User.objects.prefetch_related('roles').all()
+        elif request.user.is_institutional_admin and request.user.institution_id:
+            # Institutional admin sees only users in their institution
+            users = User.objects.filter(institution_id=request.user.institution_id).prefetch_related('roles')
+        else:
             return Response({'detail': 'Forbidden.'}, status=403)
-        users = User.objects.prefetch_related('roles').all()
         return Response(UserSerializer(users, many=True).data)
 
 
@@ -319,6 +324,7 @@ class AdminAssignRoleView(APIView):
     """Admin only: assign or remove a role from a user."""
 
     def post(self, request, user_id):
+        # Only admin can assign roles
         if not request.user.is_admin:
             return Response({'detail': 'Forbidden.'}, status=403)
         try:

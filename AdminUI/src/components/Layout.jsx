@@ -17,14 +17,40 @@ const NAV = [
 export default function Layout() {
   const navigate = useNavigate();
   const logout = () => { localStorage.clear(); navigate('/login'); };
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isInstitutionAdmin, setIsInstitutionAdmin] = useState(false);
+  const [isMentor, setIsMentor] = useState(false);
 
   useEffect(() => {
     me().then(r => {
       const roles = (r.data?.roles || []).map(x => x.name || x);
-      setIsInstitutionAdmin(roles.includes('institution_admin'));
+      setIsAdmin(roles.includes('admin'));
+      setIsInstitutionAdmin(roles.includes('institutional_admin'));
+      setIsMentor(roles.includes('mentor'));
     }).catch(() => {});
   }, []);
+
+  // Filter nav items based on role
+  const getNavItems = () => {
+    if (isAdmin) {
+      return NAV; // Admin sees all pages
+    }
+    if (isInstitutionAdmin) {
+      // Institution admin sees dashboard, daily revision, and users only
+      return [
+        { to: '/',            icon: '⊞',  label: 'Dashboard'     },
+        { to: '/daily-revision', icon: '🔁', label: 'Daily Revision' },
+        { to: '/users',       icon: '👥', label: 'Users'         },
+      ];
+    }
+    if (isMentor) {
+      // Mentor sees only dashboard
+      return [
+        { to: '/',            icon: '⊞',  label: 'Dashboard'     },
+      ];
+    }
+    return [];
+  };
 
   return (
     <div className="layout">
@@ -35,7 +61,7 @@ export default function Layout() {
           <span className="brand-sub">Admin Panel</span>
         </div>
         <nav className="sidebar-nav">
-          {NAV.map(n => (
+          {getNavItems().map(n => (
             <NavLink
               key={n.to}
               to={n.to}
