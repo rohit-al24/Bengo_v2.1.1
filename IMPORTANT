@@ -1,0 +1,1 @@
+$Env:Path = 'D:\flutter\bin;' + $Env:Path; $Env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'; $Env:Path = $Env:JAVA_HOME + '\bin;' + $Env:Path; cd 'G:\Bengo\Bengo v.2.2.0\bengo_app'; flutter run

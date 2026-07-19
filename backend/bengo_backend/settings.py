@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'apps.teams',
     'apps.announcements',
     'apps.roleplay',
+    'apps.clan',
 ]
 
 MIDDLEWARE = [

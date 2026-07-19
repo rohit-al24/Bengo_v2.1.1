@@ -68,265 +68,304 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _kBg,
+      // Resize so the layout squishes rather than scrolls when keyboard appears
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: FadeTransition(
-                  opacity: _fadeIn,
-                  child: SlideTransition(
-                    position: _slideUp,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // ── Logo ──────────────────────────────────────────
-                        _LogoWidget(),
-                        const SizedBox(height: 4),
-                        // ── Word-mark ─────────────────────────────────────
-                        Text(
-                          'BenGo',
-                          style: GoogleFonts.spaceGrotesk(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w700,
-                            color: _kInk,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'MASTERY THROUGH FOCUS',
-                          style: GoogleFonts.inter(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2.8,
-                            color: _kMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final h = constraints.maxHeight;
+            // Proportional vertical spacing that collapses on smaller screens
+            final topGap    = (h * 0.04).clamp(8.0, 28.0);
+            final logoGap   = (h * 0.015).clamp(2.0, 8.0);
+            final midGap    = (h * 0.025).clamp(6.0, 24.0);
+            final divGap    = (h * 0.022).clamp(6.0, 20.0);
+            final socialGap = (h * 0.02).clamp(6.0, 18.0);
+            final botGap    = (h * 0.015).clamp(4.0, 16.0);
 
-                        // ── Form card ─────────────────────────────────────
-                        Container(
-                          decoration: BoxDecoration(
-                            color: _kSurface,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0C000000),
-                                blurRadius: 24,
-                                offset: Offset(0, 8),
-                              ),
-                              BoxShadow(
-                                color: Color(0x06000000),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Heading
-                              Text(
-                                'Welcome back',
-                                style: GoogleFonts.spaceGrotesk(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: _kInk,
-                                  letterSpacing: -0.4,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Sign in to continue your session',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  color: _kMuted,
-                                ),
-                              ),
-                              const SizedBox(height: 22),
-
-                              // Email or username
-                              _FieldLabel(label: 'Email address or username'),
-                              const SizedBox(height: 6),
-                              _M3FilledField(
-                                controller: _emailController,
-                                focusNode: _emailFocus,
-                                hint: 'student@bengo.edu or student123',
-                                prefixIcon: Icons.alternate_email_rounded,
-                                keyboardType: TextInputType.emailAddress,
-                                onSubmitted: (_) => _passwordFocus.requestFocus(),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Password
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            return GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: SingleChildScrollView(
+                // Allow scroll ONLY when keyboard is open
+                physics: const ClampingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: h),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 480),
+                          child: FadeTransition(
+                            opacity: _fadeIn,
+                            child: SlideTransition(
+                              position: _slideUp,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  const _FieldLabel(label: 'Password'),
-                                  GestureDetector(
-                                    onTap: () {},
-                                    child: Text(
-                                      'Forgot password?',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: _kAccent,
+                                  SizedBox(height: topGap),
+
+                                  // ── Logo ────────────────────────────────
+                                  _LogoWidget(),
+                                  SizedBox(height: logoGap),
+
+                                  // ── Wordmark ─────────────────────────────
+                                  Text(
+                                    'BenGo',
+                                    style: GoogleFonts.spaceGrotesk(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w700,
+                                      color: _kInk,
+                                      letterSpacing: -1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'MASTERY THROUGH FOCUS',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 2.8,
+                                      color: _kMuted,
+                                    ),
+                                  ),
+                                  SizedBox(height: midGap),
+
+                                  // ── Form card ────────────────────────────
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: _kSurface,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color(0x0C000000),
+                                          blurRadius: 24,
+                                          offset: Offset(0, 8),
+                                        ),
+                                        BoxShadow(
+                                          color: Color(0x06000000),
+                                          blurRadius: 6,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        // Compact header row: badge + title
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                'Welcome back',
+                                                style: GoogleFonts.spaceGrotesk(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: _kInk,
+                                                  letterSpacing: -0.5,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: _kAccent.withOpacity(0.08),
+                                                borderRadius: BorderRadius.circular(20),
+                                                border: Border.all(
+                                                    color: _kAccent.withOpacity(0.18)),
+                                              ),
+                                              child: Text(
+                                                'Sign in',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: _kAccent,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 16),
+
+                                        _FieldLabel(label: 'Email address or username'),
+                                        const SizedBox(height: 6),
+                                        _M3FilledField(
+                                          controller: _emailController,
+                                          focusNode: _emailFocus,
+                                          hint: 'student@bengo.edu or student123',
+                                          prefixIcon: Icons.alternate_email_rounded,
+                                          keyboardType: TextInputType.emailAddress,
+                                          onSubmitted: (_) => _passwordFocus.requestFocus(),
+                                        ),
+                                        const SizedBox(height: 14),
+
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const _FieldLabel(label: 'Password'),
+                                            GestureDetector(
+                                              onTap: () {},
+                                              child: Text(
+                                                'Forgot password?',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _kAccent,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        _M3FilledField(
+                                          controller: _passwordController,
+                                          focusNode: _passwordFocus,
+                                          hint: '••••••••',
+                                          prefixIcon: Icons.lock_outline_rounded,
+                                          isPassword: true,
+                                          obscureText: _obscurePassword,
+                                          onToggleObscure: () => setState(
+                                              () => _obscurePassword = !_obscurePassword),
+                                          onSubmitted: (_) { if (!_isLoading) _login(); },
+                                        ),
+                                        const SizedBox(height: 16),
+
+                                        if (_errorMsg.isNotEmpty) ...[
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFF0F2),
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(
+                                                  color: const Color(0xFFFFCDD2), width: 1),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.error_outline_rounded,
+                                                    color: _kAccent, size: 16),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    _errorMsg,
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 12,
+                                                      color: _kAccent,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 14),
+                                        ],
+
+                                        _PillButton(
+                                          label: 'Enter Session',
+                                          isLoading: _isLoading,
+                                          onPressed: _isLoading ? null : _login,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // ── Flexible spacer — collapses on small screens
+                                  const Spacer(),
+
+                                  // ── Divider ───────────────────────────────
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(vertical: divGap),
+                                    child: Row(
+                                      children: [
+                                        Expanded(child: Divider(color: _kDivider, thickness: 1)),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                                          child: Text(
+                                            'or continue with',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: _kMuted,
+                                              letterSpacing: 0.3,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(child: Divider(color: _kDivider, thickness: 1)),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // ── Social buttons ────────────────────────
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _SocialButton(
+                                        onTap: () {},
+                                        label: 'Google',
+                                        icon: _GoogleSvgIcon(),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      _SocialButton(
+                                        onTap: () {},
+                                        label: 'Apple',
+                                        icon: const Icon(Icons.apple, color: _kInk, size: 22),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      _SocialButton(
+                                        onTap: () {},
+                                        label: 'SSO',
+                                        icon: const Icon(
+                                            Icons.business_center_outlined,
+                                            color: _kInk,
+                                            size: 20),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+
+                                  // ── Sign-up link — always has real bottom breathing room
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 20),
+                                    child: GestureDetector(
+                                      onTap: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (_) => const CreateAccountScreen()),
+                                      ),
+                                      child: RichText(
+                                        textAlign: TextAlign.center,
+                                        text: TextSpan(
+                                          text: "New to BenGo?  ",
+                                          style: GoogleFonts.inter(
+                                              fontSize: 13, color: _kMuted),
+                                          children: [
+                                            TextSpan(
+                                              text: 'Create an account',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                color: _kAccent,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
-                              _M3FilledField(
-                                controller: _passwordController,
-                                focusNode: _passwordFocus,
-                                hint: '••••••••',
-                                prefixIcon: Icons.lock_outline_rounded,
-                                isPassword: true,
-                                obscureText: _obscurePassword,
-                                onToggleObscure: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
-                                onSubmitted: (_) { if (!_isLoading) _login(); },
-                              ),
-                              const SizedBox(height: 20),
-
-                              // Error banner
-                              if (_errorMsg.isNotEmpty) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF0F2),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: const Color(0xFFFFCDD2),
-                                        width: 1),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.error_outline_rounded,
-                                          color: _kAccent, size: 16),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          _errorMsg,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: _kAccent,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-
-                              // Primary CTA — pill, colored shadow
-                              _PillButton(
-                                label: 'Enter Session',
-                                isLoading: _isLoading,
-                                onPressed: _isLoading ? null : _login,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-
-                        // ── Divider ───────────────────────────────────────
-                        Row(
-                          children: [
-                            Expanded(
-                                child: Divider(
-                                    color: _kDivider, thickness: 1)),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
-                              child: Text(
-                                'or continue with',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: _kMuted,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                                child: Divider(
-                                    color: _kDivider, thickness: 1)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // ── Social buttons ────────────────────────────────
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _SocialButton(
-                              onTap: () {},
-                              label: 'Google',
-                              icon: _GoogleSvgIcon(),
-                            ),
-                            const SizedBox(width: 14),
-                            _SocialButton(
-                              onTap: () {},
-                              label: 'Apple',
-                              icon: const Icon(Icons.apple,
-                                  color: _kInk, size: 22),
-                            ),
-                            const SizedBox(width: 14),
-                            _SocialButton(
-                              onTap: () {},
-                              label: 'SSO',
-                              icon: const Icon(
-                                  Icons.business_center_outlined,
-                                  color: _kInk,
-                                  size: 20),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-
-                        // ── Sign-up link ──────────────────────────────────
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (_) => const CreateAccountScreen()),
-                          ),
-                          child: RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(
-                              text: "New to BenGo? ",
-                              style: GoogleFonts.inter(
-                                  fontSize: 13, color: _kMuted),
-                              children: [
-                                TextSpan(
-                                  text: 'Create an account',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: _kAccent,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

@@ -31,6 +31,10 @@ import RolePlayCharacters from './pages/RolePlay/RolePlayCharacters';
 import RolePlayAnalytics  from './pages/RolePlay/RolePlayAnalytics';
 import RolePlaySettings   from './pages/RolePlay/RolePlaySettings';
 
+// ── Clan pages ─────────────────────────────────────────────────────────────────
+import ClanDashboard        from './pages/Clan/ClanDashboard';
+import AdrenalineDuelConfig from './pages/Clan/AdrenalineDuelConfig';
+
 function RequireAdmin({ children }) {
   const token = localStorage.getItem('access_token');
   if (!token) return <Navigate to="/login" replace />;
@@ -81,6 +85,11 @@ export default function App() {
           <Route path="roleplay/characters"   element={<RolePlayCharacters />} />
           <Route path="roleplay/analytics"    element={<RolePlayAnalytics />} />
           <Route path="roleplay/settings"     element={<RolePlaySettings />} />
+
+          {/* ── Clan ─────────────────────────────────────────────────────── */}
+          <Route path="clan"                       element={<ClanDashboard />} />
+          <Route path="clan/config/duel"           element={<AdrenalineDuelConfig />} />
+          {/* Additional Clan pages will be added here (config, list, etc.) */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

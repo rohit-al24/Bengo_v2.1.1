@@ -1,0 +1,216 @@
+/* ── Adrenaline Duel Config Admin Page ── */
+
+.adc-root {
+  min-height: 100vh;
+  background: #F5F0E8;
+  padding: 24px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.adc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.adc-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1C1410;
+  margin: 0 0 4px;
+}
+
+.adc-subtitle {
+  font-size: 13px;
+  color: #7C6A5A;
+  margin: 0;
+}
+
+/* Save button */
+.adc-save-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 100px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #C41230;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(196, 18, 48, 0.3);
+  transition: all 0.15s ease;
+}
+.adc-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(196,18,48,0.35); }
+.adc-save-btn:active { transform: translateY(0); box-shadow: none; }
+.adc-save-btn.saved  { background: #2E7D32; box-shadow: 0 4px 12px rgba(46,125,50,0.3); }
+.adc-save-btn.loading { opacity: 0.7; cursor: not-allowed; }
+.adc-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Error */
+.adc-error {
+  background: #FFEBEE;
+  border: 1px solid rgba(198,40,40,0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #C62828;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+/* Main grid */
+.adc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+/* Section card */
+.adc-section {
+  background: #FDFAF5;
+  border-radius: 16px;
+  border: 1px solid #E2D8C8;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 -1px 2px rgba(255,255,255,0.5) inset;
+  overflow: hidden;
+}
+
+.adc-section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #7C6A5A;
+  text-transform: uppercase;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #E2D8C8;
+  background: rgba(226,216,200,0.2);
+}
+
+.adc-section-body {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Field */
+.adc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adc-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1C1410;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adc-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: #7C6A5A;
+  line-height: 1.4;
+}
+
+.adc-input {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1.5px solid #E2D8C8;
+  background: #F5F0E8;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1C1410;
+  transition: border-color 0.15s;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+}
+.adc-input:focus {
+  outline: none;
+  border-color: #C41230;
+  background: #fff;
+}
+
+/* Toggle row */
+.adc-toggle-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adc-toggle {
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.adc-toggle.on  { background: #C41230; box-shadow: 0 2px 6px rgba(196,18,48,0.35); }
+.adc-toggle.off { background: #C8BAA8; }
+
+.adc-toggle-knob {
+  position: absolute;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.adc-toggle.on  .adc-toggle-knob { left: 23px; }
+.adc-toggle.off .adc-toggle-knob { left: 3px; }
+
+/* Bottom bar */
+.adc-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: #FDFAF5;
+  border-radius: 16px;
+  border: 1px solid #E2D8C8;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.adc-last-saved {
+  font-size: 12px;
+  color: #7C6A5A;
+}
+
+/* Loading */
+.adc-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  color: #7C6A5A;
+  font-size: 14px;
+}
+
+.adc-spinner {
+  width: 20px; height: 20px;
+  border: 2px solid #E2D8C8;
+  border-top-color: #C41230;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .adc-grid { grid-template-columns: 1fr; }
+}

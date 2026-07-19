@@ -15,4 +15,5 @@ urlpatterns = [
     path('api/teams/', include('apps.teams.urls')),
     path('api/announcements/', include('apps.announcements.urls')),
     path('api/roleplay/',     include('apps.roleplay.urls')),
+    path('api/clan/',         include('apps.clan.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

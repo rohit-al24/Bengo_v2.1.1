@@ -138,6 +138,17 @@ class ApiService {
     return jsonDecode(utf8.decode(res.bodyBytes)) as List;
   }
 
+  /// Public passthrough for use by feature-specific services (e.g. ClanService).
+  /// Returns the decoded body as a Map, List, or primitive depending on the API response.
+  Future<dynamic> req(String method, String path, {Map<String, dynamic>? body}) async {
+    final res = await _req(method, path, body: body);
+    if (res.statusCode >= 400) {
+      throw ApiException(res.statusCode, res.body);
+    }
+    if (res.body.isEmpty) return null;
+    return jsonDecode(utf8.decode(res.bodyBytes));
+  }
+
   // ── Auth ──────────────────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> register({
     required String username,

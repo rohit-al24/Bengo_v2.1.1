@@ -36,6 +36,9 @@ export default function Layout() {
   const [rpOpen,            setRpOpen]             = useState(
     location.pathname.startsWith('/roleplay')
   );
+  const [clanOpen,          setClanOpen]           = useState(
+    location.pathname.startsWith('/clan')
+  );
 
   useEffect(() => {
     me().then(r => {
@@ -55,6 +58,7 @@ export default function Layout() {
   // Auto-expand RolePlay group when navigating to it
   useEffect(() => {
     if (location.pathname.startsWith('/roleplay')) setRpOpen(true);
+    if (location.pathname.startsWith('/clan'))     setClanOpen(true);
   }, [location.pathname]);
 
   // Filter nav items based on role
@@ -114,6 +118,50 @@ export default function Layout() {
               {rpOpen && (
                 <div className="nav-sub-items">
                   {RP_SUB_NAV.map(item => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      className={({ isActive }) =>
+                        `nav-sub-item${isActive ? ' active' : ''}`
+                      }
+                    >
+                      <span className="nav-sub-dot" />
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Clan collapsible group — admin only */}
+          {isAdmin && (
+            <div className="nav-group">
+              <div
+                className={`nav-group-header${clanOpen ? ' open' : ''}`}
+                onClick={() => setClanOpen(o => !o)}
+              >
+                <span className="nav-group-header-left">
+                  <span className="nav-icon">⛩️</span>
+                  <span>Clan</span>
+                </span>
+                <span className={`nav-group-chevron${clanOpen ? ' open' : ''}`}>►</span>
+              </div>
+
+              {clanOpen && (
+                <div className="nav-sub-items">
+                  {[
+                    { to: '/clan',          label: 'Dashboard',  end: true  },
+                    { to: '/clan/clans',    label: 'All Clans',  end: false },
+                    { to: '/clan/rushes',   label: 'Rushes',     end: false },
+                    { to: '/clan/battles',  label: 'Battles',    end: false },
+                    { to: '/clan/chests',   label: 'Chests',     end: false },
+                    { to: '/clan/rivals',   label: 'Rivals',     end: false },
+                    { to: '/clan/config/global',  label: 'Config: Global',  end: false },
+                    { to: '/clan/config/rush',    label: 'Config: Rush',    end: false },
+                    { to: '/clan/config/duel',    label: 'Config: Duel',    end: false },
+                  ].map(item => (
                     <NavLink
                       key={item.to}
                       to={item.to}

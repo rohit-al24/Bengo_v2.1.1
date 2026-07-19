@@ -18,7 +18,7 @@ dependencies:
   url_launcher: ^6.3.2
   speech_to_text: ^7.4.0
   path_provider: ^2.1.0
-  record: ^5.0.0
+  record: ^7.1.1
   audioplayers: ^6.6.0
 
 dev_dependencies:
